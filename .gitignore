@@ -1,0 +1,40 @@
+# ── Maven ─────────────────────────────────────────────────
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# ── Node / React ──────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.env.local
+frontend/.env.*.local
+
+# ── IDE ───────────────────────────────────────────────────
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.factorypath
+
+# ── OS ────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Logs ──────────────────────────────────────────────────
+logs/
+*.log
+
+# ── Docker ────────────────────────────────────────────────
+.docker/
+
+# ── Environment ───────────────────────────────────────────
+.env
+*.env
+*.env.local
+
+# ── Spring Boot ───────────────────────────────────────────
+backend/HELP.md
