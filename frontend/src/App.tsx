@@ -5,6 +5,9 @@ import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import Dashboard from './pages/Dashboard';
+import StudentsPage from './pages/StudentsPage';
+import CoursesPage from './pages/CoursesPage';
+import EnrollmentsPage from './pages/EnrollmentsPage';
 
 export default function App() {
   const { isAuthenticated } = useAuth();
@@ -12,6 +15,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+
         {/* Public routes */}
         <Route
           path="/login"
@@ -31,12 +35,15 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<Dashboard />} />
-          {/* Students, Courses, Enrollments pages come next */}
+          <Route index          element={<Dashboard />} />
+          <Route path="students"    element={<StudentsPage />} />
+          <Route path="courses"     element={<CoursesPage />} />
+          <Route path="enrollments" element={<EnrollmentsPage />} />
         </Route>
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
+
       </Routes>
     </BrowserRouter>
   );
