@@ -11,21 +11,21 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-backend:
-  build: ./backend/student-manager
-  ports:
-    - "5030:5030"
-  depends_on:
-    - postgres
-  environment:
-    SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/studentmanager
+  backend:
+    build: ./backend/student-manager
+    ports:
+      - "5030:5030"
+    depends_on:
+      - postgres
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/studentmanager
 
-frontend:
-  build: ./frontend
-  ports:
-    - "80:80"
-  depends_on:
-    - backend
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:
