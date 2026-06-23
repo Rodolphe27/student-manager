@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import StatCard from '../components/StatCard';
-import { Student } from '../types';
-import { Course } from '../types';
-import { Enrollment } from '../types';
+import type { Student } from '../types';
+import type { Course } from '../types';
+import type { Enrollment } from '../types';
 import studentService from '../services/studentService';
 import courseService from '../services/courseService';
 import enrollmentService from '../services/enrollmentService';

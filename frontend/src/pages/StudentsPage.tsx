@@ -1,5 +1,5 @@
-import { useEffect, useState, FormEvent } from 'react';
-import { Student, CreateStudentRequest } from '../types';
+import { useEffect, useState, type FormEvent } from 'react';
+import type { Student, CreateStudentRequest } from '../types';
 import studentService from '../services/studentService';
 
 export default function StudentsPage() {

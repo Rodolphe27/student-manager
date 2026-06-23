@@ -1,6 +1,6 @@
 import api from './api';
-import { Course, CreateCourseRequest, CourseStatus } from '../types';
-import { AxiosResponse } from 'axios';
+import type { Course, CreateCourseRequest, CourseStatus } from '../types';
+import type { AxiosResponse } from 'axios';
 
 const courseService = {
   getAll: (): Promise<AxiosResponse<Course[]>> =>

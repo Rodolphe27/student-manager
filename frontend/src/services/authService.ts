@@ -1,6 +1,6 @@
 import api from './api';
-import { AuthResponse, LoginRequest, RegisterRequest } from '../types';
-import { AxiosResponse } from 'axios';
+import type  { AuthResponse, LoginRequest, RegisterRequest } from '../types';
+import type { AxiosResponse } from 'axios';
 
 const authService = {
   login: (data: LoginRequest): Promise<AxiosResponse<AuthResponse>> =>

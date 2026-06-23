@@ -1,5 +1,5 @@
-import { useEffect, useState, FormEvent } from 'react';
-import { Enrollment, Student, Course, CreateEnrollmentRequest, EnrollmentStatus } from '../types';
+import { useEffect, useState, type FormEvent } from 'react';
+import type { Enrollment, Student, Course, CreateEnrollmentRequest, EnrollmentStatus } from '../types';
 import enrollmentService from '../services/enrollmentService';
 import studentService from '../services/studentService';
 import courseService from '../services/courseService';

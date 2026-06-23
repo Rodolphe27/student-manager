@@ -1,10 +1,10 @@
 import api from './api';
-import {
+import type {
   Enrollment,
   CreateEnrollmentRequest,
   UpdateGradeRequest
 } from '../types';
-import { AxiosResponse } from 'axios';
+import type { AxiosResponse } from 'axios';
 
 const enrollmentService = {
   getAll: (): Promise<AxiosResponse<Enrollment[]>> =>

@@ -1,6 +1,6 @@
-import { useEffect, useState, FormEvent } from 'react';
-import { Course, CreateCourseRequest, CourseStatus } from '../types';
-import courseService from '../services/courseService';
+import { useEffect, useState, type FormEvent } from 'react';
+import type { Course, CreateCourseRequest, CourseStatus } from '../types';
+import  courseService from '../services/courseService';
 
 export default function CoursesPage() {
   const [courses, setCourses]   = useState<Course[]>([]);
