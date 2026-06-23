@@ -42,5 +42,7 @@ jobs:
           cache: maven
 
       - name: Build & test
-        run: ./mvnw clean verify -DskipTests
+        run: |
+          chmod +x mvnw
+          ./mvnw clean verify -DskipTests
         working-directory: backend/student-manager
