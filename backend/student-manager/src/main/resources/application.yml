@@ -19,7 +19,7 @@ spring:
       file: backend/student-manager/compose.yaml
 
 server:
-  port: 8080
+  port: 5030
 
 logging:
   level:
