@@ -17,6 +17,7 @@ spring:
   docker:
     compose:
       file: backend/student-manager/compose.yaml
+      enabled: false
 
 server:
   port: 5030
