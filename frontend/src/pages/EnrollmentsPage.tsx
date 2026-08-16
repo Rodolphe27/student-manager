@@ -11,6 +11,7 @@ export default function EnrollmentsPage() {
   const [showForm, setShowForm]       = useState<boolean>(false);
   const [loading, setLoading]         = useState<boolean>(true);
   const [error, setError]             = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<EnrollmentStatus | 'ALL'>('ALL');
 
   const [form, setForm] = useState<CreateEnrollmentRequest>({
     studentId: 0,
@@ -80,6 +81,10 @@ export default function EnrollmentsPage() {
     CANCELLED: 'bg-red-100 text-red-600',
   };
 
+  const filteredEnrollments = enrollments.filter((e: Enrollment) =>
+    statusFilter === 'ALL' ? true : e.status === statusFilter
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -89,19 +94,33 @@ export default function EnrollmentsPage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
         <div>
           <h1 className="text-xl font-bold text-gray-800">Enrollments</h1>
-          <p className="text-sm text-gray-400">{enrollments.length} total</p>
+          <p className="text-sm text-gray-400">
+            {filteredEnrollments.length} of {enrollments.length}
+          </p>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-        >
-          + New Enrollment
-        </button>
+        <div className="flex gap-2">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as EnrollmentStatus | 'ALL')}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="ALL">All statuses</option>
+            <option value="PENDING">Pending</option>
+            <option value="CONFIRMED">Confirmed</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors whitespace-nowrap"
+          >
+            + New Enrollment
+          </button>
+        </div>
       </div>
 
       {/* Form */}
@@ -113,7 +132,7 @@ export default function EnrollmentsPage() {
               {error}
             </div>
           )}
-          <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Student</label>
               <select
@@ -166,8 +185,8 @@ export default function EnrollmentsPage() {
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <table className="w-full text-sm">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
+        <table className="w-full text-sm min-w-[720px]">
           <thead className="bg-gray-50 text-gray-400 text-xs uppercase">
             <tr>
               <th className="px-5 py-3 text-left">Student</th>
@@ -179,7 +198,7 @@ export default function EnrollmentsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {enrollments.map((e: Enrollment) => (
+            {filteredEnrollments.map((e: Enrollment) => (
               <tr key={e.id} className="hover:bg-gray-50">
                 <td className="px-5 py-3 font-medium text-gray-800">{e.studentName}</td>
                 <td className="px-5 py-3 text-gray-600">
@@ -213,10 +232,10 @@ export default function EnrollmentsPage() {
                 </td>
               </tr>
             ))}
-            {enrollments.length === 0 && (
+            {filteredEnrollments.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-5 py-8 text-center text-gray-400 text-sm">
-                  No enrollments yet — add one above
+                  {enrollments.length === 0 ? 'No enrollments yet — add one above' : 'No enrollments match this filter'}
                 </td>
               </tr>
             )}

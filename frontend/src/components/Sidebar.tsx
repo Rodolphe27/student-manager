@@ -14,11 +14,19 @@ const navItems: NavItem[] = [
   { path: '/enrollments', label: 'Enrollments', icon: '📋' },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  open: boolean;
+  onNavigate: () => void;
+}
+
+export default function Sidebar({ open, onNavigate }: SidebarProps) {
   const { user, logout } = useAuth();
 
   return (
-    <div className="w-56 min-h-screen bg-slate-900 flex flex-col">
+    <div
+      className={`w-56 min-h-screen bg-slate-900 flex flex-col fixed inset-y-0 left-0 z-40 transform transition-transform duration-200 ease-in-out
+        ${open ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:static md:z-auto`}
+    >
 
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-5 border-b border-slate-700">
@@ -35,6 +43,7 @@ export default function Sidebar() {
             key={item.path}
             to={item.path}
             end={item.path === '/'}
+            onClick={onNavigate}
             className={({ isActive }: { isActive: boolean }) =>
               `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                 isActive

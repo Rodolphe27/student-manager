@@ -7,6 +7,7 @@ export default function CoursesPage() {
   const [showForm, setShowForm] = useState<boolean>(false);
   const [loading, setLoading]   = useState<boolean>(true);
   const [error, setError]       = useState<string>('');
+  const [query, setQuery]       = useState<string>('');
 
   const [form, setForm] = useState<CreateCourseRequest>({
     code: '',
@@ -59,6 +60,12 @@ export default function CoursesPage() {
     ARCHIVED: 'bg-red-100 text-red-600',
   };
 
+  const filteredCourses = courses.filter((c: Course) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    return c.code.toLowerCase().includes(q) || c.title.toLowerCase().includes(q);
+  });
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -68,19 +75,30 @@ export default function CoursesPage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
         <div>
           <h1 className="text-xl font-bold text-gray-800">Courses</h1>
-          <p className="text-sm text-gray-400">{courses.length} total</p>
+          <p className="text-sm text-gray-400">
+            {filteredCourses.length} of {courses.length}
+          </p>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-        >
-          + Add Course
-        </button>
+        <div className="flex gap-2">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by code or title…"
+            className="flex-1 sm:w-72 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors whitespace-nowrap"
+          >
+            + Add Course
+          </button>
+        </div>
       </div>
 
       {/* Form */}
@@ -92,7 +110,7 @@ export default function CoursesPage() {
               {error}
             </div>
           )}
-          <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Code</label>
               <input
@@ -166,8 +184,8 @@ export default function CoursesPage() {
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <table className="w-full text-sm">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
+        <table className="w-full text-sm min-w-[640px]">
           <thead className="bg-gray-50 text-gray-400 text-xs uppercase">
             <tr>
               <th className="px-5 py-3 text-left">Code</th>
@@ -178,7 +196,7 @@ export default function CoursesPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {courses.map((c: Course) => (
+            {filteredCourses.map((c: Course) => (
               <tr key={c.id} className="hover:bg-gray-50">
                 <td className="px-5 py-3 font-mono text-blue-600 font-medium">{c.code}</td>
                 <td className="px-5 py-3 text-gray-800">{c.title}</td>
@@ -198,10 +216,10 @@ export default function CoursesPage() {
                 </td>
               </tr>
             ))}
-            {courses.length === 0 && (
+            {filteredCourses.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-5 py-8 text-center text-gray-400 text-sm">
-                  No courses yet — add one above
+                  {courses.length === 0 ? 'No courses yet — add one above' : 'No courses match your search'}
                 </td>
               </tr>
             )}

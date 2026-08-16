@@ -7,6 +7,7 @@ export default function StudentsPage() {
   const [showForm, setShowForm]   = useState<boolean>(false);
   const [loading, setLoading]     = useState<boolean>(true);
   const [error, setError]         = useState<string>('');
+  const [query, setQuery]         = useState<string>('');
 
   const [form, setForm] = useState<CreateStudentRequest>({
     firstName: '',
@@ -52,6 +53,16 @@ export default function StudentsPage() {
     }
   };
 
+  const filteredStudents = students.filter((s: Student) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      s.fullName.toLowerCase().includes(q) ||
+      s.matriculationNumber.toLowerCase().includes(q) ||
+      s.email.toLowerCase().includes(q)
+    );
+  });
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -61,19 +72,30 @@ export default function StudentsPage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
         <div>
           <h1 className="text-xl font-bold text-gray-800">Students</h1>
-          <p className="text-sm text-gray-400">{students.length} total</p>
+          <p className="text-sm text-gray-400">
+            {filteredStudents.length} of {students.length}
+          </p>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-        >
-          + Add Student
-        </button>
+        <div className="flex gap-2">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by name, matriculation, or email…"
+            className="flex-1 sm:w-72 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors whitespace-nowrap"
+          >
+            + Add Student
+          </button>
+        </div>
       </div>
 
       {/* Form */}
@@ -85,7 +107,7 @@ export default function StudentsPage() {
               {error}
             </div>
           )}
-          <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">First Name</label>
               <input
@@ -147,8 +169,8 @@ export default function StudentsPage() {
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <table className="w-full text-sm">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
+        <table className="w-full text-sm min-w-[560px]">
           <thead className="bg-gray-50 text-gray-400 text-xs uppercase">
             <tr>
               <th className="px-5 py-3 text-left">Name</th>
@@ -158,7 +180,7 @@ export default function StudentsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {students.map((s: Student) => (
+            {filteredStudents.map((s: Student) => (
               <tr key={s.id} className="hover:bg-gray-50">
                 <td className="px-5 py-3 font-medium text-gray-800">{s.fullName}</td>
                 <td className="px-5 py-3 text-gray-500 font-mono">{s.matriculationNumber}</td>
@@ -173,10 +195,10 @@ export default function StudentsPage() {
                 </td>
               </tr>
             ))}
-            {students.length === 0 && (
+            {filteredStudents.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-5 py-8 text-center text-gray-400 text-sm">
-                  No students yet — add one above
+                  {students.length === 0 ? 'No students yet — add one above' : 'No students match your search'}
                 </td>
               </tr>
             )}
