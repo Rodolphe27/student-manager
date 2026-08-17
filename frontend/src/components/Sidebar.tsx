@@ -7,11 +7,16 @@ interface NavItem {
   icon: string;
 }
 
-const navItems: NavItem[] = [
+const adminNavItems: NavItem[] = [
   { path: '/',            label: 'Dashboard',   icon: '▣' },
   { path: '/students',    label: 'Students',    icon: '👤' },
   { path: '/courses',     label: 'Courses',     icon: '📚' },
   { path: '/enrollments', label: 'Enrollments', icon: '📋' },
+];
+
+const studentNavItems: NavItem[] = [
+  { path: '/',            label: 'Dashboard',   icon: '▣' },
+  { path: '/my-courses',  label: 'My Courses',  icon: '📋' },
 ];
 
 interface SidebarProps {
@@ -21,6 +26,7 @@ interface SidebarProps {
 
 export default function Sidebar({ open, onNavigate }: SidebarProps) {
   const { user, logout } = useAuth();
+  const navItems = user?.role === 'STUDENT' ? studentNavItems : adminNavItems;
 
   return (
     <div

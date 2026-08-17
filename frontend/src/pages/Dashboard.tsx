@@ -20,10 +20,15 @@ export default function Dashboard() {
   const [stats, setStats]           = useState<Stats>({ students: 0, courses: 0, enrollments: 0, pending: 0 });
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading]       = useState<boolean>(true);
+  const [loadError, setLoadError]   = useState<string>('');
 
   useEffect(() => {
-    const fetchData = async (): Promise<void> => {
-      try {
+    fetchData();
+  }, []);
+
+  const fetchData = async (): Promise<void> => {
+    setLoadError('');
+    try {
         const [s, c, e] = await Promise.all([
           studentService.getAll(),
           courseService.getAll(),
@@ -42,20 +47,34 @@ export default function Dashboard() {
           pending,
         });
         setEnrollments(allEnrollments.slice(0, 7));
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
+    } catch (err) {
+      console.error(err);
+      setLoadError('Could not load dashboard data. Check your connection and try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-lg flex items-center justify-between gap-4">
+          <span>{loadError}</span>
+          <button
+            onClick={() => { setLoading(true); fetchData(); }}
+            className="text-red-700 font-medium hover:underline whitespace-nowrap"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }

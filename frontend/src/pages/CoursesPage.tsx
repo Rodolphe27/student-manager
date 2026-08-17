@@ -2,45 +2,81 @@ import { useEffect, useState, type FormEvent } from 'react';
 import type { Course, CreateCourseRequest, CourseStatus } from '../types';
 import  courseService from '../services/courseService';
 
+const emptyForm: CreateCourseRequest = {
+  code: '',
+  title: '',
+  description: '',
+  creditHours: 5,
+  status: 'ACTIVE',
+};
+
 export default function CoursesPage() {
   const [courses, setCourses]   = useState<Course[]>([]);
   const [showForm, setShowForm] = useState<boolean>(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading]   = useState<boolean>(true);
+  const [loadError, setLoadError] = useState<string>('');
   const [error, setError]       = useState<string>('');
   const [query, setQuery]       = useState<string>('');
 
-  const [form, setForm] = useState<CreateCourseRequest>({
-    code: '',
-    title: '',
-    description: '',
-    creditHours: 5,
-    status: 'ACTIVE',
-  });
+  const [form, setForm] = useState<CreateCourseRequest>(emptyForm);
 
   useEffect(() => { loadCourses(); }, []);
 
   const loadCourses = async (): Promise<void> => {
+    setLoadError('');
     try {
       const r = await courseService.getAll();
       setCourses(r.data);
     } catch (err) {
       console.error(err);
+      setLoadError('Could not load courses. Check your connection and try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const openCreateForm = (): void => {
+    setEditingId(null);
+    setForm(emptyForm);
+    setError('');
+    setShowForm(true);
+  };
+
+  const openEditForm = (c: Course): void => {
+    setEditingId(c.id);
+    setForm({
+      code: c.code,
+      title: c.title,
+      description: c.description ?? '',
+      creditHours: c.creditHours,
+      status: c.status,
+    });
+    setError('');
+    setShowForm(true);
+  };
+
+  const closeForm = (): void => {
+    setShowForm(false);
+    setEditingId(null);
+    setError('');
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setError('');
     try {
-      await courseService.create(form);
-      setForm({ code: '', title: '', description: '', creditHours: 5, status: 'ACTIVE' });
-      setShowForm(false);
+      if (editingId !== null) {
+        await courseService.update(editingId, form);
+      } else {
+        await courseService.create(form);
+      }
+      closeForm();
+      setForm(emptyForm);
       loadCourses();
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      setError(error.response?.data?.message || 'Error creating course');
+      setError(error.response?.data?.message || `Error ${editingId !== null ? 'updating' : 'creating'} course`);
     }
   };
 
@@ -74,6 +110,22 @@ export default function CoursesPage() {
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="p-4 sm:p-6">
+        <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-lg flex items-center justify-between gap-4">
+          <span>{loadError}</span>
+          <button
+            onClick={() => { setLoading(true); loadCourses(); }}
+            className="text-red-700 font-medium hover:underline whitespace-nowrap"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 sm:p-6">
       {/* Header */}
@@ -93,7 +145,7 @@ export default function CoursesPage() {
             className="flex-1 sm:w-72 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
-            onClick={() => setShowForm(!showForm)}
+            onClick={() => (showForm ? closeForm() : openCreateForm())}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors whitespace-nowrap"
           >
             + Add Course
@@ -104,7 +156,7 @@ export default function CoursesPage() {
       {/* Form */}
       {showForm && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
-          <h2 className="font-semibold text-gray-700 mb-4">New Course</h2>
+          <h2 className="font-semibold text-gray-700 mb-4">{editingId !== null ? 'Edit Course' : 'New Course'}</h2>
           {error && (
             <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">
               {error}
@@ -169,11 +221,11 @@ export default function CoursesPage() {
                 type="submit"
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
               >
-                Save Course
+                {editingId !== null ? 'Update Course' : 'Save Course'}
               </button>
               <button
                 type="button"
-                onClick={() => { setShowForm(false); setError(''); }}
+                onClick={closeForm}
                 className="bg-gray-100 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200"
               >
                 Cancel
@@ -206,7 +258,13 @@ export default function CoursesPage() {
                     {c.status}
                   </span>
                 </td>
-                <td className="px-5 py-3">
+                <td className="px-5 py-3 flex gap-3">
+                  <button
+                    onClick={() => openEditForm(c)}
+                    className="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                  >
+                    Edit
+                  </button>
                   <button
                     onClick={() => handleDelete(c.id)}
                     className="text-red-500 hover:text-red-700 text-xs font-medium"

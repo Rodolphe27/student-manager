@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import StudentsPage from './pages/StudentsPage';
 import CoursesPage from './pages/CoursesPage';
 import EnrollmentsPage from './pages/EnrollmentsPage';
+import MyCoursesPage from './pages/MyCoursesPage';
 
 export default function App() {
   const { isAuthenticated } = useAuth();
@@ -39,6 +40,7 @@ export default function App() {
           <Route path="students"    element={<StudentsPage />} />
           <Route path="courses"     element={<CoursesPage />} />
           <Route path="enrollments" element={<EnrollmentsPage />} />
+          <Route path="my-courses" element={<MyCoursesPage />} />
         </Route>
 
         {/* Fallback */}

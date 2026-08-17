@@ -10,8 +10,11 @@ export default function EnrollmentsPage() {
   const [courses, setCourses]         = useState<Course[]>([]);
   const [showForm, setShowForm]       = useState<boolean>(false);
   const [loading, setLoading]         = useState<boolean>(true);
+  const [loadError, setLoadError]     = useState<string>('');
   const [error, setError]             = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<EnrollmentStatus | 'ALL'>('ALL');
+  const [studentFilter, setStudentFilter] = useState<number | 'ALL'>('ALL');
+  const [courseFilter, setCourseFilter]   = useState<number | 'ALL'>('ALL');
 
   const [form, setForm] = useState<CreateEnrollmentRequest>({
     studentId: 0,
@@ -19,24 +22,27 @@ export default function EnrollmentsPage() {
   });
 
   useEffect(() => {
-    const fetchAll = async (): Promise<void> => {
-      try {
-        const [e, s, c] = await Promise.all([
-          enrollmentService.getAll(),
-          studentService.getAll(),
-          courseService.getAll(),
-        ]);
-        setEnrollments(e.data);
-        setStudents(s.data);
-        setCourses(c.data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchAll();
   }, []);
+
+  const fetchAll = async (): Promise<void> => {
+    setLoadError('');
+    try {
+      const [e, s, c] = await Promise.all([
+        enrollmentService.getAll(),
+        studentService.getAll(),
+        courseService.getAll(),
+      ]);
+      setEnrollments(e.data);
+      setStudents(s.data);
+      setCourses(c.data);
+    } catch (err) {
+      console.error(err);
+      setLoadError('Could not load enrollments. Check your connection and try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadEnrollments = async (): Promise<void> => {
     const r = await enrollmentService.getAll();
@@ -75,20 +81,49 @@ export default function EnrollmentsPage() {
     }
   };
 
+  const handleUnenroll = async (id: number): Promise<void> => {
+    if (!confirm('Unenroll this student? This removes the enrollment record permanently.')) return;
+    try {
+      await enrollmentService.delete(id);
+      loadEnrollments();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const statusColor: Record<EnrollmentStatus, string> = {
     CONFIRMED: 'bg-green-100 text-green-700',
     PENDING:   'bg-yellow-100 text-yellow-700',
     CANCELLED: 'bg-red-100 text-red-600',
   };
 
-  const filteredEnrollments = enrollments.filter((e: Enrollment) =>
-    statusFilter === 'ALL' ? true : e.status === statusFilter
-  );
+  const filteredEnrollments = enrollments.filter((e: Enrollment) => {
+    if (statusFilter !== 'ALL' && e.status !== statusFilter) return false;
+    if (studentFilter !== 'ALL' && e.studentId !== studentFilter) return false;
+    if (courseFilter !== 'ALL' && e.courseId !== courseFilter) return false;
+    return true;
+  });
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="p-4 sm:p-6">
+        <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-lg flex items-center justify-between gap-4">
+          <span>{loadError}</span>
+          <button
+            onClick={() => { setLoading(true); fetchAll(); }}
+            className="text-red-700 font-medium hover:underline whitespace-nowrap"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
@@ -103,7 +138,7 @@ export default function EnrollmentsPage() {
             {filteredEnrollments.length} of {enrollments.length}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as EnrollmentStatus | 'ALL')}
@@ -113,6 +148,26 @@ export default function EnrollmentsPage() {
             <option value="PENDING">Pending</option>
             <option value="CONFIRMED">Confirmed</option>
             <option value="CANCELLED">Cancelled</option>
+          </select>
+          <select
+            value={studentFilter}
+            onChange={(e) => setStudentFilter(e.target.value === 'ALL' ? 'ALL' : parseInt(e.target.value))}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="ALL">All students</option>
+            {students.map((s: Student) => (
+              <option key={s.id} value={s.id}>{s.fullName}</option>
+            ))}
+          </select>
+          <select
+            value={courseFilter}
+            onChange={(e) => setCourseFilter(e.target.value === 'ALL' ? 'ALL' : parseInt(e.target.value))}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="ALL">All courses</option>
+            {courses.map((c: Course) => (
+              <option key={c.id} value={c.id}>{c.code}</option>
+            ))}
           </select>
           <button
             onClick={() => setShowForm(!showForm)}
@@ -224,11 +279,17 @@ export default function EnrollmentsPage() {
                   {e.status !== 'CANCELLED' && (
                     <button
                       onClick={() => handleCancel(e.id)}
-                      className="text-red-500 hover:text-red-700 text-xs font-medium"
+                      className="text-amber-600 hover:text-amber-800 text-xs font-medium"
                     >
                       Cancel
                     </button>
                   )}
+                  <button
+                    onClick={() => handleUnenroll(e.id)}
+                    className="text-red-500 hover:text-red-700 text-xs font-medium"
+                  >
+                    Unenroll
+                  </button>
                 </td>
               </tr>
             ))}
