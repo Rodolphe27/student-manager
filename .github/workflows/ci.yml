@@ -70,6 +70,20 @@ jobs:
 
   backend:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: studentmanager
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v5
 
@@ -82,5 +96,5 @@ jobs:
       - name: Build & test
         run: |
           chmod +x mvnw
-          ./mvnw clean verify -DskipTests
+          ./mvnw clean verify
         working-directory: backend/student-manager

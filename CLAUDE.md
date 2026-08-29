@@ -15,7 +15,7 @@ Backend:
 cd backend/student-manager
 ./mvnw clean verify
 ```
-Run the full `verify` including tests — CI currently skips tests with `-DskipTests`; don't repeat that shortcut for changes you make.
+Run the full `verify` including tests — don't add `-DskipTests` back. Most tests are pure unit tests (Mockito, e.g. `EnrollmentServiceImplTest`, `JwtUtilTest`) and need nothing external. A few boot the full Spring context with MockMvc (e.g. `AuthControllerTest`) and need a real Postgres reachable at `localhost:5432` with a `studentmanager` DB / `postgres`/`postgres` credentials (matching `application.yml`'s defaults) — either `docker compose up postgres` from the repo root, or a local `postgresql` service (`service postgresql start`, then `createdb studentmanager` as the `postgres` role). CI provisions this via a `postgres:16` service container in `.github/workflows/ci.yml`.
 
 Frontend:
 ```
@@ -31,5 +31,5 @@ Frontend E2E (Playwright, in `frontend/e2e/`): `npm run build && npx playwright 
 
 ## Notes
 
-- CI (`.github/workflows/ci.yml`) runs frontend typecheck+unit-tests+build, a separate frontend-e2e job (Playwright), and backend `mvnw clean verify -DskipTests` on push/PR to `main`.
+- CI (`.github/workflows/ci.yml`) runs frontend typecheck+unit-tests+build, a separate frontend-e2e job (Playwright), and backend `mvnw clean verify` (with a `postgres:16` service container) on push/PR to `main`.
 - When working an issue via the `Claude Code` GitHub Action (`.github/workflows/claude.yml`), run the checks above before opening a PR, and request review from `rodolphe27` once the PR is open.
