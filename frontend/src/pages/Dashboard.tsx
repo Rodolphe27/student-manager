@@ -65,7 +65,7 @@ export default function Dashboard() {
 
   if (loadError) {
     return (
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-lg flex items-center justify-between gap-4">
           <span>{loadError}</span>
           <button
@@ -80,14 +80,14 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       <h1 className="text-xl font-bold text-gray-800 mb-1">Dashboard</h1>
       <p className="text-sm text-gray-400 mb-6">
         Welcome back, <span className="text-blue-600 font-medium">{user?.username}</span> 👋
       </p>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <StatCard label="Total Students"    value={stats.students}    sub="All time"       color="blue" />
         <StatCard label="Active Courses"    value={stats.courses}     sub="Available now"  color="green" />
         <StatCard label="Total Enrollments" value={stats.enrollments} sub="All time"       color="orange" />
@@ -95,11 +95,11 @@ export default function Dashboard() {
       </div>
 
       {/* Recent Enrollments */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
         <div className="px-5 py-4 border-b border-gray-100">
           <h2 className="font-semibold text-gray-700">Recent Enrollments</h2>
         </div>
-        <table className="w-full text-sm">
+        <table className="w-full text-sm min-w-[600px]">
           <thead className="bg-gray-50 text-gray-400 text-xs uppercase">
             <tr>
               <th className="px-5 py-3 text-left">Student</th>
