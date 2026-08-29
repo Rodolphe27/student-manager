@@ -31,6 +31,9 @@ public class SecurityConfig {
     @Value("${cors.allowed-origins:http://localhost:5173,http://localhost}")
     private String allowedOrigins;
 
+    @Value("${cors.allowed-origin-patterns:}")
+    private String allowedOriginPatterns;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -56,6 +59,9 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
+        if (!allowedOriginPatterns.isBlank()) {
+            config.setAllowedOriginPatterns(Arrays.asList(allowedOriginPatterns.split(",")));
+        }
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
