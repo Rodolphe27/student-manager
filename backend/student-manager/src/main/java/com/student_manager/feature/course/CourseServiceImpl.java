@@ -67,6 +67,10 @@ public class CourseServiceImpl implements CourseService {
         Course course = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Course", id));
 
+        if (repository.existsByCodeAndIdNot(request.getCode(), id)) {
+            throw new ValidationException("Course code already exists: " + request.getCode());
+        }
+
         course.setCode(request.getCode());
         course.setTitle(request.getTitle());
         course.setDescription(request.getDescription());

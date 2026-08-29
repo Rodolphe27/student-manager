@@ -65,6 +65,13 @@ public class StudentServiceImpl implements StudentService {
         Student student = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student", id));
 
+        if (repository.existsByEmailAndIdNot(request.getEmail(), id)) {
+            throw new ValidationException("Email already exists: " + request.getEmail());
+        }
+        if (repository.existsByMatriculationNumberAndIdNot(request.getMatriculationNumber(), id)) {
+            throw new ValidationException("Matriculation number already exists: " + request.getMatriculationNumber());
+        }
+
         student.setFirstName(request.getFirstName());
         student.setLastName(request.getLastName());
         student.setMatriculationNumber(request.getMatriculationNumber());
