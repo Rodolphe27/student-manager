@@ -1,5 +1,6 @@
 package com.student_manager.feature.auth;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -15,14 +16,14 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<AuthDTO.AuthResponse> register(
-            @RequestBody AuthDTO.RegisterRequest request) {
+            @Valid @RequestBody AuthDTO.RegisterRequest request) {
         log.info("POST /api/auth/register");
         return ResponseEntity.status(201).body(authService.register(request));
     }
 
     @PostMapping("/login")
     public ResponseEntity<AuthDTO.AuthResponse> login(
-            @RequestBody AuthDTO.LoginRequest request) {
+            @Valid @RequestBody AuthDTO.LoginRequest request) {
         log.info("POST /api/auth/login");
         return ResponseEntity.ok(authService.login(request));
     }
