@@ -26,5 +26,5 @@ jobs:
       - uses: actions/checkout@v4
       - uses: anthropics/claude-code-action@v1
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           claude_args: "--append-system-prompt 'After opening the pull request for this issue, run: gh pr edit --add-reviewer rodolphe27'"
