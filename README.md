@@ -129,6 +129,38 @@ npm run dev
 ```
 Frontend runs on `http://localhost:5173`
 
+### Running the tests
+
+**Backend**
+```bash
+cd backend/student-manager
+./mvnw clean verify
+```
+Runs the full build including tests — don't add `-DskipTests`. Most are plain
+Mockito unit tests (e.g. `EnrollmentServiceImplTest`, `JwtUtilTest`) and need
+nothing external. A few boot the full Spring context with MockMvc (e.g.
+`AuthControllerTest`, `AuthorizationRulesTest`) and need a Postgres at
+`localhost:5432` with a `studentmanager` DB and `postgres`/`postgres`
+credentials — `docker-compose up postgres` from the repo root covers it. CI
+provisions the same via a `postgres:16` service container.
+
+**Frontend**
+```bash
+cd frontend
+npm ci
+npm run lint        # currently has known failures — not run in CI
+npx tsc --noEmit
+npm test            # Vitest unit tests
+npm run build
+```
+
+**Frontend E2E** (Playwright, in `frontend/e2e/`)
+```bash
+cd frontend
+npx playwright install --with-deps chromium   # first run only
+npm run build && npx playwright test
+```
+
 ---
 
 ## Docker Deployment
@@ -160,12 +192,13 @@ docker-compose down -v
 
 ## CI Pipeline
 
-GitHub Actions runs on every push and pull request to `main`:
+GitHub Actions ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs on every push and pull request to `main`:
 
-- **Frontend job** — install dependencies, type-check, build
-- **Backend job** — Maven build with Java 21
+- **`frontend`** — `npm ci`, `tsc --noEmit`, Vitest unit tests, build
+- **`frontend-e2e`** — Playwright end-to-end tests against a production build
+- **`backend`** — `./mvnw clean verify` (Java 21) against a `postgres:16` service container
 
-See [.github/workflows/ci.yml](.github/workflows/ci.yml).
+All three are required status checks for merging to `main`.
 
 ---
 
