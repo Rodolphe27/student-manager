@@ -98,6 +98,9 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         if (EnrollmentStatus.CANCELLED.equals(enrollment.getStatus())) {
             throw new ValidationException("Cannot confirm a cancelled enrollment");
         }
+        if (EnrollmentStatus.CONFIRMED.equals(enrollment.getStatus())) {
+            throw new ValidationException("Enrollment is already confirmed");
+        }
 
         enrollment.setStatus(EnrollmentStatus.CONFIRMED);
         return toDTO(enrollmentRepository.save(enrollment));
@@ -113,6 +116,9 @@ public class EnrollmentServiceImpl implements EnrollmentService {
             throw new ValidationException("Enrollment is already cancelled");
         }
 
+        // A cancelled (withdrawn) enrollment does not carry an academic grade:
+        // clear any letter grade so CANCELLED + A-F can never coexist (issue #33).
+        enrollment.setGrade(Grade.NOT_GRADED);
         enrollment.setStatus(EnrollmentStatus.CANCELLED);
         return toDTO(enrollmentRepository.save(enrollment));
     }

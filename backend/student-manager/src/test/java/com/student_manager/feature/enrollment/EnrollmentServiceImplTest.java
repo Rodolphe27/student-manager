@@ -157,6 +157,18 @@ class EnrollmentServiceImplTest {
     }
 
     @Test
+    void confirmRejectsAnAlreadyConfirmedEnrollment() {
+        Enrollment confirmed = enrollmentWith(EnrollmentStatus.CONFIRMED);
+        when(enrollmentRepository.findById(100L)).thenReturn(Optional.of(confirmed));
+
+        assertThatThrownBy(() -> enrollmentService.confirm(100L))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("already confirmed");
+
+        verify(enrollmentRepository, never()).save(any());
+    }
+
+    @Test
     void confirmThrowsWhenEnrollmentDoesNotExist() {
         when(enrollmentRepository.findById(999L)).thenReturn(Optional.empty());
 
@@ -174,6 +186,30 @@ class EnrollmentServiceImplTest {
         assertThatThrownBy(() -> enrollmentService.cancel(100L))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("already cancelled");
+    }
+
+    @Test
+    void cancelMovesAConfirmedEnrollmentToCancelled() {
+        Enrollment confirmed = enrollmentWith(EnrollmentStatus.CONFIRMED);
+        when(enrollmentRepository.findById(100L)).thenReturn(Optional.of(confirmed));
+        when(enrollmentRepository.save(any(Enrollment.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        EnrollmentDTO result = enrollmentService.cancel(100L);
+
+        assertThat(result.getStatus()).isEqualTo(EnrollmentStatus.CANCELLED);
+    }
+
+    @Test
+    void cancelClearsAnyLetterGrade() {
+        Enrollment graded = enrollmentWith(EnrollmentStatus.CONFIRMED);
+        graded.setGrade(Grade.A);
+        when(enrollmentRepository.findById(100L)).thenReturn(Optional.of(graded));
+        when(enrollmentRepository.save(any(Enrollment.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        EnrollmentDTO result = enrollmentService.cancel(100L);
+
+        assertThat(result.getStatus()).isEqualTo(EnrollmentStatus.CANCELLED);
+        assertThat(result.getGrade()).isEqualTo(Grade.NOT_GRADED);
     }
 
     // ── updateGrade ─────────────────────────────────────────────────
