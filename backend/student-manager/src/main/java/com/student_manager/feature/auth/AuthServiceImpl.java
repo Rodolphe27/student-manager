@@ -31,7 +31,10 @@ public class AuthServiceImpl implements AuthService {
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        user.setRole(request.getRole() != null ? request.getRole() : Role.STUDENT);
+        // Self-registration is always STUDENT. Any client-supplied role is ignored to
+        // prevent privilege escalation (issue #43). Elevated roles must be granted via
+        // a separate, ADMIN-authenticated endpoint.
+        user.setRole(Role.STUDENT);
         user.setActive(true);
 
         User saved = userRepository.save(user);

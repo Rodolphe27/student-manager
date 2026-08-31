@@ -10,6 +10,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -22,7 +23,7 @@ class AuthControllerTest {
 
     @Test
     void registerWithABlankUsernameIsRejectedAsABadRequest() throws Exception {
-        AuthDTO.RegisterRequest request = new AuthDTO.RegisterRequest("", "user@example.com", "Password123!", Role.STUDENT);
+        AuthDTO.RegisterRequest request = new AuthDTO.RegisterRequest("", "user@example.com", "Password123!");
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -32,7 +33,7 @@ class AuthControllerTest {
 
     @Test
     void registerWithABlankPasswordIsRejectedAsABadRequest() throws Exception {
-        AuthDTO.RegisterRequest request = new AuthDTO.RegisterRequest("passwordtestuser", "user@example.com", "", Role.STUDENT);
+        AuthDTO.RegisterRequest request = new AuthDTO.RegisterRequest("passwordtestuser", "user@example.com", "");
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -42,12 +43,38 @@ class AuthControllerTest {
 
     @Test
     void registerWithAnInvalidEmailIsRejectedAsABadRequest() throws Exception {
-        AuthDTO.RegisterRequest request = new AuthDTO.RegisterRequest("emailtestuser", "not-an-email", "Password123!", Role.STUDENT);
+        AuthDTO.RegisterRequest request = new AuthDTO.RegisterRequest("emailtestuser", "not-an-email", "Password123!");
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void selfRegistrationAlwaysCreatesAStudentAccount() throws Exception {
+        AuthDTO.RegisterRequest request = new AuthDTO.RegisterRequest("plainuser", "plainuser@example.com", "Password123!");
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.role").value("STUDENT"));
+    }
+
+    @Test
+    void clientSuppliedRoleInRegistrationBodyIsIgnored() throws Exception {
+        // Regression test for issue #43: an anonymous caller must not be able to
+        // mint an elevated account by putting "role" in the registration payload.
+        String bodyWithAdminRole = """
+                {"username":"escalator","email":"escalator@example.com","password":"Password123!","role":"ADMIN"}
+                """;
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(bodyWithAdminRole))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.role").value("STUDENT"));
     }
 
     @Test
