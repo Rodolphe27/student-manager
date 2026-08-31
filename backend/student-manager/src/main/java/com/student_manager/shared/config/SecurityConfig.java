@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -44,6 +45,26 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
+
+                        // Course catalogue: any authenticated user may browse it;
+                        // only staff may create / update / delete courses.
+                        .requestMatchers(HttpMethod.GET, "/api/courses/**").authenticated()
+                        .requestMatchers("/api/courses/**").hasAnyRole("TEACHER", "ADMIN")
+
+                        // A student may look up their own record and their own
+                        // enrolment list (the "My Courses" view).
+                        .requestMatchers(HttpMethod.GET, "/api/students/me").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/enrollments/student/**").authenticated()
+
+                        // Student roster: staff may read it; only ADMIN may mutate it.
+                        .requestMatchers(HttpMethod.GET, "/api/students/**").hasAnyRole("TEACHER", "ADMIN")
+                        .requestMatchers("/api/students/**").hasRole("ADMIN")
+
+                        // Every other enrolment operation (list all, enrol, confirm/cancel,
+                        // grade) is staff-only; deleting an enrolment is ADMIN-only.
+                        .requestMatchers(HttpMethod.DELETE, "/api/enrollments/**").hasRole("ADMIN")
+                        .requestMatchers("/api/enrollments/**").hasAnyRole("TEACHER", "ADMIN")
+
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 

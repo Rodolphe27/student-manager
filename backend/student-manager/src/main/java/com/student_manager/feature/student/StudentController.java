@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +21,12 @@ public class StudentController {
     public ResponseEntity<List<StudentDTO>> getAll() {
         log.info("GET /api/students");
         return ResponseEntity.ok(service.findAll());
+    }
+
+    @GetMapping("me")
+    public ResponseEntity<StudentDTO> getMe(Authentication authentication) {
+        log.info("GET /api/students/me ({})", authentication.getName());
+        return ResponseEntity.ok(service.findByAccountUsername(authentication.getName()));
     }
 
     @GetMapping("{id}")

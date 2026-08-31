@@ -1,5 +1,6 @@
 package com.student_manager.feature.student;
 
+import com.student_manager.feature.auth.UserRepository;
 import com.student_manager.shared.exception.ResourceNotFoundException;
 import com.student_manager.shared.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 public class StudentServiceImpl implements StudentService {
 
     private final StudentRepository repository;
+    private final UserRepository userRepository;
 
     @Override
     public StudentDTO findById(Long id) {
@@ -23,6 +25,19 @@ public class StudentServiceImpl implements StudentService {
         log.info("Fetching student with id: {}", id);
         Student student = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student", id));
+        return toDTO(student);
+    }
+
+    @Override
+    public StudentDTO findByAccountUsername(String username) {
+        Objects.requireNonNull(username, "username must not be null");
+        log.info("Fetching student linked to account: {}", username);
+        String email = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("No account found: " + username))
+                .getEmail();
+        Student student = repository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No student record is linked to account: " + username));
         return toDTO(student);
     }
 

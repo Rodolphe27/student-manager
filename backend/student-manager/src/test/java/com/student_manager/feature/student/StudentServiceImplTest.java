@@ -1,5 +1,7 @@
 package com.student_manager.feature.student;
 
+import com.student_manager.feature.auth.User;
+import com.student_manager.feature.auth.UserRepository;
 import com.student_manager.shared.exception.ResourceNotFoundException;
 import com.student_manager.shared.exception.ValidationException;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +22,7 @@ import static org.mockito.Mockito.*;
 class StudentServiceImplTest {
 
     @Mock private StudentRepository repository;
+    @Mock private UserRepository userRepository;
 
     @InjectMocks
     private StudentServiceImpl studentService;
@@ -43,6 +46,42 @@ class StudentServiceImplTest {
         request.setEmail(email);
         request.setMatriculationNumber(matriculationNumber);
         return request;
+    }
+
+    // ── findByAccountUsername ───────────────────────────────────────
+
+    @Test
+    void findByAccountUsernameResolvesTheStudentLinkedByEmail() {
+        User account = new User();
+        account.setUsername("ada");
+        account.setEmail("ada@example.com");
+        when(userRepository.findByUsername("ada")).thenReturn(Optional.of(account));
+        when(repository.findByEmail("ada@example.com")).thenReturn(Optional.of(existing));
+
+        StudentDTO result = studentService.findByAccountUsername("ada");
+
+        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getEmail()).isEqualTo("ada@example.com");
+    }
+
+    @Test
+    void findByAccountUsernameThrowsWhenAccountHasNoStudentRecord() {
+        User account = new User();
+        account.setUsername("nolink");
+        account.setEmail("nolink@example.com");
+        when(userRepository.findByUsername("nolink")).thenReturn(Optional.of(account));
+        when(repository.findByEmail("nolink@example.com")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> studentService.findByAccountUsername("nolink"))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void findByAccountUsernameThrowsWhenAccountDoesNotExist() {
+        when(userRepository.findByUsername("ghost")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> studentService.findByAccountUsername("ghost"))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 
     // ── create ──────────────────────────────────────────────────────
