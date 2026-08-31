@@ -22,6 +22,17 @@ spring:
 server:
   port: 5030
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health   # only /actuator/health is exposed (the path is permitAll)
+  endpoint:
+    health:
+      probes:
+        enabled: true     # adds /actuator/health/liveness and /readiness for container platforms
+      show-details: never
+
 logging:
   level:
     root: INFO
