@@ -21,8 +21,6 @@ public class AuthDTO {
 
         @NotBlank(message = "Password is required")
         private String password;
-
-        private Role role;
     }
 
     @Data

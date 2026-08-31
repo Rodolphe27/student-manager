@@ -36,7 +36,6 @@ describe('RegisterPage', () => {
     expect(screen.getByLabelText(/username/i)).toBeRequired();
     expect(screen.getByLabelText(/email/i)).toBeRequired();
     expect(screen.getByLabelText(/password/i)).toBeRequired();
-    expect(screen.getByLabelText(/role/i)).toHaveValue('STUDENT');
     expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument();
   });
 
@@ -58,7 +57,6 @@ describe('RegisterPage', () => {
         username: 'newuser',
         email: 'newuser@example.com',
         password: 'Password123!',
-        role: 'STUDENT',
       });
     });
     await waitFor(() => expect(localStorage.getItem('token')).toBe('fake-token'));
