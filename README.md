@@ -92,6 +92,11 @@ student-manager-app/
 | PATCH | `/api/enrollments/{id}/grade` | Update grade |
 | DELETE | `/api/enrollments/{id}` | Delete enrollment |
 
+### Operations
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/actuator/health` | Liveness/readiness health check (public, no auth). Use as the Railway service `healthcheckPath`. |
+
 ---
 
 ## Getting Started
