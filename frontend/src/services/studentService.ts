@@ -9,6 +9,9 @@ const studentService = {
   getById: (id: number): Promise<AxiosResponse<Student>> =>
     api.get<Student>(`/students/${id}`),
 
+  getMe: (): Promise<AxiosResponse<Student>> =>
+    api.get<Student>('/students/me'),
+
   create: (data: CreateStudentRequest): Promise<AxiosResponse<Student>> =>
     api.post<Student>('/students', data),
 

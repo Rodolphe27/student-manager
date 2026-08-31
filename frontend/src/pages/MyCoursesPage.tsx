@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { Enrollment, EnrollmentStatus } from '../types';
+import type { Enrollment, EnrollmentStatus, Student } from '../types';
 import studentService from '../services/studentService';
 import enrollmentService from '../services/enrollmentService';
 import { useAuth } from '../context/AuthContext';
@@ -18,10 +18,12 @@ export default function MyCoursesPage() {
   const fetchMine = async (): Promise<void> => {
     setLoadError('');
     try {
-      const students = (await studentService.getAll()).data;
-      const mine = students.find((s) => s.email.toLowerCase() === user?.email?.toLowerCase());
-
-      if (!mine) {
+      let mine: Student;
+      try {
+        mine = (await studentService.getMe()).data;
+      } catch (err) {
+        const status = (err as { response?: { status?: number } }).response?.status;
+        if (status !== 404) throw err;
         setLinked(false);
         setEnrollments([]);
         return;
