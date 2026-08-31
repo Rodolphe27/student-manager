@@ -38,3 +38,7 @@ logs/
 
 # ── Spring Boot ───────────────────────────────────────────
 backend/HELP.md
+
+# Playwright (stray runs from repo root)
+/test-results/
+/playwright-report/
