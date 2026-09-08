@@ -42,6 +42,17 @@ public class StudentServiceImpl implements StudentService {
     }
 
     @Override
+    public boolean accountOwnsStudent(String username, Long studentId) {
+        if (username == null || studentId == null) {
+            return false;
+        }
+        return userRepository.findByUsername(username)
+                .flatMap(account -> repository.findByEmail(account.getEmail()))
+                .map(student -> studentId.equals(student.getId()))
+                .orElse(false);
+    }
+
+    @Override
     public List<StudentDTO> findAll() {
         log.info("Fetching all students");
         return repository.findAll()

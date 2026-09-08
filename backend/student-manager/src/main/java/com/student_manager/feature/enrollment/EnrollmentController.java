@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,6 +30,7 @@ public class EnrollmentController {
     }
 
     @GetMapping("student/{studentId}")
+    @PreAuthorize("@ownershipGuard.canAccessStudentData(#studentId, authentication)")
     public ResponseEntity<List<EnrollmentDTO>> getByStudent(@PathVariable Long studentId) {
         log.info("GET /api/enrollments/student/{}", studentId);
         return ResponseEntity.ok(service.findByStudentId(studentId));

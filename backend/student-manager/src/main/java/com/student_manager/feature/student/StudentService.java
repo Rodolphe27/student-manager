@@ -13,6 +13,14 @@ public interface StudentService {
      */
     StudentDTO findByAccountUsername(String username);
 
+    /**
+     * True when the account identified by {@code username} is linked (by e-mail)
+     * to the student row {@code studentId}. Used by authorization checks so a
+     * STUDENT can only reach their own data. Never throws — a missing account or
+     * student row simply yields {@code false}.
+     */
+    boolean accountOwnsStudent(String username, Long studentId);
+
     List<StudentDTO> findAll();
     StudentDTO create(CreateStudentRequest request);
     StudentDTO update(Long id, CreateStudentRequest request);

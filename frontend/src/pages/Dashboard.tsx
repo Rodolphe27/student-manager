@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import StatCard from '../components/StatCard';
 import type { Enrollment } from '../types';
 import studentService from '../services/studentService';
 import courseService from '../services/courseService';
 import enrollmentService from '../services/enrollmentService';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 
 interface Card {
   label: string;
@@ -22,16 +22,7 @@ export default function Dashboard() {
   const [loading, setLoading]         = useState<boolean>(true);
   const [loadError, setLoadError]     = useState<string>('');
 
-  // Wait for the auth context to resolve before fetching — the role decides
-  // which endpoints we're allowed to call.
-  useEffect(() => {
-    if (!authLoading) fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authLoading]);
-
-  const fetchData = async (): Promise<void> => {
-    setLoadError('');
-    setLoading(true);
+  const fetchData = useCallback(async (): Promise<void> => {
     try {
       if (isStaff) {
         // Staff see totals across everyone.
@@ -70,13 +61,28 @@ export default function Dashboard() {
         ]);
         setEnrollments(mine.slice(0, 7));
       }
+      setLoadError('');
     } catch (err) {
       console.error(err);
       setLoadError('Could not load dashboard data. Check your connection and try again.');
     } finally {
       setLoading(false);
     }
+  }, [isStaff]);
+
+  const retry = (): void => {
+    setLoadError('');
+    setLoading(true);
+    void fetchData();
   };
+
+  // Wait for the auth context to resolve before fetching — the role decides
+  // which endpoints we're allowed to call. Fetch-on-mount; result lands via
+  // setState. See CoursesPage for the react-hooks/set-state-in-effect rationale.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!authLoading) void fetchData();
+  }, [authLoading, fetchData]);
 
   if (loading) {
     return (
@@ -92,7 +98,7 @@ export default function Dashboard() {
         <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-lg flex items-center justify-between gap-4">
           <span>{loadError}</span>
           <button
-            onClick={fetchData}
+            onClick={retry}
             className="text-red-700 font-medium hover:underline whitespace-nowrap"
           >
             Retry

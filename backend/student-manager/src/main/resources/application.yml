@@ -2,18 +2,20 @@ spring:
   application:
     name: student-manager
   datasource:
-    url: jdbc:postgresql://localhost:5432/studentmanager
-    username: postgres
-    password: postgres
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/studentmanager}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      # `update` keeps the schema in sync without migrations for local/dev use.
+      # Set SPRING_JPA_DDL_AUTO=validate once a migration tool is in place.
+      ddl-auto: ${SPRING_JPA_DDL_AUTO:update}
+    show-sql: ${SPRING_JPA_SHOW_SQL:false}
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
+        format_sql: ${SPRING_JPA_SHOW_SQL:false}
   docker:
     compose:
       file: backend/student-manager/compose.yaml
@@ -21,6 +23,8 @@ spring:
 
 server:
   port: 5030
+  # Honour X-Forwarded-* from the Railway/Vercel edge so HTTPS/host are correct.
+  forward-headers-strategy: framework
 
 management:
   endpoints:
@@ -36,14 +40,12 @@ management:
 logging:
   level:
     root: INFO
-    com.studentmanager: DEBUG
-    org.springframework.security: DEBUG
-    org.hibernate.SQL: DEBUG
-  file:
-    name: logs/student-manager.log
+    com.student_manager: ${LOG_LEVEL_APP:INFO}
+    org.springframework.security: ${LOG_LEVEL_SECURITY:WARN}
+    org.hibernate.SQL: ${LOG_LEVEL_SQL:WARN}
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
 jwt:
-  secret: student-manager-secret-key-2024-very-long-secure-string-minimum-32-chars
-  expiration: 86400000
+  secret: ${JWT_SECRET:student-manager-secret-key-2024-very-long-secure-string-minimum-32-chars}
+  expiration: ${JWT_EXPIRATION:86400000}

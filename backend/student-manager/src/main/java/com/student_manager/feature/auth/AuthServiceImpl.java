@@ -1,6 +1,6 @@
 package com.student_manager.feature.auth;
 
-import com.student_manager.shared.exception.ResourceNotFoundException;
+import com.student_manager.shared.exception.InvalidCredentialsException;
 import com.student_manager.shared.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,15 +48,18 @@ public class AuthServiceImpl implements AuthService {
     public AuthDTO.AuthResponse login(AuthDTO.LoginRequest request) {
         log.info("Login attempt: {}", request.getUsername());
 
+        // Every failure below throws the same exception with the same message so a
+        // caller cannot tell an unknown username from a wrong password (issue: user
+        // enumeration via /api/auth/login).
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + request.getUsername()));
+                .orElseThrow(InvalidCredentialsException::new);
 
         if (!user.isActive()) {
-            throw new ValidationException("User account is disabled");
+            throw new InvalidCredentialsException();
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new ValidationException("Invalid password");
+            throw new InvalidCredentialsException();
         }
 
         String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());

@@ -2,8 +2,13 @@ package com.student_manager.shared.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.student_manager.feature.auth.JwtUtil;
+import com.student_manager.feature.auth.Role;
+import com.student_manager.feature.auth.User;
+import com.student_manager.feature.auth.UserRepository;
 import com.student_manager.feature.course.CreateCourseRequest;
 import com.student_manager.feature.student.CreateStudentRequest;
+import com.student_manager.feature.student.Student;
+import com.student_manager.feature.student.StudentRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -30,9 +35,33 @@ class AuthorizationRulesTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private JwtUtil jwtUtil;
+    @Autowired private StudentRepository studentRepository;
+    @Autowired private UserRepository userRepository;
 
     private String bearer(String role) {
         return "Bearer " + jwtUtil.generateToken(role.toLowerCase() + "-user", role);
+    }
+
+    private String bearerFor(String username, String role) {
+        return "Bearer " + jwtUtil.generateToken(username, role);
+    }
+
+    /** Persists a User + Student sharing an e-mail and returns the student id. */
+    private long linkedStudentFor(String username, String email) {
+        User account = new User();
+        account.setUsername(username);
+        account.setEmail(email);
+        account.setPasswordHash("irrelevant-for-authz");
+        account.setRole(Role.STUDENT);
+        account.setActive(true);
+        userRepository.save(account);
+
+        Student student = new Student();
+        student.setFirstName("Owned");
+        student.setLastName("Student");
+        student.setMatriculationNumber("M-OWN-" + username);
+        student.setEmail(email);
+        return studentRepository.save(student).getId();
     }
 
     // ── students ────────────────────────────────────────────────────
@@ -120,8 +149,28 @@ class AuthorizationRulesTest {
 
     @Test
     void studentCanLookUpTheirOwnEnrollments() throws Exception {
-        mockMvc.perform(get("/api/enrollments/student/1").header("Authorization", bearer("STUDENT")))
+        long ownId = linkedStudentFor("owner-user", "owner.authz@example.com");
+
+        mockMvc.perform(get("/api/enrollments/student/" + ownId)
+                        .header("Authorization", bearerFor("owner-user", "STUDENT")))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void studentCannotLookUpAnotherStudentsEnrollments() throws Exception {
+        long ownId = linkedStudentFor("owner2-user", "owner2.authz@example.com");
+        long someoneElse = ownId + 999;
+
+        mockMvc.perform(get("/api/enrollments/student/" + someoneElse)
+                        .header("Authorization", bearerFor("owner2-user", "STUDENT")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void studentWithNoLinkedRecordCannotListEnrollmentsByStudentId() throws Exception {
+        // "student-user" has a valid token but no account/student row behind it.
+        mockMvc.perform(get("/api/enrollments/student/1").header("Authorization", bearer("STUDENT")))
+                .andExpect(status().isForbidden());
     }
 
     @Test

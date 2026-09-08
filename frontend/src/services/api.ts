@@ -16,11 +16,15 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor — handles 401 globally
+// Response interceptor — treat a 401 as an expired session and bounce to login,
+// EXCEPT on the auth endpoints themselves, where a 401 just means "bad
+// credentials" and must surface to the calling page.
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const url: string = error.config?.url ?? '';
+    const isAuthRequest = url.includes('/auth/');
+    if (error.response?.status === 401 && !isAuthRequest) {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }

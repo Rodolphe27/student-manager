@@ -148,7 +148,7 @@ provisions the same via a `postgres:16` service container.
 ```bash
 cd frontend
 npm ci
-npm run lint        # currently has known failures — not run in CI
+npm run lint        # ESLint — clean (add as a CI step to keep it that way)
 npx tsc --noEmit
 npm test            # Vitest unit tests
 npm run build
@@ -209,4 +209,11 @@ All three are required status checks for merging to `main`.
 | `SPRING_DATASOURCE_URL` | `jdbc:postgresql://localhost:5432/studentmanager` | Database URL |
 | `SPRING_DATASOURCE_USERNAME` | `postgres` | Database user |
 | `SPRING_DATASOURCE_PASSWORD` | `postgres` | Database password |
+| `JWT_SECRET` | *(baked-in dev key)* | HMAC signing key for JWTs — **must** be overridden in any deployed environment |
+| `JWT_EXPIRATION` | `86400000` | Token lifetime in milliseconds |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost` | Comma-separated allowed browser origins |
+| `CORS_ALLOWED_ORIGIN_PATTERNS` | *(empty)* | Comma-separated origin patterns (e.g. `https://*.vercel.app`) |
+| `SPRING_JPA_DDL_AUTO` | `update` | Hibernate schema mode; set `validate` once migrations exist |
+| `SPRING_JPA_SHOW_SQL` | `false` | Log every SQL statement (dev only) |
+| `LOG_LEVEL_APP` / `LOG_LEVEL_SECURITY` / `LOG_LEVEL_SQL` | `INFO` / `WARN` / `WARN` | Per-area log levels |
 | `VITE_API_URL` | `http://localhost:5030/api` | Backend API URL (frontend) |

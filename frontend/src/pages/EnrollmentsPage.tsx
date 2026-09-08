@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import type { Enrollment, Student, Course, CreateEnrollmentRequest, EnrollmentStatus } from '../types';
 import enrollmentService from '../services/enrollmentService';
 import studentService from '../services/studentService';
@@ -21,12 +21,7 @@ export default function EnrollmentsPage() {
     courseId: 0,
   });
 
-  useEffect(() => {
-    fetchAll();
-  }, []);
-
-  const fetchAll = async (): Promise<void> => {
-    setLoadError('');
+  const fetchAll = useCallback(async (): Promise<void> => {
     try {
       const [e, s, c] = await Promise.all([
         enrollmentService.getAll(),
@@ -36,13 +31,18 @@ export default function EnrollmentsPage() {
       setEnrollments(e.data);
       setStudents(s.data);
       setCourses(c.data);
+      setLoadError('');
     } catch (err) {
       console.error(err);
       setLoadError('Could not load enrollments. Check your connection and try again.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Fetch-on-mount; result lands via setState. See CoursesPage for the rationale.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { void fetchAll(); }, [fetchAll]);
 
   const loadEnrollments = async (): Promise<void> => {
     const r = await enrollmentService.getAll();
