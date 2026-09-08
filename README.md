@@ -148,7 +148,7 @@ provisions the same via a `postgres:16` service container.
 ```bash
 cd frontend
 npm ci
-npm run lint        # ESLint — clean (add as a CI step to keep it that way)
+npm run lint        # ESLint — clean, enforced in CI
 npx tsc --noEmit
 npm test            # Vitest unit tests
 npm run build
@@ -194,7 +194,7 @@ docker-compose down -v
 
 GitHub Actions ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs on every push and pull request to `main`:
 
-- **`frontend`** — `npm ci`, `tsc --noEmit`, Vitest unit tests, build
+- **`frontend`** — `npm ci`, ESLint, `tsc --noEmit`, Vitest unit tests, build
 - **`frontend-e2e`** — Playwright end-to-end tests against a production build
 - **`backend`** — `./mvnw clean verify` (Java 21) against a `postgres:16` service container
 
