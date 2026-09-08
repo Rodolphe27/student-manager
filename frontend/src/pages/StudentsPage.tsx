@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import type { Student, CreateStudentRequest } from '../types';
 import studentService from '../services/studentService';
 
@@ -23,20 +23,22 @@ export default function StudentsPage() {
 
   const [form, setForm] = useState<CreateStudentRequest>(emptyForm);
 
-  useEffect(() => { loadStudents(); }, []);
-
-  const loadStudents = async (): Promise<void> => {
-    setLoadError('');
+  const loadStudents = useCallback(async (): Promise<void> => {
     try {
       const r = await studentService.getAll();
       setStudents(r.data);
+      setLoadError('');
     } catch (err) {
       console.error(err);
       setLoadError('Could not load students. Check your connection and try again.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Fetch-on-mount; result lands via setState. See CoursesPage for the rationale.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { void loadStudents(); }, [loadStudents]);
 
   const openCreateForm = (): void => {
     setEditingId(null);

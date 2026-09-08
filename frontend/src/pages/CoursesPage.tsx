@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import type { Course, CreateCourseRequest, CourseStatus } from '../types';
 import  courseService from '../services/courseService';
 
@@ -21,20 +21,24 @@ export default function CoursesPage() {
 
   const [form, setForm] = useState<CreateCourseRequest>(emptyForm);
 
-  useEffect(() => { loadCourses(); }, []);
-
-  const loadCourses = async (): Promise<void> => {
-    setLoadError('');
+  const loadCourses = useCallback(async (): Promise<void> => {
     try {
       const r = await courseService.getAll();
       setCourses(r.data);
+      setLoadError('');
     } catch (err) {
       console.error(err);
       setLoadError('Could not load courses. Check your connection and try again.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Fetch-on-mount: the effect kicks off an async load whose result lands via
+  // setState. react-hooks/set-state-in-effect flags every such pattern; it's
+  // intentional here (revisit if this app adopts React Query / Suspense).
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { void loadCourses(); }, [loadCourses]);
 
   const openCreateForm = (): void => {
     setEditingId(null);

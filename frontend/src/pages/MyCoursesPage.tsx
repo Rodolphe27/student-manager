@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { Enrollment, EnrollmentStatus, Student } from '../types';
 import studentService from '../services/studentService';
 import enrollmentService from '../services/enrollmentService';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 
 export default function MyCoursesPage() {
   const { user } = useAuth();
@@ -11,12 +11,7 @@ export default function MyCoursesPage() {
   const [loadError, setLoadError]     = useState<string>('');
   const [linked, setLinked]           = useState<boolean>(true);
 
-  useEffect(() => {
-    fetchMine();
-  }, []);
-
-  const fetchMine = async (): Promise<void> => {
-    setLoadError('');
+  const fetchMine = useCallback(async (): Promise<void> => {
     try {
       let mine: Student;
       try {
@@ -32,13 +27,18 @@ export default function MyCoursesPage() {
       setLinked(true);
       const r = await enrollmentService.getByStudent(mine.id);
       setEnrollments(r.data);
+      setLoadError('');
     } catch (err) {
       console.error(err);
       setLoadError('Could not load your courses. Check your connection and try again.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Fetch-on-mount; result lands via setState. See CoursesPage for the rationale.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { void fetchMine(); }, [fetchMine]);
 
   const statusColor: Record<EnrollmentStatus, string> = {
     CONFIRMED: 'bg-green-100 text-green-700',

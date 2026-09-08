@@ -1,33 +1,26 @@
-import  { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { AuthResponse, LoginRequest, RegisterRequest } from '../types';
 import authService from '../services/authService';
+import { AuthContext } from './auth-context';
 
-// ── Types ──────────────────────────────────────────────────────────
-interface AuthContextType {
-  user: AuthResponse | null;
-  loading: boolean;
-  login: (data: LoginRequest) => Promise<void>;
-  register: (data: RegisterRequest) => Promise<void>;
-  logout: () => void;
-  isAuthenticated: boolean;
+// The hook lives in ./useAuth and the context object in ./auth-context so this
+// file only exports a component (keeps React Fast Refresh working).
+
+function readStoredUser(): AuthResponse | null {
+  try {
+    const stored = localStorage.getItem('user');
+    return stored ? (JSON.parse(stored) as AuthResponse) : null;
+  } catch {
+    return null;
+  }
 }
-
-// ── Context ────────────────────────────────────────────────────────
-const AuthContext = createContext<AuthContextType | null>(null);
 
 // ── Provider ───────────────────────────────────────────────────────
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser]       = useState<AuthResponse | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-
-  // Check if user is already logged in on mount
-  useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (stored) {
-      setUser(JSON.parse(stored));
-    }
-    setLoading(false);
-  }, []);
+  // Resolve the session synchronously from localStorage so there is no
+  // logged-out flash and no setState-in-effect on mount.
+  const [user, setUser] = useState<AuthResponse | null>(readStoredUser);
+  const [loading] = useState<boolean>(false);
 
   const login = async (data: LoginRequest): Promise<void> => {
     const response = await authService.login(data);
@@ -65,13 +58,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-// ── Hook ───────────────────────────────────────────────────────────
-export function useAuth(): AuthContextType {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used inside AuthProvider');
-  }
-  return context;
 }

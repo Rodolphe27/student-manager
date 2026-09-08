@@ -86,4 +86,33 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void loginWithAnUnknownUserReturnsAGenericUnauthorized() throws Exception {
+        AuthDTO.LoginRequest request = new AuthDTO.LoginRequest("no-such-user-xyz", "whatever");
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Invalid username or password"));
+    }
+
+    @Test
+    void loginWithTheWrongPasswordReturnsTheSameGenericUnauthorized() throws Exception {
+        AuthDTO.RegisterRequest signup =
+                new AuthDTO.RegisterRequest("pwdcheckuser", "pwdcheckuser@example.com", "Password123!");
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(signup)))
+                .andExpect(status().isCreated());
+
+        AuthDTO.LoginRequest badLogin = new AuthDTO.LoginRequest("pwdcheckuser", "WrongPassword!");
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(badLogin)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Invalid username or password"));
+    }
 }

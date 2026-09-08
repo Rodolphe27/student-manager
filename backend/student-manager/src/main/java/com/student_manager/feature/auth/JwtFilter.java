@@ -37,15 +37,20 @@ public class JwtFilter extends OncePerRequestFilter {
                 String username = jwtUtil.extractUsername(token);
                 String role     = jwtUtil.extractRole(token);
 
-                UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(
-                                username,
-                                null,
-                                List.of(new SimpleGrantedAuthority("ROLE_" + role))
-                        );
+                // A token that verifies but carries no subject/role claim is not a
+                // usable identity — leave the context unauthenticated rather than
+                // granting a bogus "ROLE_null" authority.
+                if (username != null && role != null && !role.isBlank()) {
+                    UsernamePasswordAuthenticationToken auth =
+                            new UsernamePasswordAuthenticationToken(
+                                    username,
+                                    null,
+                                    List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                            );
 
-                SecurityContextHolder.getContext().setAuthentication(auth);
-                log.debug("Authenticated user: {} with role: {}", username, role);
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                    log.debug("Authenticated user: {} with role: {}", username, role);
+                }
             }
         }
 
