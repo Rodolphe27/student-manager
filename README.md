@@ -4,14 +4,35 @@ A full-stack student management application built for FH Dortmund. Manage studen
 
 ---
 
+## Live Demo
+
+| | URL |
+|---|---|
+| Web app | https://student-manager-fh.vercel.app |
+| API | https://backend-production-8ceca.up.railway.app/api |
+| API health | https://backend-production-8ceca.up.railway.app/actuator/health |
+| Swagger UI | https://backend-production-8ceca.up.railway.app/swagger-ui.html |
+
+Register an account to explore the **student** view. Self-registration always
+creates a `STUDENT`; `TEACHER` and `ADMIN` roles are assigned server-side (a
+deliberate guard against privilege escalation). The demo runs on free-tier
+hosting, so the first request after a period of inactivity can take a few
+seconds to wake up.
+
+The frontend is on Vercel, the containerized backend on Railway, and the
+database on Supabase — each layer deployed independently.
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS v4 |
 | Backend | Spring Boot 3, Java 21, Spring Security, JWT |
-| Database | PostgreSQL 16 |
+| Database | PostgreSQL — 16 locally (Docker Compose), Supabase Postgres in the deployed environment |
 | Containerization | Docker, Docker Compose |
+| Hosting | Vercel (web), Railway (API), Supabase (database) |
 | CI | GitHub Actions |
 
 ---
@@ -35,8 +56,8 @@ student-manager-app/
 ├── frontend/                  # React + Vite app
 │   ├── src/
 │   │   ├── components/        # Layout, Sidebar, ProtectedRoute, StatCard
-│   │   ├── context/           # AuthContext
-│   │   ├── pages/             # Dashboard, Students, Courses, Enrollments, Login, Register
+│   │   ├── context/           # AuthProvider + auth-context + useAuth hook
+│   │   ├── pages/             # Dashboard, Students, Courses, Enrollments, MyCourses, Login, Register
 │   │   ├── services/          # Axios API services
 │   │   └── types/             # TypeScript interfaces
 │   ├── Dockerfile
@@ -45,7 +66,7 @@ student-manager-app/
 │   ├── src/main/java/
 │   │   └── com/student_manager/
 │   │       ├── feature/       # auth, student, course, enrollment
-│   │       └── shared/        # config, exceptions
+│   │       └── shared/        # config (security), security (OwnershipGuard), exceptions
 │   ├── src/main/resources/
 │   │   └── application.yml
 │   └── Dockerfile
@@ -57,45 +78,54 @@ student-manager-app/
 
 ## API Endpoints
 
-### Auth
+Every `/api/**` route except `/api/auth/**` requires a `Bearer` JWT. The
+**Access** column is the role rule enforced by `SecurityConfig` (plus, where
+noted, a method-level ownership check).
+
+### Auth — public
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/auth/register` | Register a new user |
-| POST | `/api/auth/login` | Login and receive JWT token |
+| POST | `/api/auth/register` | Register a new user. Always creates a `STUDENT`; any `role` in the body is ignored. |
+| POST | `/api/auth/login` | Log in, returns a JWT. Unknown user, wrong password and disabled account all return the same `401 Invalid username or password`. |
 
 ### Students
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/students` | List all students |
-| GET | `/api/students/{id}` | Get student by ID |
-| POST | `/api/students` | Create a student |
-| PUT | `/api/students/{id}` | Update a student |
-| DELETE | `/api/students/{id}` | Delete a student |
+| Method | Endpoint | Access | Description |
+|--------|----------|--------|-------------|
+| GET | `/api/students/me` | any authenticated | The caller's own student record (matched by account e-mail) |
+| GET | `/api/students` | TEACHER, ADMIN | List all students |
+| GET | `/api/students/{id}` | TEACHER, ADMIN | Get student by ID |
+| POST | `/api/students` | ADMIN | Create a student |
+| PUT | `/api/students/{id}` | ADMIN | Update a student |
+| DELETE | `/api/students/{id}` | ADMIN | Delete a student |
 
 ### Courses
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/courses` | List all courses |
-| GET | `/api/courses/{id}` | Get course by ID |
-| GET | `/api/courses/status/{status}` | Filter by status |
-| POST | `/api/courses` | Create a course |
-| PUT | `/api/courses/{id}` | Update a course |
-| DELETE | `/api/courses/{id}` | Delete a course |
+| Method | Endpoint | Access | Description |
+|--------|----------|--------|-------------|
+| GET | `/api/courses` | any authenticated | List all courses |
+| GET | `/api/courses/{id}` | any authenticated | Get course by ID |
+| GET | `/api/courses/status/{status}` | any authenticated | Filter by status |
+| POST | `/api/courses` | TEACHER, ADMIN | Create a course |
+| PUT | `/api/courses/{id}` | TEACHER, ADMIN | Update a course |
+| DELETE | `/api/courses/{id}` | TEACHER, ADMIN | Delete a course |
 
 ### Enrollments
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/enrollments` | List all enrollments |
-| POST | `/api/enrollments` | Create enrollment |
-| PATCH | `/api/enrollments/{id}/confirm` | Confirm enrollment |
-| PATCH | `/api/enrollments/{id}/cancel` | Cancel enrollment |
-| PATCH | `/api/enrollments/{id}/grade` | Update grade |
-| DELETE | `/api/enrollments/{id}` | Delete enrollment |
+| Method | Endpoint | Access | Description |
+|--------|----------|--------|-------------|
+| GET | `/api/enrollments/student/{studentId}` | the owning STUDENT, or TEACHER / ADMIN | That student's enrollments. A STUDENT may only read their own — enforced by `@PreAuthorize` on top of the role rule. |
+| GET | `/api/enrollments` | TEACHER, ADMIN | List all enrollments |
+| GET | `/api/enrollments/{id}` | TEACHER, ADMIN | Get enrollment by ID |
+| GET | `/api/enrollments/course/{courseId}` | TEACHER, ADMIN | Enrollments for a course |
+| POST | `/api/enrollments` | TEACHER, ADMIN | Create enrollment |
+| PATCH | `/api/enrollments/{id}/confirm` | TEACHER, ADMIN | Confirm enrollment |
+| PATCH | `/api/enrollments/{id}/cancel` | TEACHER, ADMIN | Cancel enrollment (clears any grade) |
+| PATCH | `/api/enrollments/{id}/grade` | TEACHER, ADMIN | Set grade (confirmed enrollments only) |
+| DELETE | `/api/enrollments/{id}` | ADMIN | Delete enrollment |
 
-### Operations
+### Operations — public
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/actuator/health` | Liveness/readiness health check (public, no auth). Use as the Railway service `healthcheckPath`. |
+| GET | `/actuator/health` | Liveness/readiness health check. Used as the Railway service `healthcheckPath`. |
+| GET | `/swagger-ui.html`, `/v3/api-docs` | Interactive API docs / OpenAPI spec |
 
 ---
 
