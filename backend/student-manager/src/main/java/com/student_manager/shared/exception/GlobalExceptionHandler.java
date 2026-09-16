@@ -38,6 +38,13 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(400, ex.getMessage(), null, LocalDateTime.now()));
     }
 
+    @ExceptionHandler(InvalidInviteException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidInvite(InvalidInviteException ex) {
+        log.warn("Invalid registration invite: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(400, ex.getMessage(), null, LocalDateTime.now()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();

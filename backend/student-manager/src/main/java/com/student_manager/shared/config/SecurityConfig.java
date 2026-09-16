@@ -65,8 +65,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/enrollments/student/**").authenticated()
 
                         // Student roster: staff may read it; only ADMIN may mutate it.
+                        // (Covers POST /api/students/{id}/invite too — ADMIN-only, same as
+                        // every other non-GET student operation.)
                         .requestMatchers(HttpMethod.GET, "/api/students/**").hasAnyRole("TEACHER", "ADMIN")
                         .requestMatchers("/api/students/**").hasRole("ADMIN")
+
+                        // Teacher roster: same shape as students — staff may read, only
+                        // ADMIN may mutate or issue an invite.
+                        .requestMatchers(HttpMethod.GET, "/api/teachers/**").hasAnyRole("TEACHER", "ADMIN")
+                        .requestMatchers("/api/teachers/**").hasRole("ADMIN")
 
                         // Every other enrolment operation (list all, enrol, confirm/cancel,
                         // grade) is staff-only; deleting an enrolment is ADMIN-only.

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -32,10 +33,7 @@ public class StudentServiceImpl implements StudentService {
     public StudentDTO findByAccountUsername(String username) {
         Objects.requireNonNull(username, "username must not be null");
         log.info("Fetching student linked to account: {}", username);
-        String email = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("No account found: " + username))
-                .getEmail();
-        Student student = repository.findByEmail(email)
+        Student student = resolveByAccount(username)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "No student record is linked to account: " + username));
         return toDTO(student);
@@ -46,10 +44,21 @@ public class StudentServiceImpl implements StudentService {
         if (username == null || studentId == null) {
             return false;
         }
-        return userRepository.findByUsername(username)
-                .flatMap(account -> repository.findByEmail(account.getEmail()))
+        return resolveByAccount(username)
                 .map(student -> studentId.equals(student.getId()))
                 .orElse(false);
+    }
+
+    /**
+     * Resolves the student linked to an account, preferring the {@code account}
+     * FK set by a claimed {@code RegistrationInvite}. Falls back to matching the
+     * account's e-mail against {@link Student#getEmail()} for students who
+     * predate the invite flow and were never explicitly linked.
+     */
+    private Optional<Student> resolveByAccount(String username) {
+        return repository.findByAccountUsername(username)
+                .or(() -> userRepository.findByUsername(username)
+                        .flatMap(account -> repository.findByEmail(account.getEmail())));
     }
 
     @Override

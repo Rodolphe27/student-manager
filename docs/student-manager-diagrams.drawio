@@ -1,0 +1,606 @@
+<mxfile host="app.diagrams.net" agent="claude-code" version="24.0.0">
+  <diagram name="System Architecture" id="arch">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1650" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="a_title" value="Student Manager — System Architecture" style="text;html=1;fontSize=20;fontStyle=1;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="600" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- CLIENT GROUP -->
+        <mxCell id="a_gClient" value="Client (browser)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#666666;dashed=1;verticalAlign=top;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="40" y="80" width="320" height="330" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_user" value="End user" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="70" y="115" width="120" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_spa" value="React SPA&#10;React 19 · Vite · TypeScript · Tailwind v4&#10;React Router · AuthProvider / useAuth&#10;axios instance (services layer)" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalAlign=top;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="70" y="175" width="260" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_ls" value="localStorage&#10;token (JWT) · user" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="110" y="315" width="180" height="70" as="geometry"/>
+        </mxCell>
+
+        <!-- VERCEL -->
+        <mxCell id="a_gVercel" value="Vercel — frontend hosting" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#666666;dashed=1;verticalAlign=top;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="40" y="450" width="320" height="150" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_vercel" value="Static build + nginx&#10;Serves SPA bundle&#10;VITE_API_URL → Railway API&#10;TLS terminates here" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalAlign=top;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="70" y="485" width="260" height="95" as="geometry"/>
+        </mxCell>
+
+        <!-- CI -->
+        <mxCell id="a_gCI" value="GitHub" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#666666;dashed=1;verticalAlign=top;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="40" y="640" width="320" height="300" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_repo" value="Repository (branch: main)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="70" y="675" width="260" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_actions" value="GitHub Actions — .github/workflows/ci.yml&#10;• frontend: npm ci · ESLint · tsc --noEmit · Vitest · build&#10;• frontend-e2e: Playwright vs production build&#10;• backend: ./mvnw clean verify (Java 21) + postgres:16 service&#10;All three are required checks for merge to main" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fillColor=#f5f5f5;strokeColor=#666666;verticalAlign=top;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="70" y="730" width="260" height="185" as="geometry"/>
+        </mxCell>
+
+        <!-- RAILWAY BACKEND -->
+        <mxCell id="a_gRailway" value="Railway — backend container (Docker)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#9673a6;dashed=1;verticalAlign=top;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="470" y="80" width="560" height="770" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_boot" value="Spring Boot 3 · Java 21 — port 5030, context path /api&#10;forward-headers-strategy: framework (trusts X-Forwarded-*) · HSTS" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fillColor=#e1d5e7;strokeColor=#9673a6;verticalAlign=top;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="500" y="115" width="500" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_cors" value="CORS filter — allowed origins: http://localhost:5173, http://localhost, https://*.vercel.app" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="500" y="190" width="500" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_jwtfilter" value="JwtFilter (OncePerRequestFilter) — validates Bearer token, sets SecurityContext with ROLE_*" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="500" y="250" width="500" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_chain" value="SecurityFilterChain — stateless; URL rules map HTTP method + path → role (STUDENT / TEACHER / ADMIN)" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="500" y="310" width="500" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_ctrl" value="REST Controllers — /api/auth · /api/students · /api/courses · /api/enrollments&#10;@PreAuthorize + OwnershipGuard on GET /api/enrollments/student/{id}" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fillColor=#e1d5e7;strokeColor=#9673a6;verticalAlign=top;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="500" y="370" width="500" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_svc" value="Service layer (interface + impl) — business rules&#10;Enrollment state machine: PENDING → CONFIRMED → grade; CANCELLED terminal&#10;Register always role STUDENT (anti privilege-escalation); uniform 401 on login" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fillColor=#e1d5e7;strokeColor=#9673a6;verticalAlign=top;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="500" y="445" width="500" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_repos" value="Spring Data JPA Repositories — UserRepository · StudentRepository · CourseRepository · EnrollmentRepository" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="500" y="540" width="500" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_jpa" value="Hibernate / JPA — ddl-auto=update (no migration tool) · snake_case naming" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="500" y="600" width="500" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_gex" value="GlobalExceptionHandler (@RestControllerAdvice) — maps exceptions → ErrorResponse(status, message, details, timestamp)" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="500" y="660" width="500" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_act" value="Actuator — /actuator/health (permitAll) · Railway healthcheckPath&#10;Swagger UI — /swagger-ui.html · /v3/api-docs" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fillColor=#e1d5e7;strokeColor=#9673a6;verticalAlign=top;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="500" y="720" width="500" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_sec" value="Cross-cutting: JWT Bearer (jjwt, HMAC-SHA, JWT_SECRET, 24 h) · BCrypt password hashing · no refresh token / server-side revocation" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fillColor=#fff2cc;strokeColor=#d6b656;verticalAlign=top;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="500" y="785" width="500" height="55" as="geometry"/>
+        </mxCell>
+
+        <!-- SUPABASE -->
+        <mxCell id="a_gSupa" value="Supabase — managed database" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#82b366;dashed=1;verticalAlign=top;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="80" width="330" height="330" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_pg" value="PostgreSQL 16&#10;(local: Docker Compose)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;verticalAlign=top;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="1160" y="120" width="250" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_tables" value="Tables&#10;• users&#10;• students&#10;• courses&#10;• enrollments  (unique student_id + course_id)" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fillColor=#d5e8d4;strokeColor=#82b366;verticalAlign=top;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="1160" y="230" width="250" height="150" as="geometry"/>
+        </mxCell>
+
+        <!-- EDGES -->
+        <mxCell id="a_e1" value="uses (HTTPS)" style="endArrow=block;html=1;rounded=0;fontSize=10;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="a_user" target="a_spa">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_e2" value="reads / writes" style="endArrow=open;html=1;rounded=0;fontSize=10;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="a_spa" target="a_ls">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_e3" value="GET / — SPA bundle (HTTPS)" style="endArrow=block;html=1;rounded=0;fontSize=10;exitX=0.2;exitY=1;exitDx=0;exitDy=0;entryX=0.2;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="a_ls" target="a_vercel">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_e4" value="REST /api/**  ·  Authorization: Bearer &lt;JWT&gt;  ·  JSON / HTTPS" style="endArrow=block;html=1;rounded=0;fontSize=10;strokeWidth=2;exitX=1;exitY=0.35;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="a_spa" target="a_ctrl">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="430" y="235"/><mxPoint x="430" y="400"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="a_e5" value="JDBC / SSL · SPRING_DATASOURCE_URL" style="endArrow=block;html=1;rounded=0;fontSize=10;strokeWidth=2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.7;entryDx=0;entryDy=0;" edge="1" parent="1" source="a_repos" target="a_pg">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1075" y="562"/><mxPoint x="1075" y="183"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="a_e6" value="deploy on push" style="endArrow=block;html=1;rounded=0;fontSize=10;dashed=1;exitX=1;exitY=0.2;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="a_actions" target="a_vercel">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="360" y="767"/><mxPoint x="360" y="532"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="a_e7" value="deploy on push" style="endArrow=block;html=1;rounded=0;fontSize=10;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.7;entryDx=0;entryDy=0;" edge="1" parent="1" source="a_actions" target="a_boot">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="440" y="822"/><mxPoint x="440" y="157"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="a_e8" value="health probe" style="endArrow=block;html=1;rounded=0;fontSize=10;dashed=1;exitX=0;exitY=0.85;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="a_gRailway" target="a_act">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_flowNote" value="Request path: JwtFilter → SecurityFilterChain (URL role rule) → Controller → @PreAuthorize (OwnershipGuard, where present) → Service → Repository → PostgreSQL" style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="470" y="870" width="960" height="20" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram name="Backend - Class Diagram" id="backend">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2420" pageHeight="1820" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="b_title" value="Student Manager — Backend Class Diagram (Spring Boot 3, package-by-feature)" style="text;html=1;fontSize=20;fontStyle=1;align=left;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="1400" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_legend" value="Legend:  ▷ hollow triangle = extends / implements   ·   ─▶ solid = uses / association   ·   ┄▶ dashed = dependency (@PreAuthorize, soft link)" style="text;html=1;fontSize=11;fontStyle=2;align=left;" vertex="1" parent="1">
+          <mxGeometry x="40" y="52" width="1600" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- ================= COLUMN HEADERS (x: auth 40 · student 520 · course 1000 · enrollment 1480 · shared 1960 ; w=380) ================= -->
+        <mxCell id="b_authHdr" value="package  feature.auth" style="text;html=1;fontStyle=1;fontSize=14;align=left;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="90" width="380" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_stuHdr" value="package  feature.student" style="text;html=1;fontStyle=1;fontSize=14;align=left;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="520" y="90" width="380" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_couHdr" value="package  feature.course" style="text;html=1;fontStyle=1;fontSize=14;align=left;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="90" width="380" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_enrHdr" value="package  feature.enrollment" style="text;html=1;fontStyle=1;fontSize=14;align=left;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="1480" y="90" width="380" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_shdHdr" value="package  shared" style="text;html=1;fontStyle=1;fontSize=14;align=left;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1960" y="90" width="380" height="26" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== ROW: Controller  (y=130) ===== -->
+        <mxCell id="b_authCtrl" value="&lt;b&gt;AuthController&lt;/b&gt;&lt;br&gt;&lt;i&gt;@RestController /api/auth&lt;/i&gt;&lt;hr&gt;+ register(req: RegisterRequest): AuthResponse [201]&lt;br&gt;+ login(req: LoginRequest): AuthResponse" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="130" width="380" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_stuCtrl" value="&lt;b&gt;StudentController&lt;/b&gt;&lt;br&gt;&lt;i&gt;@RestController /api/students&lt;/i&gt;&lt;hr&gt;+ getAll(): StudentDTO[]&lt;br&gt;+ getMe(auth): StudentDTO&lt;br&gt;+ getById(id): StudentDTO&lt;br&gt;+ create(req: CreateStudentRequest): StudentDTO [201]&lt;br&gt;+ update(id, req): StudentDTO&lt;br&gt;+ delete(id): void" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="520" y="130" width="380" height="180" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_couCtrl" value="&lt;b&gt;CourseController&lt;/b&gt;&lt;br&gt;&lt;i&gt;@RestController /api/courses&lt;/i&gt;&lt;hr&gt;+ getAll(): CourseDTO[]&lt;br&gt;+ getById(id): CourseDTO&lt;br&gt;+ getByStatus(status): CourseDTO[]&lt;br&gt;+ create(req: CreateCourseRequest): CourseDTO [201]&lt;br&gt;+ update(id, req): CourseDTO&lt;br&gt;+ delete(id): void" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="130" width="380" height="180" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_enrCtrl" value="&lt;b&gt;EnrollmentController&lt;/b&gt;&lt;br&gt;&lt;i&gt;@RestController /api/enrollments&lt;/i&gt;&lt;hr&gt;+ getAll() · getById(id)&lt;br&gt;+ getByStudent(studentId)&lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;i&gt;@PreAuthorize(@ownershipGuard.canAccessStudentData)&lt;/i&gt;&lt;br&gt;+ getByCourse(courseId)&lt;br&gt;+ create(req: CreateEnrollmentRequest): EnrollmentDTO [201]&lt;br&gt;+ confirm(id) · cancel(id) · updateGrade(id, req)&lt;br&gt;+ delete(id): void" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="1480" y="130" width="380" height="210" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_app" value="&lt;b&gt;StudentManagerApplication&lt;/b&gt;&lt;hr&gt;+ main(args: String[]): void" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1960" y="130" width="380" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_seccfg" value="&lt;b&gt;SecurityConfig&lt;/b&gt;&lt;br&gt;&lt;i&gt;@Configuration @EnableWebSecurity&lt;/i&gt;&lt;hr&gt;- jwtFilter: JwtFilter&lt;hr&gt;+ securityFilterChain(http): SecurityFilterChain&lt;br&gt;+ passwordEncoder(): PasswordEncoder&lt;br&gt;+ corsConfigurationSource(): CorsConfigurationSource" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1960" y="220" width="380" height="140" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== ROW: Service «interface»  (y=400) ===== -->
+        <mxCell id="b_authSvc" value="&lt;b&gt;&amp;laquo;interface&amp;raquo; AuthService&lt;/b&gt;&lt;hr&gt;+ register(req: RegisterRequest): AuthResponse&lt;br&gt;+ login(req: LoginRequest): AuthResponse" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="40" y="400" width="380" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_stuSvc" value="&lt;b&gt;&amp;laquo;interface&amp;raquo; StudentService&lt;/b&gt;&lt;hr&gt;+ findById(id): StudentDTO&lt;br&gt;+ findByAccountUsername(username): StudentDTO&lt;br&gt;+ accountOwnsStudent(username, studentId): boolean&lt;br&gt;+ findAll(): StudentDTO[]&lt;br&gt;+ create / update / delete" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="520" y="400" width="380" height="150" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_couSvc" value="&lt;b&gt;&amp;laquo;interface&amp;raquo; CourseService&lt;/b&gt;&lt;hr&gt;+ findById(id): CourseDTO&lt;br&gt;+ findAll(): CourseDTO[]&lt;br&gt;+ findByStatus(status: CourseStatus): CourseDTO[]&lt;br&gt;+ create / update / delete" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="400" width="380" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_enrSvc" value="&lt;b&gt;&amp;laquo;interface&amp;raquo; EnrollmentService&lt;/b&gt;&lt;hr&gt;+ findById / findAll&lt;br&gt;+ findByStudentId(id) · findByCourseId(id)&lt;br&gt;+ create(req): EnrollmentDTO&lt;br&gt;+ confirm(id) · cancel(id) · updateGrade(id, req)&lt;br&gt;+ delete(id): void" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="1480" y="400" width="380" height="150" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_swagger" value="&lt;b&gt;SwaggerConfig&lt;/b&gt;&lt;br&gt;&lt;i&gt;@Configuration&lt;/i&gt;&lt;hr&gt;+ openAPI(): OpenAPI" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1960" y="400" width="380" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_guard" value="&lt;b&gt;OwnershipGuard&lt;/b&gt;&lt;br&gt;&lt;i&gt;@Component(&quot;ownershipGuard&quot;)&lt;/i&gt;&lt;hr&gt;- studentService: StudentService&lt;hr&gt;+ canAccessStudentData(studentId: Long, auth: Authentication): boolean" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1960" y="500" width="380" height="120" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== ROW: ServiceImpl  (y=620) ===== -->
+        <mxCell id="b_authImpl" value="&lt;b&gt;AuthServiceImpl&lt;/b&gt;&lt;br&gt;&lt;i&gt;@Service&lt;/i&gt;&lt;hr&gt;- userRepository: UserRepository&lt;br&gt;- jwtUtil: JwtUtil&lt;br&gt;- passwordEncoder: PasswordEncoder&lt;hr&gt;register: reject dup username/email; role forced to STUDENT&lt;br&gt;login: same 401 for unknown user / bad password / inactive" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="620" width="380" height="170" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_stuImpl" value="&lt;b&gt;StudentServiceImpl&lt;/b&gt;&lt;br&gt;&lt;i&gt;@Service&lt;/i&gt;&lt;hr&gt;- repository: StudentRepository&lt;br&gt;- userRepository: UserRepository&lt;hr&gt;accountOwnsStudent: account.email → student.email&lt;br&gt;create/update: unique email + matriculationNumber&lt;br&gt;- toDTO(student): StudentDTO" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="520" y="620" width="380" height="170" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_couImpl" value="&lt;b&gt;CourseServiceImpl&lt;/b&gt;&lt;br&gt;&lt;i&gt;@Service&lt;/i&gt;&lt;hr&gt;- repository: CourseRepository&lt;hr&gt;create/update: unique code&lt;br&gt;- toDTO(course): CourseDTO" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="620" width="380" height="170" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_enrImpl" value="&lt;b&gt;EnrollmentServiceImpl&lt;/b&gt;&lt;br&gt;&lt;i&gt;@Service&lt;/i&gt;&lt;hr&gt;- enrollmentRepository · studentRepository · courseRepository&lt;hr&gt;create: course must be ACTIVE; unique (student, course)&lt;br&gt;confirm: not from CANCELLED; not already CONFIRMED&lt;br&gt;cancel: clears grade → NOT_GRADED; CANCELLED terminal&lt;br&gt;updateGrade: only when status = CONFIRMED&lt;br&gt;- toDTO(enrollment): EnrollmentDTO" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="1480" y="620" width="380" height="170" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_gex" value="&lt;b&gt;GlobalExceptionHandler&lt;/b&gt;&lt;br&gt;&lt;i&gt;@RestControllerAdvice&lt;/i&gt;&lt;hr&gt;+ handleNotFound → 404&lt;br&gt;+ handleInvalidCredentials → 401&lt;br&gt;+ handleValidation / handleMethodArgumentNotValid → 400&lt;br&gt;+ handleAccessDenied → 403&lt;br&gt;+ handleGeneral → 500&lt;hr&gt;&lt;i&gt;record&lt;/i&gt; ErrorResponse(status, message, details, timestamp)" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1960" y="660" width="380" height="180" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== ROW: Repository  (y=850) ===== -->
+        <mxCell id="b_userRepo" value="&lt;b&gt;&amp;laquo;interface&amp;raquo; UserRepository&lt;/b&gt;&lt;br&gt;&lt;i&gt;extends JpaRepository (User, Long)&lt;/i&gt;&lt;hr&gt;+ findByUsername(u) · findByEmail(e)&lt;br&gt;+ existsByUsername(u) · existsByEmail(e)" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="40" y="850" width="380" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_stuRepo" value="&lt;b&gt;&amp;laquo;interface&amp;raquo; StudentRepository&lt;/b&gt;&lt;br&gt;&lt;i&gt;extends JpaRepository (Student, Long)&lt;/i&gt;&lt;hr&gt;+ findByEmail / findByMatriculationNumber&lt;br&gt;+ existsByEmail / existsByMatriculationNumber&lt;br&gt;+ existsByEmailAndIdNot / ...AndIdNot" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="520" y="850" width="380" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_couRepo" value="&lt;b&gt;&amp;laquo;interface&amp;raquo; CourseRepository&lt;/b&gt;&lt;br&gt;&lt;i&gt;extends JpaRepository (Course, Long)&lt;/i&gt;&lt;hr&gt;+ findByCode(code) · existsByCode(code)&lt;br&gt;+ existsByCodeAndIdNot(code, id)&lt;br&gt;+ findByStatus(status): Course[]" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="850" width="380" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_enrRepo" value="&lt;b&gt;&amp;laquo;interface&amp;raquo; EnrollmentRepository&lt;/b&gt;&lt;br&gt;&lt;i&gt;extends JpaRepository (Enrollment, Long)&lt;/i&gt;&lt;hr&gt;+ findByStudentId(id) · findByCourseId(id)&lt;br&gt;+ findByStatus(status)&lt;br&gt;+ existsByStudentIdAndCourseId(sid, cid): boolean" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="1480" y="850" width="380" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_exc" value="&lt;b&gt;RuntimeException subclasses&lt;/b&gt;&lt;hr&gt;ResourceNotFoundException(name, id)&lt;br&gt;ValidationException(message)&lt;br&gt;InvalidCredentialsException()  // fixed message" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1960" y="880" width="380" height="100" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== BaseEntity: centred above the entity row ===== -->
+        <mxCell id="b_base" value="&lt;b&gt;BaseEntity&lt;/b&gt;&lt;br&gt;&lt;i&gt;@MappedSuperclass · abstract&lt;/i&gt;&lt;hr&gt;- id: Long  &lt;i&gt;@Id @GeneratedValue&lt;/i&gt;&lt;br&gt;- createdAt: LocalDateTime  &lt;i&gt;@CreatedDate&lt;/i&gt;&lt;br&gt;- updatedAt: LocalDateTime  &lt;i&gt;@LastModifiedDate&lt;/i&gt;" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="740" y="1010" width="420" height="150" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== ROW: Entity  (y=1220) ===== -->
+        <mxCell id="b_user" value="&lt;b&gt;User&lt;/b&gt;&lt;br&gt;&lt;i&gt;@Entity  table = users&lt;/i&gt;&lt;hr&gt;- username: String  &lt;i&gt;unique&lt;/i&gt;&lt;br&gt;- email: String  &lt;i&gt;unique&lt;/i&gt;&lt;br&gt;- passwordHash: String&lt;br&gt;- role: Role = STUDENT&lt;br&gt;- active: boolean = true&lt;hr&gt;+ isActive(): boolean" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1220" width="380" height="170" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_student" value="&lt;b&gt;Student&lt;/b&gt;&lt;br&gt;&lt;i&gt;@Entity  table = students&lt;/i&gt;&lt;hr&gt;- firstName: String&lt;br&gt;- lastName: String&lt;br&gt;- matriculationNumber: String  &lt;i&gt;unique&lt;/i&gt;&lt;br&gt;- birthDate: LocalDate&lt;br&gt;- email: String  &lt;i&gt;unique&lt;/i&gt;&lt;hr&gt;+ getFullName(): String" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="520" y="1220" width="380" height="170" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_course" value="&lt;b&gt;Course&lt;/b&gt;&lt;br&gt;&lt;i&gt;@Entity  table = courses&lt;/i&gt;&lt;hr&gt;- code: String  &lt;i&gt;unique&lt;/i&gt;&lt;br&gt;- title: String&lt;br&gt;- description: String&lt;br&gt;- creditHours: int&lt;br&gt;- status: CourseStatus = ACTIVE&lt;hr&gt;+ isActive(): boolean" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="1220" width="380" height="170" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_enr" value="&lt;b&gt;Enrollment&lt;/b&gt;&lt;br&gt;&lt;i&gt;@Entity  table = enrollments · unique(student_id, course_id)&lt;/i&gt;&lt;hr&gt;- student: Student  &lt;i&gt;@ManyToOne(LAZY)&lt;/i&gt;&lt;br&gt;- course: Course  &lt;i&gt;@ManyToOne(LAZY)&lt;/i&gt;&lt;br&gt;- enrolledAt: LocalDate&lt;br&gt;- status: EnrollmentStatus = PENDING&lt;br&gt;- grade: Grade = NOT_GRADED&lt;hr&gt;+ isConfirmed(): boolean" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="1480" y="1220" width="380" height="180" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_jwtFilter" value="&lt;b&gt;JwtFilter&lt;/b&gt;&lt;br&gt;&lt;i&gt;@Component · extends OncePerRequestFilter&lt;/i&gt;&lt;hr&gt;- jwtUtil: JwtUtil&lt;hr&gt;# doFilterInternal(req, res, chain): void&lt;br&gt;&amp;nbsp;&amp;nbsp;→ sets UsernamePasswordAuthenticationToken(ROLE_*)" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="1960" y="1050" width="380" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_jwtUtil" value="&lt;b&gt;JwtUtil&lt;/b&gt;&lt;br&gt;&lt;i&gt;@Component&lt;/i&gt;&lt;hr&gt;- secret: String  &lt;i&gt;${jwt.secret}&lt;/i&gt;&lt;br&gt;- expiration: long  &lt;i&gt;${jwt.expiration}&lt;/i&gt;&lt;hr&gt;+ generateToken(username, role): String&lt;br&gt;+ extractUsername(token): String&lt;br&gt;+ extractRole(token): String&lt;br&gt;+ isTokenValid(token): boolean" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="1960" y="1200" width="380" height="160" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== ROW: DTO / requests  (y=1440) ===== -->
+        <mxCell id="b_authDto" value="&lt;b&gt;AuthDTO&lt;/b&gt;  (nested)&lt;hr&gt;&lt;b&gt;RegisterRequest&lt;/b&gt;: username, email, password  &lt;i&gt;@Valid&lt;/i&gt;&lt;br&gt;&lt;b&gt;LoginRequest&lt;/b&gt;: username, password&lt;br&gt;&lt;b&gt;AuthResponse&lt;/b&gt;: token, username, email, role: Role" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#ffffff;strokeColor=#6c8ebf;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1450" width="380" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_stuDto" value="&lt;b&gt;StudentDTO&lt;/b&gt;: id, firstName, lastName, matriculationNumber, birthDate, email, fullName&lt;hr&gt;&lt;b&gt;CreateStudentRequest&lt;/b&gt;: firstName, lastName, matriculationNumber, birthDate, email  &lt;i&gt;@Valid&lt;/i&gt;" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#ffffff;strokeColor=#82b366;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="520" y="1450" width="380" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_couDto" value="&lt;b&gt;CourseDTO&lt;/b&gt;: id, code, title, description, creditHours, status, active&lt;hr&gt;&lt;b&gt;CreateCourseRequest&lt;/b&gt;: code, title, description, creditHours, status?  &lt;i&gt;@Valid&lt;/i&gt;" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#ffffff;strokeColor=#d79b00;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="1450" width="380" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_enrDto" value="&lt;b&gt;EnrollmentDTO&lt;/b&gt;: id, studentId, studentName, courseId, courseTitle, courseCode, enrolledAt, status, grade, confirmed&lt;hr&gt;&lt;b&gt;CreateEnrollmentRequest&lt;/b&gt;: studentId, courseId&lt;br&gt;&lt;b&gt;UpdateGradeRequest&lt;/b&gt;: grade: Grade" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#ffffff;strokeColor=#9673a6;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="1480" y="1450" width="380" height="120" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== ROW: enums  (y=1620) ===== -->
+        <mxCell id="b_role" value="&lt;b&gt;&amp;laquo;enum&amp;raquo; Role&lt;/b&gt;&lt;hr&gt;STUDENT · TEACHER · ADMIN" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1620" width="380" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_couStatus" value="&lt;b&gt;&amp;laquo;enum&amp;raquo; CourseStatus&lt;/b&gt;&lt;hr&gt;ACTIVE · INACTIVE · ARCHIVED" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="1620" width="380" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_enrStatus" value="&lt;b&gt;&amp;laquo;enum&amp;raquo; EnrollmentStatus&lt;/b&gt;&lt;hr&gt;PENDING · CONFIRMED · CANCELLED" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="1480" y="1620" width="380" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="b_grade" value="&lt;b&gt;&amp;laquo;enum&amp;raquo; Grade&lt;/b&gt;&lt;hr&gt;A · B · C · D · F · NOT_GRADED" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="1480" y="1695" width="380" height="55" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== controller -> service  (straight vertical, top/bottom centre) ===== -->
+        <mxCell id="b_c1" style="endArrow=open;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_authCtrl" target="b_authSvc"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="b_c2" style="endArrow=open;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_stuCtrl" target="b_stuSvc"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="b_c3" style="endArrow=open;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_couCtrl" target="b_couSvc"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="b_c4" style="endArrow=open;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_enrCtrl" target="b_enrSvc"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ===== impl -> service  (realization, straight vertical) ===== -->
+        <mxCell id="b_r1" style="endArrow=block;endFill=0;dashed=1;html=1;rounded=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_authImpl" target="b_authSvc"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="b_r2" style="endArrow=block;endFill=0;dashed=1;html=1;rounded=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_stuImpl" target="b_stuSvc"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="b_r3" style="endArrow=block;endFill=0;dashed=1;html=1;rounded=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_couImpl" target="b_couSvc"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="b_r4" style="endArrow=block;endFill=0;dashed=1;html=1;rounded=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_enrImpl" target="b_enrSvc"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ===== impl -> own repository  (straight vertical) ===== -->
+        <mxCell id="b_p1" style="endArrow=open;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_authImpl" target="b_userRepo"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="b_p2" style="endArrow=open;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_stuImpl" target="b_stuRepo"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="b_p3" style="endArrow=open;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_couImpl" target="b_couRepo"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="b_p4" style="endArrow=open;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_enrImpl" target="b_enrRepo"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ===== enrollment impl -> foreign repositories  (routed left, below repo row) ===== -->
+        <mxCell id="b_p4b" style="endArrow=open;html=1;rounded=0;dashed=1;exitX=0;exitY=0.85;exitDx=0;exitDy=0;entryX=0.75;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_enrImpl" target="b_stuRepo">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1440" y="1000"/><mxPoint x="805" y="1000"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="b_p4c" style="endArrow=open;html=1;rounded=0;dashed=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.35;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_enrImpl" target="b_couRepo"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="b_p2b" style="endArrow=open;html=1;rounded=0;dashed=1;exitX=0;exitY=0.85;exitDx=0;exitDy=0;entryX=1;entryY=0.3;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_stuImpl" target="b_userRepo">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="470" y="765"/></Array></mxGeometry>
+        </mxCell>
+
+        <!-- ===== repository -> entity  (straight vertical) ===== -->
+        <mxCell id="b_re1" style="endArrow=open;endFill=0;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_userRepo" target="b_user"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="b_re2" style="endArrow=open;endFill=0;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_stuRepo" target="b_student"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="b_re3" style="endArrow=open;endFill=0;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_couRepo" target="b_course"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="b_re4" style="endArrow=open;endFill=0;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_enrRepo" target="b_enr"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ===== inheritance: entity -> BaseEntity  (bus at y≈1190, into BaseEntity bottom) ===== -->
+        <mxCell id="b_i2" style="endArrow=block;endFill=0;html=1;rounded=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.05;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_student" target="b_base">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="710" y="1190"/><mxPoint x="761" y="1190"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="b_i1" style="endArrow=block;endFill=0;html=1;rounded=0;exitX=0.7;exitY=0;exitDx=0;exitDy=0;entryX=0.1;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_user" target="b_base">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="306" y="1190"/><mxPoint x="782" y="1190"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="b_i3" style="endArrow=block;endFill=0;html=1;rounded=0;exitX=0.3;exitY=0;exitDx=0;exitDy=0;entryX=0.92;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_course" target="b_base">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1114" y="1195"/><mxPoint x="1126" y="1195"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="b_i4" style="endArrow=block;endFill=0;html=1;rounded=0;exitX=0.2;exitY=0;exitDx=0;exitDy=0;entryX=0.97;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_enr" target="b_base">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1556" y="1195"/><mxPoint x="1147" y="1195"/></Array></mxGeometry>
+        </mxCell>
+
+        <!-- ===== enrollment -> student / course (association) ===== -->
+        <mxCell id="b_a2" value="*     1" style="endArrow=open;html=1;rounded=0;fontSize=10;exitX=0;exitY=0.3;exitDx=0;exitDy=0;entryX=1;entryY=0.4;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_enr" target="b_course"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="b_a1" value="*     1" style="endArrow=open;html=1;rounded=0;fontSize=10;exitX=0.15;exitY=1;exitDx=0;exitDy=0;entryX=0.85;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_enr" target="b_student">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1537" y="1420"/><mxPoint x="843" y="1420"/></Array></mxGeometry>
+        </mxCell>
+
+        <!-- ===== user <-> student soft link ===== -->
+        <mxCell id="b_soft" value="linked by email (no FK)" style="endArrow=open;startArrow=open;html=1;rounded=0;dashed=1;fontSize=10;dashPattern=1 4;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_user" target="b_student"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ===== auth / security wiring  (left-side channel x 1870-1930) ===== -->
+        <mxCell id="b_w2" style="endArrow=open;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_jwtFilter" target="b_jwtUtil"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="b_w3" style="endArrow=open;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_seccfg" target="b_jwtFilter">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1930" y="290"/><mxPoint x="1930" y="1110"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="b_w1" style="endArrow=open;html=1;rounded=0;dashed=1;exitX=0.7;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_authImpl" target="b_jwtUtil">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="306" y="810"/><mxPoint x="1890" y="810"/><mxPoint x="1890" y="1280"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="b_w4" value="&amp;laquo;filter chain&amp;raquo;" style="endArrow=open;html=1;rounded=0;fontSize=10;dashed=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=0.85;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_jwtFilter" target="b_authCtrl">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="2150" y="60"/><mxPoint x="120" y="60"/></Array></mxGeometry>
+        </mxCell>
+
+        <!-- ===== ownership guard  (buses at y≈370 and left channel) ===== -->
+        <mxCell id="b_g1" style="endArrow=open;html=1;rounded=0;exitX=0;exitY=0.4;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_guard" target="b_stuSvc">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1870" y="548"/><mxPoint x="1870" y="370"/><mxPoint x="710" y="370"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="b_g2" value="@PreAuthorize" style="endArrow=open;html=1;rounded=0;dashed=1;fontSize=10;exitX=1;exitY=0.7;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="b_enrCtrl" target="b_guard">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1910" y="277"/><mxPoint x="1910" y="560"/></Array></mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram name="Frontend - Module Diagram" id="frontend">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2420" pageHeight="1020" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="f_title" value="Student Manager — Frontend Module Diagram (React 19 + Vite + TypeScript)" style="text;html=1;fontSize=20;fontStyle=1;align=left;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="1400" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_legend" value="Legend:  ─▶ solid = imports / calls   ·   ┄▶ dashed = type-only import / persistence / redirect" style="text;html=1;fontSize=11;fontStyle=2;align=left;" vertex="1" parent="1">
+          <mxGeometry x="40" y="52" width="1400" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== COLUMN HEADERS (x: entry 40 · context 500 · pages 960 · services 1420 · http/types 1880 ; w=340) ===== -->
+        <mxCell id="f_hdr1" value="entry &amp; routing" style="text;html=1;fontStyle=1;fontSize=14;align=left;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="40" y="90" width="340" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_hdr2" value="context (auth)" style="text;html=1;fontStyle=1;fontSize=14;align=left;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="500" y="90" width="340" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_hdr3" value="pages" style="text;html=1;fontStyle=1;fontSize=14;align=left;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="960" y="90" width="340" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_hdr4" value="services (typed API wrappers)" style="text;html=1;fontStyle=1;fontSize=14;align=left;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="1420" y="90" width="340" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_hdr5" value="http core &amp; types" style="text;html=1;fontStyle=1;fontSize=14;align=left;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="1880" y="90" width="340" height="26" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== entry & routing column ===== -->
+        <mxCell id="f_main" value="&lt;b&gt;main.tsx&lt;/b&gt;&lt;hr&gt;ReactDOM.createRoot(...).render()&lt;br&gt;wraps &amp;lt;App /&amp;gt; in &amp;lt;AuthProvider&amp;gt; + StrictMode" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="40" y="130" width="340" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_app" value="&lt;b&gt;App.tsx&lt;/b&gt;&lt;hr&gt;&amp;lt;BrowserRouter&amp;gt; · &amp;lt;Routes&amp;gt;&lt;br&gt;public: /login, /register (→ / if authed)&lt;br&gt;protected: / → &amp;lt;ProtectedRoute&amp;gt;&amp;lt;Layout /&amp;gt;&lt;br&gt;&amp;nbsp;&amp;nbsp;index = Dashboard&lt;br&gt;&amp;nbsp;&amp;nbsp;students · courses · enrollments · my-courses&lt;br&gt;* → &amp;lt;Navigate to=&quot;/&quot;&amp;gt;" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="40" y="270" width="340" height="170" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_protected" value="&lt;b&gt;components/ProtectedRoute.tsx&lt;/b&gt;&lt;hr&gt;useAuth() → if !isAuthenticated → &amp;lt;Navigate to=&quot;/login&quot;&amp;gt;&lt;br&gt;spinner while loading" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="40" y="490" width="340" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_layout" value="&lt;b&gt;components/Layout.tsx&lt;/b&gt;&lt;hr&gt;app shell · &amp;lt;Outlet /&amp;gt; · renders Sidebar" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="40" y="630" width="340" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_sidebar" value="&lt;b&gt;components/Sidebar.tsx&lt;/b&gt;&lt;hr&gt;nav links · role-aware items · logout()" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="40" y="750" width="340" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_statcard" value="&lt;b&gt;components/StatCard.tsx&lt;/b&gt;&lt;hr&gt;presentational stat tile (used by Dashboard)" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="40" y="870" width="340" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== context column ===== -->
+        <mxCell id="f_authctx" value="&lt;b&gt;context/auth-context.ts&lt;/b&gt;&lt;hr&gt;export AuthContext = createContext()&lt;br&gt;&lt;i&gt;type&lt;/i&gt; AuthContextType {&lt;br&gt;&amp;nbsp;&amp;nbsp;user: AuthResponse | null&lt;br&gt;&amp;nbsp;&amp;nbsp;loading: boolean&lt;br&gt;&amp;nbsp;&amp;nbsp;login(data: LoginRequest): Promise&lt;br&gt;&amp;nbsp;&amp;nbsp;register(data: RegisterRequest): Promise&lt;br&gt;&amp;nbsp;&amp;nbsp;logout(): void&lt;br&gt;&amp;nbsp;&amp;nbsp;isAuthenticated: boolean }" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="500" y="130" width="340" height="200" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_authprov" value="&lt;b&gt;context/AuthContext.tsx&lt;/b&gt;&lt;hr&gt;&lt;b&gt;AuthProvider&lt;/b&gt;&lt;br&gt;useState&amp;lt;AuthResponse|null&amp;gt;(readStoredUser)&lt;br&gt;login()/register(): call authService,&lt;br&gt;&amp;nbsp;&amp;nbsp;persist token + user to localStorage, setUser&lt;br&gt;logout(): authService.logout(), clear, setUser(null)&lt;br&gt;provides AuthContextType" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="500" y="380" width="340" height="170" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_useauth" value="&lt;b&gt;context/useAuth.ts&lt;/b&gt;&lt;hr&gt;useAuth(): AuthContextType&lt;br&gt;useContext(AuthContext) · throws if outside provider" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="500" y="600" width="340" height="90" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== pages column ===== -->
+        <mxCell id="f_dash" value="&lt;b&gt;pages/Dashboard.tsx&lt;/b&gt;&lt;hr&gt;stats + recent activity · student / course / enrollment services · StatCard" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="960" y="130" width="340" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_students" value="&lt;b&gt;pages/StudentsPage.tsx&lt;/b&gt;&lt;hr&gt;list / create / delete students  (TEACHER, ADMIN)" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="960" y="250" width="340" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_courses" value="&lt;b&gt;pages/CoursesPage.tsx&lt;/b&gt;&lt;hr&gt;list / create / update / delete courses · status filter" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="960" y="360" width="340" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_enroll" value="&lt;b&gt;pages/EnrollmentsPage.tsx&lt;/b&gt;&lt;hr&gt;enroll · confirm · cancel · grade  (TEACHER, ADMIN)" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="960" y="470" width="340" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_mycourses" value="&lt;b&gt;pages/MyCoursesPage.tsx&lt;/b&gt;&lt;hr&gt;student view · GET /students/me then /enrollments/student/{id}" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="960" y="580" width="340" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_login" value="&lt;b&gt;pages/LoginPage.tsx&lt;/b&gt;&lt;hr&gt;useAuth().login()" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="960" y="700" width="340" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_register" value="&lt;b&gt;pages/RegisterPage.tsx&lt;/b&gt;&lt;hr&gt;useAuth().register()" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="960" y="800" width="340" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== services column ===== -->
+        <mxCell id="f_authsvc" value="&lt;b&gt;services/authService.ts&lt;/b&gt;&lt;hr&gt;login(data) · register(data)&lt;br&gt;logout() · getToken() · isAuthenticated()" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="1420" y="130" width="340" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_stusvc" value="&lt;b&gt;services/studentService.ts&lt;/b&gt;&lt;hr&gt;getAll() · getById(id) · getMe()&lt;br&gt;create(data) · update(id, data) · delete(id)" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="1420" y="270" width="340" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_cousvc" value="&lt;b&gt;services/courseService.ts&lt;/b&gt;&lt;hr&gt;getAll() · getById(id) · getByStatus(status)&lt;br&gt;create(data) · update(id, data) · delete(id)" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="1420" y="410" width="340" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_enrsvc" value="&lt;b&gt;services/enrollmentService.ts&lt;/b&gt;&lt;hr&gt;getAll() · getById(id) · getByStudent(id) · getByCourse(id)&lt;br&gt;create(data) · confirm(id) · cancel(id)&lt;br&gt;updateGrade(id, data) · delete(id)" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="1420" y="550" width="340" height="110" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== http core & types column ===== -->
+        <mxCell id="f_api" value="&lt;b&gt;services/api.ts&lt;/b&gt;&lt;hr&gt;axios.create({ baseURL: VITE_API_URL })&lt;br&gt;&lt;b&gt;request interceptor:&lt;/b&gt; attach Authorization: Bearer&lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;lt;token from localStorage&amp;gt;&lt;br&gt;&lt;b&gt;response interceptor:&lt;/b&gt; on 401 &amp;&amp; !/auth/ →&lt;br&gt;&amp;nbsp;&amp;nbsp;remove token, window.location.href = &quot;/login&quot;" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="1880" y="130" width="340" height="170" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_ls" value="localStorage&#10;token · user" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1960" y="360" width="180" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_types" value="&lt;b&gt;types/index.ts&lt;/b&gt;&lt;hr&gt;&lt;i&gt;interface&lt;/i&gt; Student · Course · Enrollment&lt;br&gt;&lt;i&gt;interface&lt;/i&gt; AuthResponse · LoginRequest · RegisterRequest&lt;br&gt;&lt;i&gt;interface&lt;/i&gt; CreateStudentRequest · CreateCourseRequest&lt;br&gt;&amp;nbsp;&amp;nbsp;CreateEnrollmentRequest · UpdateGradeRequest&lt;br&gt;&lt;i&gt;type&lt;/i&gt; Role · CourseStatus · EnrollmentStatus · Grade" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="1880" y="500" width="340" height="150" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_backend" value="Backend REST API&#10;/api/**  (see System Architecture page)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="1880" y="720" width="340" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== EDGES: within entry/routing (straight vertical) ===== -->
+        <mxCell id="f_e1" style="endArrow=open;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_main" target="f_app"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="f_e3" style="endArrow=open;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_app" target="f_protected"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="f_e6" style="endArrow=open;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_layout" target="f_sidebar"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="f_e4" value="renders shell" style="endArrow=open;html=1;rounded=0;fontSize=10;exitX=1;exitY=0.85;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_app" target="f_layout">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="420" y="426"/><mxPoint x="420" y="665"/></Array></mxGeometry>
+        </mxCell>
+
+        <!-- ===== App → pages (single representative "renders" via top bus) ===== -->
+        <mxCell id="f_e5" value="renders routed pages" style="endArrow=open;html=1;rounded=0;fontSize=10;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.1;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_app" target="f_dash">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="210" y="78"/><mxPoint x="994" y="78"/></Array></mxGeometry>
+        </mxCell>
+
+        <!-- ===== auth context wiring ===== -->
+        <mxCell id="f_e2" value="mounts &amp;lt;AuthProvider&amp;gt;" style="endArrow=open;html=1;rounded=0;fontSize=10;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_main" target="f_authprov">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="460" y="175"/><mxPoint x="460" y="465"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="f_e10" style="endArrow=open;html=1;rounded=0;dashed=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_authprov" target="f_authctx"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="f_e9" style="endArrow=open;html=1;rounded=0;dashed=1;exitX=0;exitY=0.3;exitDx=0;exitDy=0;entryX=0;entryY=0.85;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_useauth" target="f_authctx">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="470" y="627"/><mxPoint x="470" y="300"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="f_e7" style="endArrow=open;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.3;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_protected" target="f_useauth"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="f_e8" style="endArrow=open;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.7;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_sidebar" target="f_useauth">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="440" y="785"/><mxPoint x="440" y="663"/></Array></mxGeometry>
+        </mxCell>
+
+        <!-- ===== AuthProvider → authService (down, bottom bus y=910, up gap channel x=1380) ===== -->
+        <mxCell id="f_e11" style="endArrow=open;html=1;rounded=0;exitX=0.8;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.4;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_authprov" target="f_authsvc">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="772" y="910"/><mxPoint x="1380" y="910"/><mxPoint x="1380" y="166"/></Array></mxGeometry>
+        </mxCell>
+
+        <!-- ===== pages → services (into left edge, gap channel x=1380 for the two skips) ===== -->
+        <mxCell id="f_e12" style="endArrow=open;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_dash" target="f_stusvc">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1360" y="170"/><mxPoint x="1360" y="292"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="f_e13" style="endArrow=open;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.6;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_students" target="f_stusvc"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="f_e14" style="endArrow=open;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_courses" target="f_cousvc"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="f_e15" style="endArrow=open;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.3;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_enroll" target="f_enrsvc"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="f_e16" style="endArrow=open;html=1;rounded=0;exitX=1;exitY=0.35;exitDx=0;exitDy=0;entryX=0;entryY=0.8;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_mycourses" target="f_enrsvc"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="f_e16b" style="endArrow=open;html=1;rounded=0;exitX=1;exitY=0.7;exitDx=0;exitDy=0;entryX=0;entryY=0.8;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_mycourses" target="f_stusvc">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1360" y="636"/><mxPoint x="1360" y="342"/></Array></mxGeometry>
+        </mxCell>
+
+        <!-- ===== login/register → useAuth (into right edge, channel x=900) ===== -->
+        <mxCell id="f_e17" style="endArrow=open;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.35;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_login" target="f_useauth">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="900" y="730"/><mxPoint x="900" y="631"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="f_e18" style="endArrow=open;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.7;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_register" target="f_useauth">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="880" y="830"/><mxPoint x="880" y="663"/></Array></mxGeometry>
+        </mxCell>
+
+        <!-- ===== services → api (into left edge; far two via channel x=1830) ===== -->
+        <mxCell id="f_e19" style="endArrow=open;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.15;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_authsvc" target="f_api"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="f_e20" style="endArrow=open;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.4;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_stusvc" target="f_api"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="f_e21" style="endArrow=open;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.65;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_cousvc" target="f_api">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1830" y="455"/><mxPoint x="1830" y="240"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="f_e22" style="endArrow=open;html=1;rounded=0;exitX=1;exitY=0.4;exitDx=0;exitDy=0;entryX=0;entryY=0.85;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_enrsvc" target="f_api">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1830" y="594"/><mxPoint x="1830" y="274"/></Array></mxGeometry>
+        </mxCell>
+
+        <!-- ===== api ↔ localStorage / backend, AuthProvider → localStorage ===== -->
+        <mxCell id="f_e23" value="read / clear token" style="endArrow=open;html=1;rounded=0;dashed=1;fontSize=10;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_api" target="f_ls"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="f_e25" value="persist token / user" style="endArrow=open;html=1;rounded=0;dashed=1;fontSize=10;exitX=0.9;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_authprov" target="f_ls">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="806" y="930"/><mxPoint x="2050" y="930"/><mxPoint x="2050" y="470"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="f_e24" value="HTTP / JSON" style="endArrow=block;html=1;rounded=0;fontSize=10;strokeWidth=2;exitX=1;exitY=0.85;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_api" target="f_backend">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="2260" y="275"/><mxPoint x="2260" y="750"/></Array></mxGeometry>
+        </mxCell>
+
+        <!-- ===== representative type imports ===== -->
+        <mxCell id="f_e26" value="imports types" style="endArrow=open;html=1;rounded=0;dashed=1;fontSize=10;exitX=1;exitY=0.2;exitDx=0;exitDy=0;entryX=0;entryY=0.4;entryDx=0;entryDy=0;" edge="1" parent="1" source="f_enrsvc" target="f_types">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1820" y="572"/><mxPoint x="1820" y="560"/></Array></mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram name="Database - ER Diagram" id="db">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="d_title" value="Student Manager — Database (PostgreSQL 16)" style="text;html=1;fontSize=20;fontStyle=1;align=left;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="900" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="d_note" value="Schema is generated by Hibernate (spring.jpa.hibernate.ddl-auto = update — no migration tool yet). Physical column names via snake_case naming strategy. Every table has id (BIGINT, IDENTITY, PK) and created_at / updated_at (TIMESTAMP, NOT NULL) inherited from BaseEntity via JPA auditing. Enums are persisted as VARCHAR (@Enumerated(STRING))." style="text;html=1;fontSize=11;fontStyle=2;align=left;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="40" y="52" width="1300" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- users -->
+        <mxCell id="d_users" value="&lt;b&gt;users&lt;/b&gt;&lt;hr&gt;&lt;b&gt;id&lt;/b&gt;  BIGINT  PK, IDENTITY&lt;br&gt;username  VARCHAR  NOT NULL, UNIQUE&lt;br&gt;email  VARCHAR  NOT NULL, UNIQUE&lt;br&gt;password_hash  VARCHAR  NOT NULL  (BCrypt)&lt;br&gt;role  VARCHAR  NOT NULL   { STUDENT, TEACHER, ADMIN }&lt;br&gt;active  BOOLEAN  NOT NULL&lt;br&gt;created_at  TIMESTAMP  NOT NULL&lt;br&gt;updated_at  TIMESTAMP  NOT NULL" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="80" y="130" width="360" height="180" as="geometry"/>
+        </mxCell>
+
+        <!-- students -->
+        <mxCell id="d_students" value="&lt;b&gt;students&lt;/b&gt;&lt;hr&gt;&lt;b&gt;id&lt;/b&gt;  BIGINT  PK, IDENTITY&lt;br&gt;first_name  VARCHAR  NOT NULL&lt;br&gt;last_name  VARCHAR  NOT NULL&lt;br&gt;matriculation_number  VARCHAR  NOT NULL, UNIQUE&lt;br&gt;birth_date  DATE&lt;br&gt;email  VARCHAR  NOT NULL, UNIQUE&lt;br&gt;created_at  TIMESTAMP  NOT NULL&lt;br&gt;updated_at  TIMESTAMP  NOT NULL" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="80" y="440" width="360" height="180" as="geometry"/>
+        </mxCell>
+
+        <!-- courses -->
+        <mxCell id="d_courses" value="&lt;b&gt;courses&lt;/b&gt;&lt;hr&gt;&lt;b&gt;id&lt;/b&gt;  BIGINT  PK, IDENTITY&lt;br&gt;code  VARCHAR  NOT NULL, UNIQUE&lt;br&gt;title  VARCHAR  NOT NULL&lt;br&gt;description  VARCHAR&lt;br&gt;credit_hours  INTEGER  NOT NULL&lt;br&gt;status  VARCHAR  NOT NULL   { ACTIVE, INACTIVE, ARCHIVED }&lt;br&gt;created_at  TIMESTAMP  NOT NULL&lt;br&gt;updated_at  TIMESTAMP  NOT NULL" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="900" y="440" width="380" height="180" as="geometry"/>
+        </mxCell>
+
+        <!-- enrollments -->
+        <mxCell id="d_enroll" value="&lt;b&gt;enrollments&lt;/b&gt;&lt;hr&gt;&lt;b&gt;id&lt;/b&gt;  BIGINT  PK, IDENTITY&lt;br&gt;student_id  BIGINT  NOT NULL   FK → students(id)&lt;br&gt;course_id  BIGINT  NOT NULL   FK → courses(id)&lt;br&gt;enrolled_at  DATE  NOT NULL&lt;br&gt;status  VARCHAR  NOT NULL   { PENDING, CONFIRMED, CANCELLED }&lt;br&gt;grade  VARCHAR  NOT NULL   { A, B, C, D, F, NOT_GRADED }&lt;br&gt;created_at  TIMESTAMP  NOT NULL&lt;br&gt;updated_at  TIMESTAMP  NOT NULL&lt;hr&gt;&lt;i&gt;UNIQUE (student_id, course_id)&lt;/i&gt;" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="500" y="720" width="440" height="210" as="geometry"/>
+        </mxCell>
+
+        <!-- relationships -->
+        <mxCell id="d_r1" value="student_id → students.id&#10;N .. 1" style="endArrow=ERone;startArrow=ERmany;html=1;rounded=0;fontSize=10;exitX=0;exitY=0.25;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="d_enroll" target="d_students">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="460" y="640"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="d_r2" value="course_id → courses.id&#10;N .. 1" style="endArrow=ERone;startArrow=ERmany;html=1;rounded=0;fontSize=10;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="d_enroll" target="d_courses">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1090" y="670"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="d_r3" value="linked by email (application-level, no DB FK)  ·  1 .. 0..1" style="endArrow=ERzeroToOne;startArrow=ERone;html=1;rounded=0;dashed=1;fontSize=10;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="d_users" target="d_students">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="d_gap" value="Note: registration inserts a row in &lt;b&gt;users&lt;/b&gt; only. A matching &lt;b&gt;students&lt;/b&gt; row must be created separately (by an ADMIN) before GET /api/students/me and the ownership check resolve for that account." style="text;html=1;fontSize=11;fontStyle=2;align=left;verticalAlign=top;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="900" y="130" width="400" height="90" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
