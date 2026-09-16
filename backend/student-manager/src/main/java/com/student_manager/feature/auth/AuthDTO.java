@@ -21,6 +21,14 @@ public class AuthDTO {
 
         @NotBlank(message = "Password is required")
         private String password;
+
+        /**
+         * Optional code from an ADMIN-issued RegistrationInvite. When present,
+         * it — not this request — determines the account's role and links it to
+         * the invite's target Student/Teacher profile. Absent means a plain
+         * self-registration, always STUDENT with no profile link.
+         */
+        private String registrationCode;
     }
 
     @Data

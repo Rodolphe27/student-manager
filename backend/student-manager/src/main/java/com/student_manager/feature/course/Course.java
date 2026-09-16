@@ -1,5 +1,6 @@
 package com.student_manager.feature.course;
 
+import com.student_manager.feature.teacher.Teacher;
 import com.student_manager.shared.domain.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -29,6 +30,18 @@ public class Course extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private CourseStatus status = CourseStatus.ACTIVE;
+
+    // Nullable, unlike the proposed design's NOT NULL term_id: this app has no
+    // migration tool (ddl-auto=update) and existing production courses have no
+    // term to backfill. Tighten to non-null once Flyway lands and a backfill
+    // migration can run first.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "term_id")
+    private Term term;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "teacher_id")
+    private Teacher teacher;
 
     public boolean isActive() {
         return CourseStatus.ACTIVE.equals(this.status);

@@ -1,11 +1,13 @@
 package com.student_manager.feature.auth;
 
+import com.student_manager.feature.invite.RegistrationInviteService;
 import com.student_manager.shared.exception.InvalidCredentialsException;
 import com.student_manager.shared.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -15,8 +17,10 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
+    private final RegistrationInviteService registrationInviteService;
 
     @Override
+    @Transactional
     public AuthDTO.AuthResponse register(AuthDTO.RegisterRequest request) {
         log.info("Registering user: {}", request.getUsername());
 
@@ -37,7 +41,14 @@ public class AuthServiceImpl implements AuthService {
         user.setRole(Role.STUDENT);
         user.setActive(true);
 
-        User saved = userRepository.save(user);
+        User saved;
+        if (request.getRegistrationCode() != null && !request.getRegistrationCode().isBlank()) {
+            // The invite — not this request — decides the final role and links the
+            // account to its target profile. claim() overwrites user.role below.
+            saved = registrationInviteService.claim(request.getRegistrationCode(), user);
+        } else {
+            saved = userRepository.save(user);
+        }
         log.info("User registered with id: {}", saved.getId());
 
         String token = jwtUtil.generateToken(saved.getUsername(), saved.getRole().name());
