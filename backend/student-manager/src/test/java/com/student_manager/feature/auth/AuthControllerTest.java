@@ -23,7 +23,7 @@ class AuthControllerTest {
 
     @Test
     void registerWithABlankUsernameIsRejectedAsABadRequest() throws Exception {
-        AuthDTO.RegisterRequest request = new AuthDTO.RegisterRequest("", "user@example.com", "Password123!");
+        AuthDTO.RegisterRequest request = new AuthDTO.RegisterRequest("", "user@example.com", "Password123!", null);
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -33,7 +33,7 @@ class AuthControllerTest {
 
     @Test
     void registerWithABlankPasswordIsRejectedAsABadRequest() throws Exception {
-        AuthDTO.RegisterRequest request = new AuthDTO.RegisterRequest("passwordtestuser", "user@example.com", "");
+        AuthDTO.RegisterRequest request = new AuthDTO.RegisterRequest("passwordtestuser", "user@example.com", "", null);
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -43,7 +43,7 @@ class AuthControllerTest {
 
     @Test
     void registerWithAnInvalidEmailIsRejectedAsABadRequest() throws Exception {
-        AuthDTO.RegisterRequest request = new AuthDTO.RegisterRequest("emailtestuser", "not-an-email", "Password123!");
+        AuthDTO.RegisterRequest request = new AuthDTO.RegisterRequest("emailtestuser", "not-an-email", "Password123!", null);
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -53,7 +53,7 @@ class AuthControllerTest {
 
     @Test
     void selfRegistrationAlwaysCreatesAStudentAccount() throws Exception {
-        AuthDTO.RegisterRequest request = new AuthDTO.RegisterRequest("plainuser", "plainuser@example.com", "Password123!");
+        AuthDTO.RegisterRequest request = new AuthDTO.RegisterRequest("plainuser", "plainuser@example.com", "Password123!", null);
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -101,7 +101,7 @@ class AuthControllerTest {
     @Test
     void loginWithTheWrongPasswordReturnsTheSameGenericUnauthorized() throws Exception {
         AuthDTO.RegisterRequest signup =
-                new AuthDTO.RegisterRequest("pwdcheckuser", "pwdcheckuser@example.com", "Password123!");
+                new AuthDTO.RegisterRequest("pwdcheckuser", "pwdcheckuser@example.com", "Password123!", null);
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(signup)))
