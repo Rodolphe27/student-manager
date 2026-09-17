@@ -4,35 +4,14 @@ A full-stack student management application built for FH Dortmund. Manage studen
 
 ---
 
-## Live Demo
-
-| | URL |
-|---|---|
-| Web app | https://student-manager-fh.vercel.app |
-| API | https://backend-production-8ceca.up.railway.app/api |
-| API health | https://backend-production-8ceca.up.railway.app/actuator/health |
-| Swagger UI | https://backend-production-8ceca.up.railway.app/swagger-ui.html |
-
-Register an account to explore the **student** view. Self-registration always
-creates a `STUDENT`; `TEACHER` and `ADMIN` roles are assigned server-side (a
-deliberate guard against privilege escalation). The demo runs on free-tier
-hosting, so the first request after a period of inactivity can take a few
-seconds to wake up.
-
-The frontend is on Vercel, the containerized backend on Railway, and the
-database on Supabase — each layer deployed independently.
-
----
-
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS v4 |
 | Backend | Spring Boot 3, Java 21, Spring Security, JWT |
-| Database | PostgreSQL — 16 locally (Docker Compose), Supabase Postgres in the deployed environment |
+| Database | PostgreSQL 16 (Docker Compose) |
 | Containerization | Docker, Docker Compose |
-| Hosting | Vercel (web), Railway (API), Supabase (database) |
 | CI | GitHub Actions |
 
 ---
@@ -124,7 +103,7 @@ noted, a method-level ownership check).
 ### Operations — public
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/actuator/health` | Liveness/readiness health check. Used as the Railway service `healthcheckPath`. |
+| GET | `/actuator/health` | Liveness/readiness health check. |
 | GET | `/swagger-ui.html`, `/v3/api-docs` | Interactive API docs / OpenAPI spec |
 
 ---
@@ -193,9 +172,9 @@ npm run build && npx playwright test
 
 ---
 
-## Docker Deployment
+## Docker Compose (all services)
 
-Build and run all services with one command from the project root:
+Build and run all services locally with one command from the project root:
 
 ```bash
 docker-compose up --build
@@ -242,7 +221,7 @@ All three are required status checks for merging to `main`.
 | `JWT_SECRET` | *(baked-in dev key)* | HMAC signing key for JWTs — **must** be overridden in any deployed environment |
 | `JWT_EXPIRATION` | `86400000` | Token lifetime in milliseconds |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost` | Comma-separated allowed browser origins |
-| `CORS_ALLOWED_ORIGIN_PATTERNS` | *(empty)* | Comma-separated origin patterns (e.g. `https://*.vercel.app`) |
+| `CORS_ALLOWED_ORIGIN_PATTERNS` | *(empty)* | Comma-separated origin patterns (e.g. `https://*.example.com`) |
 | `SPRING_JPA_DDL_AUTO` | `update` | Hibernate schema mode; set `validate` once migrations exist |
 | `SPRING_JPA_SHOW_SQL` | `false` | Log every SQL statement (dev only) |
 | `LOG_LEVEL_APP` / `LOG_LEVEL_SECURITY` / `LOG_LEVEL_SQL` | `INFO` / `WARN` / `WARN` | Per-area log levels |
