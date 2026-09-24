@@ -5,7 +5,11 @@ import com.student_manager.feature.auth.JwtUtil;
 import com.student_manager.feature.auth.Role;
 import com.student_manager.feature.auth.User;
 import com.student_manager.feature.auth.UserRepository;
+import com.student_manager.feature.course.Course;
+import com.student_manager.feature.course.CourseRepository;
+import com.student_manager.feature.course.CourseStatus;
 import com.student_manager.feature.course.CreateCourseRequest;
+import com.student_manager.feature.enrollment.CreateEnrollmentRequest;
 import com.student_manager.feature.student.CreateStudentRequest;
 import com.student_manager.feature.student.Student;
 import com.student_manager.feature.student.StudentRepository;
@@ -37,6 +41,7 @@ class AuthorizationRulesTest {
     @Autowired private JwtUtil jwtUtil;
     @Autowired private StudentRepository studentRepository;
     @Autowired private UserRepository userRepository;
+    @Autowired private CourseRepository courseRepository;
 
     private String bearer(String role) {
         return "Bearer " + jwtUtil.generateToken(role.toLowerCase() + "-user", role);
@@ -62,6 +67,16 @@ class AuthorizationRulesTest {
         student.setMatriculationNumber("M-OWN-" + username);
         student.setEmail(email);
         return studentRepository.save(student).getId();
+    }
+
+    /** Persists an ACTIVE course with a unique code and returns its id. */
+    private long activeCourseFor(String codeSuffix) {
+        Course course = new Course();
+        course.setCode("AUTHZ-ENR-" + codeSuffix);
+        course.setTitle("Authorization Enrollment Fixture");
+        course.setCreditHours(3);
+        course.setStatus(CourseStatus.ACTIVE);
+        return courseRepository.save(course).getId();
     }
 
     // ── students ────────────────────────────────────────────────────
@@ -189,6 +204,39 @@ class AuthorizationRulesTest {
     void teacherCanListAllEnrollments() throws Exception {
         mockMvc.perform(get("/api/enrollments").header("Authorization", bearer("TEACHER")))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void studentCanEnrollThemselves() throws Exception {
+        long ownId = linkedStudentFor("self-enroll-user", "self-enroll.authz@example.com");
+        long courseId = activeCourseFor("1");
+
+        CreateEnrollmentRequest request = new CreateEnrollmentRequest();
+        request.setStudentId(ownId);
+        request.setCourseId(courseId);
+
+        mockMvc.perform(post("/api/enrollments")
+                        .header("Authorization", bearerFor("self-enroll-user", "STUDENT"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    void studentCannotEnrollAnotherStudent() throws Exception {
+        long ownId = linkedStudentFor("self-enroll-user2", "self-enroll2.authz@example.com");
+        long someoneElse = ownId + 999;
+        long courseId = activeCourseFor("2");
+
+        CreateEnrollmentRequest request = new CreateEnrollmentRequest();
+        request.setStudentId(someoneElse);
+        request.setCourseId(courseId);
+
+        mockMvc.perform(post("/api/enrollments")
+                        .header("Authorization", bearerFor("self-enroll-user2", "STUDENT"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
     }
 
     // ── unauthenticated ─────────────────────────────────────────────

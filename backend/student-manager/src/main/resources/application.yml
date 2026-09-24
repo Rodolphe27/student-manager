@@ -5,7 +5,7 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/studentmanager}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:postgres}
-    driver-class-name: org.postgresql.Driver
+    driver-class-name: org.postgresql.Driver  
   jpa:
     hibernate:
       # `update` keeps the schema in sync without migrations for local/dev use.

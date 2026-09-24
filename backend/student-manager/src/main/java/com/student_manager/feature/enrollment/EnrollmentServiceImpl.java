@@ -14,6 +14,12 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
+// Generic "Fetching .../Confirming .../Cancelling ... with id: {}" lines below
+// are commented out, not deleted — RequestLoggingFilter (shared/config)
+// already logs method + path + status, and the id in those lines was always
+// just the path variable. create()'s lines are kept: the student/course ids
+// come from the request body, and the new enrollment id doesn't exist until
+// after the save.
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -25,7 +31,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     public EnrollmentDTO findById(Long id) {
-        log.info("Fetching enrollment with id: {}", id);
+        // log.info("Fetching enrollment with id: {}", id);
         Enrollment enrollment = enrollmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Enrollment", id));
         return toDTO(enrollment);
@@ -33,7 +39,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     public List<EnrollmentDTO> findAll() {
-        log.info("Fetching all enrollments");
+        // log.info("Fetching all enrollments");
         return enrollmentRepository.findAll()
                 .stream()
                 .map(this::toDTO)
@@ -42,7 +48,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     public List<EnrollmentDTO> findByStudentId(Long studentId) {
-        log.info("Fetching enrollments for student: {}", studentId);
+        // log.info("Fetching enrollments for student: {}", studentId);
         return enrollmentRepository.findByStudentId(studentId)
                 .stream()
                 .map(this::toDTO)
@@ -51,7 +57,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     public List<EnrollmentDTO> findByCourseId(Long courseId) {
-        log.info("Fetching enrollments for course: {}", courseId);
+        // log.info("Fetching enrollments for course: {}", courseId);
         return enrollmentRepository.findByCourseId(courseId)
                 .stream()
                 .map(this::toDTO)
@@ -91,7 +97,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     public EnrollmentDTO confirm(Long id) {
-        log.info("Confirming enrollment with id: {}", id);
+        // log.info("Confirming enrollment with id: {}", id);
         Enrollment enrollment = enrollmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Enrollment", id));
 
@@ -108,7 +114,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     public EnrollmentDTO cancel(Long id) {
-        log.info("Cancelling enrollment with id: {}", id);
+        // log.info("Cancelling enrollment with id: {}", id);
         Enrollment enrollment = enrollmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Enrollment", id));
 
@@ -125,7 +131,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     public EnrollmentDTO updateGrade(Long id, UpdateGradeRequest request) {
-        log.info("Updating grade for enrollment: {}", id);
+        // log.info("Updating grade for enrollment: {}", id);
         Enrollment enrollment = enrollmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Enrollment", id));
 
@@ -139,7 +145,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     public void delete(Long id) {
-        log.info("Deleting enrollment with id: {}", id);
+        // log.info("Deleting enrollment with id: {}", id);
         if (!enrollmentRepository.existsById(id)) {
             throw new ResourceNotFoundException("Enrollment", id);
         }

@@ -1,38 +1,44 @@
 package com.student_manager.feature.teacher;
 
-import com.student_manager.shared.exception.ResourceNotFoundException;
 import com.student_manager.shared.exception.ValidationException;
+import com.student_manager.shared.service.CrudServiceSupport;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
+// findById/findAll/delete come from CrudServiceSupport — see that class for
+// why create()/update() stay here. Generic "Fetching .../Updating .../
+// Deleting ... with id: {}" lines that used to live in those three methods
+// are gone with them; RequestLoggingFilter (shared/config) already logs
+// method + path + status, and the id was always just the path variable.
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class TeacherServiceImpl implements TeacherService {
+public class TeacherServiceImpl extends CrudServiceSupport<Teacher, TeacherDTO> implements TeacherService {
 
     private final TeacherRepository repository;
 
     @Override
-    public TeacherDTO findById(Long id) {
-        Objects.requireNonNull(id, "Teacher id must not be null");
-        log.info("Fetching teacher with id: {}", id);
-        Teacher teacher = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Teacher", id));
-        return toDTO(teacher);
+    protected JpaRepository<Teacher, Long> repository() {
+        return repository;
     }
 
     @Override
-    public List<TeacherDTO> findAll() {
-        log.info("Fetching all teachers");
-        return repository.findAll()
-                .stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
+    protected String resourceName() {
+        return "Teacher";
+    }
+
+    @Override
+    protected TeacherDTO toDTO(Teacher teacher) {
+        TeacherDTO dto = new TeacherDTO();
+        dto.setId(teacher.getId());
+        dto.setFirstName(teacher.getFirstName());
+        dto.setLastName(teacher.getLastName());
+        dto.setEmail(teacher.getEmail());
+        dto.setDepartment(teacher.getDepartment());
+        dto.setFullName(teacher.getFullName());
+        return dto;
     }
 
     @Override
@@ -56,10 +62,7 @@ public class TeacherServiceImpl implements TeacherService {
 
     @Override
     public TeacherDTO update(Long id, CreateTeacherRequest request) {
-        Objects.requireNonNull(id, "Teacher id must not be null");
-        log.info("Updating teacher with id: {}", id);
-        Teacher teacher = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Teacher", id));
+        Teacher teacher = loadOrThrow(id);
 
         if (repository.existsByEmailAndIdNot(request.getEmail(), id)) {
             throw new ValidationException("Email already exists: " + request.getEmail());
@@ -71,29 +74,6 @@ public class TeacherServiceImpl implements TeacherService {
         teacher.setDepartment(request.getDepartment());
 
         Teacher saved = repository.save(teacher);
-        log.info("Teacher updated with id: {}", saved.getId());
         return toDTO(saved);
-    }
-
-    @Override
-    public void delete(Long id) {
-        Objects.requireNonNull(id, "Teacher id must not be null");
-        log.info("Deleting teacher with id: {}", id);
-        if (!repository.existsById(id)) {
-            throw new ResourceNotFoundException("Teacher", id);
-        }
-        repository.deleteById(id);
-        log.info("Teacher deleted with id: {}", id);
-    }
-
-    private TeacherDTO toDTO(Teacher teacher) {
-        TeacherDTO dto = new TeacherDTO();
-        dto.setId(teacher.getId());
-        dto.setFirstName(teacher.getFirstName());
-        dto.setLastName(teacher.getLastName());
-        dto.setEmail(teacher.getEmail());
-        dto.setDepartment(teacher.getDepartment());
-        dto.setFullName(teacher.getFullName());
-        return dto;
     }
 }

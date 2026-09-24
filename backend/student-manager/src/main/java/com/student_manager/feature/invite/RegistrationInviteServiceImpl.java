@@ -16,6 +16,9 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+// All log.info(...) calls below are commented out — InviteAuditAspect
+// (shared/audit) already logs issuance and claim as AUDIT lines with more
+// detail, from outside this class. @Slf4j is kept for any future log line.
 @Slf4j
 @Service
 public class RegistrationInviteServiceImpl implements RegistrationInviteService {
@@ -38,7 +41,10 @@ public class RegistrationInviteServiceImpl implements RegistrationInviteService 
     @Override
     @Transactional
     public RegistrationInviteDTO issueInvite(Role role, ProfileType targetType, Long targetId, String issuerUsername) {
-        log.info("Issuing {} invite for {} {}", role, targetType, targetId);
+        // Commented out, not deleted: InviteAuditAspect#afterIssue already logs
+        // this event (with more detail — issuer, expiresAt) after a successful
+        // return, so this line was a duplicate of the same audit entry.
+        // log.info("Issuing {} invite for {} {}", role, targetType, targetId);
 
         ProfileResolver resolver = resolverFor(targetType);
         if (!resolver.profileExists(targetId)) {
@@ -55,14 +61,16 @@ public class RegistrationInviteServiceImpl implements RegistrationInviteService 
         User issuer = userRepository.findByUsername(issuerUsername).orElse(null);
         RegistrationInvite invite = RegistrationInvite.issue(role, targetType, targetId, issuer, INVITE_TTL);
         RegistrationInvite saved = repository.save(invite);
-        log.info("Invite issued with id: {}", saved.getId());
+        // log.info("Invite issued with id: {}", saved.getId()); // superseded by InviteAuditAspect#afterIssue
         return toDTO(saved);
     }
 
     @Override
     @Transactional
     public User claim(String code, User user) {
-        log.info("Claiming invite");
+        // Commented out, not deleted: InviteAuditAspect#afterClaim already logs
+        // this event (with account/userId/role) after a successful return.
+        // log.info("Claiming invite");
         RegistrationInvite invite = repository.findByCode(code)
                 .orElseThrow(() -> new InvalidInviteException("Invalid registration code"));
 
@@ -82,7 +90,7 @@ public class RegistrationInviteServiceImpl implements RegistrationInviteService 
         invite.markUsed();
         repository.save(invite);
 
-        log.info("Invite claimed by new user id: {}", savedUser.getId());
+        // log.info("Invite claimed by new user id: {}", savedUser.getId()); // superseded by InviteAuditAspect#afterClaim
         return savedUser;
     }
 

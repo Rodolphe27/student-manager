@@ -10,6 +10,7 @@ interface NavItem {
 const adminNavItems: NavItem[] = [
   { path: '/',            label: 'Dashboard',   icon: '▣' },
   { path: '/students',    label: 'Students',    icon: '👤' },
+  { path: '/teachers',    label: 'Teachers',    icon: '🎓' },
   { path: '/courses',     label: 'Courses',     icon: '📚' },
   { path: '/enrollments', label: 'Enrollments', icon: '📋' },
 ];

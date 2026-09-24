@@ -1,4 +1,5 @@
 package com.student_manager.feature.course;
+
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

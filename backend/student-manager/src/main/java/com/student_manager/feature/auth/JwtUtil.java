@@ -27,11 +27,11 @@ public class JwtUtil {
 
     public String generateToken(String username, String role) {
         return Jwts.builder()
-                .subject(username)                    // ✅ new API
+                .subject(username)
                 .claim("role", role)
-                .issuedAt(new Date())                 // ✅ new API
-                .expiration(new Date(System.currentTimeMillis() + expiration)) // ✅ new API
-                .signWith(getSigningKey())             // ✅ new API (algorithm auto-detected)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(getSigningKey())
                 .compact();
     }
 
@@ -53,11 +53,13 @@ public class JwtUtil {
         }
     }
 
+    // jjwt 0.12's non-deprecated parsing API: parserBuilder()/parseClaimsJws()/
+    // getBody() are all superseded by parser()/parseSignedClaims()/getPayload().
     private Claims getClaims(String token) {
-        return Jwts.parser()                         // ✅ new API (parserBuilder() deprecated)
-                .verifyWith(getSigningKey())          // ✅ new API
+        return Jwts.parser()
+                .verifyWith(getSigningKey())
                 .build()
-                .parseSignedClaims(token)            // ✅ new API (parseClaimsJws() deprecated)
-                .getPayload();                       // ✅ new API (getBody() deprecated)
+                .parseSignedClaims(token)
+                .getPayload();
     }
 }

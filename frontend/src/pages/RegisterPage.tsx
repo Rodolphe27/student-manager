@@ -1,16 +1,20 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import  type { RegisterRequest } from '../types';
 
 export default function RegisterPage() {
   const { register } = useAuth();
   const navigate     = useNavigate();
+  const [searchParams] = useSearchParams();
 
+  // A registration link sent via InviteModal carries ?code=... — prefill it so
+  // the person doesn't have to copy/paste it separately.
   const [form, setForm]       = useState<RegisterRequest>({
     username: '',
     email: '',
     password: '',
+    registrationCode: searchParams.get('code') ?? '',
   });
   const [error, setError]     = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
@@ -21,7 +25,11 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await register(form);
+      // Only send registrationCode when it's actually filled in — an empty
+      // string is meaningless to the backend and keeps the payload the same
+      // shape as a plain (code-less) registration.
+      const code = form.registrationCode?.trim();
+      await register(code ? form : { username: form.username, email: form.email, password: form.password });
       navigate('/');
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
@@ -101,6 +109,23 @@ export default function RegisterPage() {
               placeholder="Choose a password"
               required
             />
+          </div>
+
+          <div>
+            <label htmlFor="registrationCode" className="block text-sm font-medium text-gray-700 mb-1">
+              Registration Code <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <input
+              id="registrationCode"
+              type="text"
+              value={form.registrationCode}
+              onChange={(e) => setForm({ ...form, registrationCode: e.target.value })}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="From your invite link, if you have one"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Links your account to a student or teacher profile an admin already set up for you.
+            </p>
           </div>
 
           <button

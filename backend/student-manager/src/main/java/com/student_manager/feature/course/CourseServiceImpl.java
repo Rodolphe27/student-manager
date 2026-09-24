@@ -1,4 +1,5 @@
 package com.student_manager.feature.course;
+
 import com.student_manager.shared.exception.ResourceNotFoundException;
 import com.student_manager.shared.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
@@ -8,6 +9,11 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+// Generic "Fetching .../Updating .../Deleting ... with id: {}" lines below are
+// commented out, not deleted — RequestLoggingFilter (shared/config) already
+// logs method + path + status, and the id in those lines was always just the
+// path variable. Lines carrying request-body data (code) or a newly assigned
+// id, which the filter can't see, are kept.
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -17,7 +23,7 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public CourseDTO findById(Long id) {
-        log.info("Fetching course with id: {}", id);
+        // log.info("Fetching course with id: {}", id);
         Course course = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Course", id));
         return toDTO(course);
@@ -25,7 +31,7 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public List<CourseDTO> findAll() {
-        log.info("Fetching all courses");
+        // log.info("Fetching all courses");
         return repository.findAll()
                 .stream()
                 .map(this::toDTO)
@@ -34,7 +40,7 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public List<CourseDTO> findByStatus(CourseStatus status) {
-        log.info("Fetching courses with status: {}", status);
+        // log.info("Fetching courses with status: {}", status);
         return repository.findByStatus(status)
                 .stream()
                 .map(this::toDTO)
@@ -63,7 +69,7 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public CourseDTO update(Long id, CreateCourseRequest request) {
-        log.info("Updating course with id: {}", id);
+        // log.info("Updating course with id: {}", id);
         Course course = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Course", id));
 
@@ -80,18 +86,18 @@ public class CourseServiceImpl implements CourseService {
         }
 
         Course saved = repository.save(course);
-        log.info("Course updated with id: {}", saved.getId());
+        // log.info("Course updated with id: {}", saved.getId());
         return toDTO(saved);
     }
 
     @Override
     public void delete(Long id) {
-        log.info("Deleting course with id: {}", id);
+        // log.info("Deleting course with id: {}", id);
         if (!repository.existsById(id)) {
             throw new ResourceNotFoundException("Course", id);
         }
         repository.deleteById(id);
-        log.info("Course deleted with id: {}", id);
+        // log.info("Course deleted with id: {}", id);
     }
 
     private CourseDTO toDTO(Course course) {

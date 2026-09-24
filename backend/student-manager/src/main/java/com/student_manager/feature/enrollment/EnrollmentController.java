@@ -9,6 +9,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+// Per-method entry logging removed — RequestLoggingFilter (shared/config) now
+// logs method + path + status + duration for every request. The lines below
+// are commented out, not deleted, for reference.
 @Slf4j
 @RestController
 @RequestMapping("/api/enrollments")
@@ -19,45 +22,49 @@ public class EnrollmentController {
 
     @GetMapping
     public ResponseEntity<List<EnrollmentDTO>> getAll() {
-        log.info("GET /api/enrollments");
+        // log.info("GET /api/enrollments");
         return ResponseEntity.ok(service.findAll());
     }
 
     @GetMapping("{id}")
     public ResponseEntity<EnrollmentDTO> getById(@PathVariable Long id) {
-        log.info("GET /api/enrollments/{}", id);
+        // log.info("GET /api/enrollments/{}", id);
         return ResponseEntity.ok(service.findById(id));
     }
 
     @GetMapping("student/{studentId}")
     @PreAuthorize("@ownershipGuard.canAccessStudentData(#studentId, authentication)")
     public ResponseEntity<List<EnrollmentDTO>> getByStudent(@PathVariable Long studentId) {
-        log.info("GET /api/enrollments/student/{}", studentId);
+        // log.info("GET /api/enrollments/student/{}", studentId);
         return ResponseEntity.ok(service.findByStudentId(studentId));
     }
 
     @GetMapping("course/{courseId}")
     public ResponseEntity<List<EnrollmentDTO>> getByCourse(@PathVariable Long courseId) {
-        log.info("GET /api/enrollments/course/{}", courseId);
+        // log.info("GET /api/enrollments/course/{}", courseId);
         return ResponseEntity.ok(service.findByCourseId(courseId));
     }
 
+    // SecurityConfig lets STUDENT/TEACHER/ADMIN all reach this endpoint; this
+    // check is what stops a student enrolling anyone but themselves — staff
+    // pass through unconditionally (see OwnershipGuard).
     @PostMapping
+    @PreAuthorize("@ownershipGuard.canAccessStudentData(#request.studentId, authentication)")
     public ResponseEntity<EnrollmentDTO> create(
             @Valid @RequestBody CreateEnrollmentRequest request) {
-        log.info("POST /api/enrollments");
+        // log.info("POST /api/enrollments");
         return ResponseEntity.status(201).body(service.create(request));
     }
 
     @PatchMapping("{id}/confirm")
     public ResponseEntity<EnrollmentDTO> confirm(@PathVariable Long id) {
-        log.info("PATCH /api/enrollments/{}/confirm", id);
+        // log.info("PATCH /api/enrollments/{}/confirm", id);
         return ResponseEntity.ok(service.confirm(id));
     }
 
     @PatchMapping("{id}/cancel")
     public ResponseEntity<EnrollmentDTO> cancel(@PathVariable Long id) {
-        log.info("PATCH /api/enrollments/{}/cancel", id);
+        // log.info("PATCH /api/enrollments/{}/cancel", id);
         return ResponseEntity.ok(service.cancel(id));
     }
 
@@ -65,13 +72,13 @@ public class EnrollmentController {
     public ResponseEntity<EnrollmentDTO> updateGrade(
             @PathVariable Long id,
             @Valid @RequestBody UpdateGradeRequest request) {
-        log.info("PATCH /api/enrollments/{}/grade", id);
+        // log.info("PATCH /api/enrollments/{}/grade", id);
         return ResponseEntity.ok(service.updateGrade(id, request));
     }
 
     @DeleteMapping("{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        log.info("DELETE /api/enrollments/{}", id);
+        // log.info("DELETE /api/enrollments/{}", id);
         service.delete(id);
         return ResponseEntity.noContent().build();
     }

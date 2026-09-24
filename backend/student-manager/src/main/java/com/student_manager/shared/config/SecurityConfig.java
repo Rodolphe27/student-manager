@@ -75,8 +75,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/teachers/**").hasAnyRole("TEACHER", "ADMIN")
                         .requestMatchers("/api/teachers/**").hasRole("ADMIN")
 
-                        // Every other enrolment operation (list all, enrol, confirm/cancel,
-                        // grade) is staff-only; deleting an enrolment is ADMIN-only.
+                        // A student may enrol themselves in a course; the controller's
+                        // @PreAuthorize (via ownershipGuard) then restricts the studentId
+                        // in the request body to their own — this rule alone would let
+                        // any student enrol anyone.
+                        .requestMatchers(HttpMethod.POST, "/api/enrollments").hasAnyRole("STUDENT", "TEACHER", "ADMIN")
+
+                        // Every other enrolment operation (list all, confirm/cancel, grade)
+                        // is staff-only; deleting an enrolment is ADMIN-only.
                         .requestMatchers(HttpMethod.DELETE, "/api/enrollments/**").hasRole("ADMIN")
                         .requestMatchers("/api/enrollments/**").hasAnyRole("TEACHER", "ADMIN")
 

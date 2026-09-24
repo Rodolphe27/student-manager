@@ -23,7 +23,7 @@ class AuthControllerTest {
 
     @Test
     void registerWithABlankUsernameIsRejectedAsABadRequest() throws Exception {
-        AuthDTO.RegisterRequest request = new AuthDTO.RegisterRequest("", "user@example.com", "Password123!", null);
+        RegisterRequest request = new RegisterRequest("", "user@example.com", "Password123!", null);
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -33,7 +33,7 @@ class AuthControllerTest {
 
     @Test
     void registerWithABlankPasswordIsRejectedAsABadRequest() throws Exception {
-        AuthDTO.RegisterRequest request = new AuthDTO.RegisterRequest("passwordtestuser", "user@example.com", "", null);
+        RegisterRequest request = new RegisterRequest("passwordtestuser", "user@example.com", "", null);
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -43,7 +43,7 @@ class AuthControllerTest {
 
     @Test
     void registerWithAnInvalidEmailIsRejectedAsABadRequest() throws Exception {
-        AuthDTO.RegisterRequest request = new AuthDTO.RegisterRequest("emailtestuser", "not-an-email", "Password123!", null);
+        RegisterRequest request = new RegisterRequest("emailtestuser", "not-an-email", "Password123!", null);
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -53,7 +53,7 @@ class AuthControllerTest {
 
     @Test
     void selfRegistrationAlwaysCreatesAStudentAccount() throws Exception {
-        AuthDTO.RegisterRequest request = new AuthDTO.RegisterRequest("plainuser", "plainuser@example.com", "Password123!", null);
+        RegisterRequest request = new RegisterRequest("plainuser", "plainuser@example.com", "Password123!", null);
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -79,7 +79,7 @@ class AuthControllerTest {
 
     @Test
     void loginWithABlankUsernameIsRejectedAsABadRequest() throws Exception {
-        AuthDTO.LoginRequest request = new AuthDTO.LoginRequest("", "Password123!");
+        LoginRequest request = new LoginRequest("", "Password123!");
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -89,7 +89,7 @@ class AuthControllerTest {
 
     @Test
     void loginWithAnUnknownUserReturnsAGenericUnauthorized() throws Exception {
-        AuthDTO.LoginRequest request = new AuthDTO.LoginRequest("no-such-user-xyz", "whatever");
+        LoginRequest request = new LoginRequest("no-such-user-xyz", "whatever");
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -100,14 +100,14 @@ class AuthControllerTest {
 
     @Test
     void loginWithTheWrongPasswordReturnsTheSameGenericUnauthorized() throws Exception {
-        AuthDTO.RegisterRequest signup =
-                new AuthDTO.RegisterRequest("pwdcheckuser", "pwdcheckuser@example.com", "Password123!", null);
+        RegisterRequest signup =
+                new RegisterRequest("pwdcheckuser", "pwdcheckuser@example.com", "Password123!", null);
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(signup)))
                 .andExpect(status().isCreated());
 
-        AuthDTO.LoginRequest badLogin = new AuthDTO.LoginRequest("pwdcheckuser", "WrongPassword!");
+        LoginRequest badLogin = new LoginRequest("pwdcheckuser", "WrongPassword!");
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

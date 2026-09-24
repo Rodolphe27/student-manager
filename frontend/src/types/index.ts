@@ -61,6 +61,33 @@ export interface UpdateGradeRequest {
   grade: Grade;
 }
 
+export interface Teacher {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  department: string | null;
+  fullName: string;
+}
+
+export interface CreateTeacherRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  department?: string;
+}
+
+export type ProfileType = 'STUDENT' | 'TEACHER';
+
+export interface RegistrationInvite {
+  id: number;
+  code: string;
+  role: Role;
+  targetType: ProfileType;
+  targetId: number;
+  expiresAt: string;
+}
+
 export interface AuthResponse {
   token: string;
   username: string;
@@ -77,4 +104,5 @@ export interface RegisterRequest {
   username: string;
   email: string;
   password: string;
+  registrationCode?: string;
 }

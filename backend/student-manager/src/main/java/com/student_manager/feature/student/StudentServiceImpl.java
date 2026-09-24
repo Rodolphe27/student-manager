@@ -3,30 +3,49 @@ package com.student_manager.feature.student;
 import com.student_manager.feature.auth.UserRepository;
 import com.student_manager.shared.exception.ResourceNotFoundException;
 import com.student_manager.shared.exception.ValidationException;
+import com.student_manager.shared.service.CrudServiceSupport;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
+// findById/findAll/delete come from CrudServiceSupport — see that class for
+// why create()/update() stay here. Generic "Fetching .../Updating .../
+// Deleting ... with id: {}" lines that used to live in those three methods
+// are gone with them; RequestLoggingFilter (shared/config) already logs
+// method + path + status, and the id was always just the path variable.
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class StudentServiceImpl implements StudentService {
+public class StudentServiceImpl extends CrudServiceSupport<Student, StudentDTO> implements StudentService {
 
     private final StudentRepository repository;
     private final UserRepository userRepository;
 
     @Override
-    public StudentDTO findById(Long id) {
-        Objects.requireNonNull(id, "Student id must not be null");
-        log.info("Fetching student with id: {}", id);
-        Student student = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Student", id));
-        return toDTO(student);
+    protected JpaRepository<Student, Long> repository() {
+        return repository;
+    }
+
+    @Override
+    protected String resourceName() {
+        return "Student";
+    }
+
+    @Override
+    protected StudentDTO toDTO(Student student) {
+        StudentDTO dto = new StudentDTO();
+        dto.setId(student.getId());
+        dto.setFirstName(student.getFirstName());
+        dto.setLastName(student.getLastName());
+        dto.setMatriculationNumber(student.getMatriculationNumber());
+        dto.setBirthDate(student.getBirthDate());
+        dto.setEmail(student.getEmail());
+        dto.setFullName(student.getFullName());
+        return dto;
     }
 
     @Override
@@ -62,15 +81,6 @@ public class StudentServiceImpl implements StudentService {
     }
 
     @Override
-    public List<StudentDTO> findAll() {
-        log.info("Fetching all students");
-        return repository.findAll()
-                .stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-    }
-
-    @Override
     public StudentDTO create(CreateStudentRequest request) {
         log.info("Creating student: {}", request.getEmail());
 
@@ -95,10 +105,7 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     public StudentDTO update(Long id, CreateStudentRequest request) {
-        Objects.requireNonNull(id, "Student id must not be null");
-        log.info("Updating student with id: {}", id);
-        Student student = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Student", id));
+        Student student = loadOrThrow(id);
 
         if (repository.existsByEmailAndIdNot(request.getEmail(), id)) {
             throw new ValidationException("Email already exists: " + request.getEmail());
@@ -114,30 +121,6 @@ public class StudentServiceImpl implements StudentService {
         student.setEmail(request.getEmail());
 
         Student saved = repository.save(student);
-        log.info("Student updated with id: {}", saved.getId());
         return toDTO(saved);
-    }
-
-    @Override
-    public void delete(Long id) {
-        Objects.requireNonNull(id, "Student id must not be null");
-        log.info("Deleting student with id: {}", id);
-        if (!repository.existsById(id)) {
-            throw new ResourceNotFoundException("Student", id);
-        }
-        repository.deleteById(id);
-        log.info("Student deleted with id: {}", id);
-    }
-
-    private StudentDTO toDTO(Student student) {
-        StudentDTO dto = new StudentDTO();
-        dto.setId(student.getId());
-        dto.setFirstName(student.getFirstName());
-        dto.setLastName(student.getLastName());
-        dto.setMatriculationNumber(student.getMatriculationNumber());
-        dto.setBirthDate(student.getBirthDate());
-        dto.setEmail(student.getEmail());
-        dto.setFullName(student.getFullName());
-        return dto;
     }
 }

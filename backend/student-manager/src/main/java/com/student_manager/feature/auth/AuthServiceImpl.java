@@ -9,6 +9,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+// Unlike the CRUD services, the log.info(...) calls below are intentionally
+// kept active (not commented out) as part of the logging-centralization
+// cleanup. They're a security-audit trail for authentication — who
+// registered/logged in and when — not a restatement of the request path, and
+// each one carries data (username, generated id) that RequestLoggingFilter
+// (shared/config) can't see. Same category as InviteAuditAspect.
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -21,7 +27,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public AuthDTO.AuthResponse register(AuthDTO.RegisterRequest request) {
+    public AuthResponse register(RegisterRequest request) {
         log.info("Registering user: {}", request.getUsername());
 
         if (userRepository.existsByUsername(request.getUsername())) {
@@ -52,11 +58,11 @@ public class AuthServiceImpl implements AuthService {
         log.info("User registered with id: {}", saved.getId());
 
         String token = jwtUtil.generateToken(saved.getUsername(), saved.getRole().name());
-        return new AuthDTO.AuthResponse(token, saved.getUsername(), saved.getEmail(), saved.getRole());
+        return new AuthResponse(token, saved.getUsername(), saved.getEmail(), saved.getRole());
     }
 
     @Override
-    public AuthDTO.AuthResponse login(AuthDTO.LoginRequest request) {
+    public AuthResponse login(LoginRequest request) {
         log.info("Login attempt: {}", request.getUsername());
 
         // Every failure below throws the same exception with the same message so a
@@ -75,6 +81,6 @@ public class AuthServiceImpl implements AuthService {
 
         String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
         log.info("User logged in: {}", user.getUsername());
-        return new AuthDTO.AuthResponse(token, user.getUsername(), user.getEmail(), user.getRole());
+        return new AuthResponse(token, user.getUsername(), user.getEmail(), user.getRole());
     }
 }
