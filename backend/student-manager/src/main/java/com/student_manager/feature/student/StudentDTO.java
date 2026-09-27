@@ -6,6 +6,10 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
+/**
+ * Client-facing view of a {@link Student}, including the derived
+ * {@link #fullName} convenience field.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

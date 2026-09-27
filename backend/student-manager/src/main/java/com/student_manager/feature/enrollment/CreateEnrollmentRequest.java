@@ -4,6 +4,10 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Request payload for enrolling a student in a course
+ * (used by {@code POST /api/enrollments}).
+ */
 @Data
 @NoArgsConstructor
 public class CreateEnrollmentRequest {

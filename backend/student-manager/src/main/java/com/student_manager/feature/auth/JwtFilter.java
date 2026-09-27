@@ -15,6 +15,13 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Servlet filter that reads a {@code Bearer} JWT from the {@code Authorization}
+ * header, validates it, and — when valid — populates the
+ * {@link SecurityContextHolder} with an authenticated principal carrying a
+ * single {@code ROLE_*} authority derived from the token's claims. Runs once
+ * per request, ahead of Spring Security's own authentication filter.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -22,6 +29,18 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
 
+    /**
+     * Extracts and validates the bearer token (if present), authenticates the
+     * security context on success, and always continues the filter chain —
+     * an absent, invalid, or claim-less token simply leaves the request
+     * unauthenticated rather than being rejected here.
+     *
+     * @param request  the incoming HTTP request
+     * @param response the outgoing HTTP response
+     * @param chain    the remaining filter chain to invoke
+     * @throws ServletException if the underlying filter chain throws one
+     * @throws IOException      if the underlying filter chain throws one
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,

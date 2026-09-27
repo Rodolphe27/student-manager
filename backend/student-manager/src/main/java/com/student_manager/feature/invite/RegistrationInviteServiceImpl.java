@@ -16,6 +16,11 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * Default {@link RegistrationInviteService} implementation. Delegates
+ * profile-specific existence checks and account linking to the
+ * {@link ProfileResolver} registered for each {@link ProfileType}.
+ */
 // All log.info(...) calls below are commented out — InviteAuditAspect
 // (shared/audit) already logs issuance and claim as AUDIT lines with more
 // detail, from outside this class. @Slf4j is kept for any future log line.
@@ -29,6 +34,14 @@ public class RegistrationInviteServiceImpl implements RegistrationInviteService 
     private final UserRepository userRepository;
     private final Map<ProfileType, ProfileResolver> resolvers;
 
+    /**
+     * Creates the service, indexing the injected {@link ProfileResolver}
+     * beans by the {@link ProfileType} each one supports.
+     *
+     * @param repository invite persistence
+     * @param userRepository user persistence, used to look up the issuer and save claimed accounts
+     * @param resolverBeans all registered profile resolvers, one per {@link ProfileType}
+     */
     public RegistrationInviteServiceImpl(RegistrationInviteRepository repository,
                                           UserRepository userRepository,
                                           List<ProfileResolver> resolverBeans) {
@@ -38,6 +51,17 @@ public class RegistrationInviteServiceImpl implements RegistrationInviteService 
                 .collect(Collectors.toMap(ProfileResolver::supports, Function.identity()));
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param role the role to grant the account that eventually claims this invite
+     * @param targetType the kind of profile (Student or Teacher) targeted
+     * @param targetId the id of the target profile
+     * @param issuerUsername the username of the issuing user
+     * @return the created invite as a DTO
+     * @throws ResourceNotFoundException if the target profile does not exist
+     * @throws ValidationException if an active (unused, unexpired) invite already exists for the target
+     */
     @Override
     @Transactional
     public RegistrationInviteDTO issueInvite(Role role, ProfileType targetType, Long targetId, String issuerUsername) {
@@ -65,6 +89,14 @@ public class RegistrationInviteServiceImpl implements RegistrationInviteService 
         return toDTO(saved);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param code the invite code to claim
+     * @param user the not-yet-persisted user account claiming the invite
+     * @return the saved, role-assigned user
+     * @throws InvalidInviteException if the code is unknown, already used, or expired
+     */
     @Override
     @Transactional
     public User claim(String code, User user) {

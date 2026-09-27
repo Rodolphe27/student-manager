@@ -7,6 +7,9 @@ package com.student_manager.shared.exception;
  */
 public class InvalidCredentialsException extends RuntimeException {
 
+    /**
+     * Creates the exception with its fixed, non-specific message.
+     */
     public InvalidCredentialsException() {
         super("Invalid username or password");
     }

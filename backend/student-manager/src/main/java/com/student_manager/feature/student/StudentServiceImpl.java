@@ -17,6 +17,12 @@ import java.util.Optional;
 // Deleting ... with id: {}" lines that used to live in those three methods
 // are gone with them; RequestLoggingFilter (shared/config) already logs
 // method + path + status, and the id was always just the path variable.
+/**
+ * Default {@link StudentService} implementation. {@code findById}/{@code
+ * findAll}/{@code delete} are inherited from {@link CrudServiceSupport};
+ * this class adds the account-linkage lookups and the {@code create}/{@code
+ * update} operations whose uniqueness checks are specific to students.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -25,16 +31,28 @@ public class StudentServiceImpl extends CrudServiceSupport<Student, StudentDTO> 
     private final StudentRepository repository;
     private final UserRepository userRepository;
 
+    /**
+     * @return the JPA repository backing the inherited CRUD operations
+     */
     @Override
     protected JpaRepository<Student, Long> repository() {
         return repository;
     }
 
+    /**
+     * @return the resource name used in {@link ResourceNotFoundException} messages
+     */
     @Override
     protected String resourceName() {
         return "Student";
     }
 
+    /**
+     * Maps a {@link Student} entity to its client-facing {@link StudentDTO}.
+     *
+     * @param student the entity to map
+     * @return the resulting DTO
+     */
     @Override
     protected StudentDTO toDTO(Student student) {
         StudentDTO dto = new StudentDTO();
@@ -58,6 +76,15 @@ public class StudentServiceImpl extends CrudServiceSupport<Student, StudentDTO> 
         return toDTO(student);
     }
 
+    /**
+     * True when the account identified by {@code username} resolves to the
+     * student row {@code studentId}. Never throws — a missing account or
+     * student row simply yields {@code false}.
+     *
+     * @param username the account's username
+     * @param studentId the student id to check ownership of
+     * @return {@code true} if that account owns that student record
+     */
     @Override
     public boolean accountOwnsStudent(String username, Long studentId) {
         if (username == null || studentId == null) {
@@ -80,6 +107,13 @@ public class StudentServiceImpl extends CrudServiceSupport<Student, StudentDTO> 
                         .flatMap(account -> repository.findByEmail(account.getEmail())));
     }
 
+    /**
+     * Creates a new student profile.
+     *
+     * @param request the student's details
+     * @return the created student
+     * @throws ValidationException if the email or matriculation number is already in use
+     */
     @Override
     public StudentDTO create(CreateStudentRequest request) {
         log.info("Creating student: {}", request.getEmail());
@@ -103,6 +137,15 @@ public class StudentServiceImpl extends CrudServiceSupport<Student, StudentDTO> 
         return toDTO(saved);
     }
 
+    /**
+     * Updates an existing student's details.
+     *
+     * @param id the student id
+     * @param request the new details
+     * @return the updated student
+     * @throws com.student_manager.shared.exception.ResourceNotFoundException if no student has that id
+     * @throws ValidationException if the email or matriculation number is already used by another student
+     */
     @Override
     public StudentDTO update(Long id, CreateStudentRequest request) {
         Student student = loadOrThrow(id);

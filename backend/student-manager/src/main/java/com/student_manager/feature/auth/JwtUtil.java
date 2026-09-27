@@ -16,6 +16,11 @@ import java.util.Date;
 // jwt.expiration window (default 24h) with no server-side denylist or refresh-token rotation,
 // so a leaked/stolen token can't be invalidated before it expires. Add a jti denylist (e.g.
 // Redis) checked in JwtFilter, or move to short-lived access tokens + refresh tokens.
+/**
+ * Issues and validates the HMAC-signed JWTs used for stateless authentication.
+ * The signing key is derived from the {@code jwt.secret} property and tokens
+ * carry the username as subject plus the role as a custom claim.
+ */
 @Slf4j
 @Component
 public class JwtUtil {
@@ -30,6 +35,13 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Builds a signed JWT for the given identity.
+     *
+     * @param username the subject claim, i.e. the account's username
+     * @param role     the account's role, stored as a custom {@code role} claim
+     * @return the compact, signed JWT string
+     */
     public String generateToken(String username, String role) {
         return Jwts.builder()
                 .subject(username)
@@ -40,14 +52,36 @@ public class JwtUtil {
                 .compact();
     }
 
+    /**
+     * Extracts the username (subject claim) from a token.
+     *
+     * @param token the JWT to read
+     * @return the subject claim, or {@code null} if absent
+     * @throws JwtException if the token is malformed, expired, or fails signature verification
+     */
     public String extractUsername(String token) {
         return getClaims(token).getSubject();
     }
 
+    /**
+     * Extracts the {@code role} custom claim from a token.
+     *
+     * @param token the JWT to read
+     * @return the role claim, or {@code null} if absent
+     * @throws JwtException if the token is malformed, expired, or fails signature verification
+     */
     public String extractRole(String token) {
         return getClaims(token).get("role", String.class);
     }
 
+    /**
+     * Checks whether a token is well-formed, correctly signed, and not
+     * expired. Never throws — any parsing failure is treated as an invalid
+     * token.
+     *
+     * @param token the JWT to validate
+     * @return {@code true} if the token parses and verifies successfully, {@code false} otherwise
+     */
     public boolean isTokenValid(String token) {
         try {
             getClaims(token);

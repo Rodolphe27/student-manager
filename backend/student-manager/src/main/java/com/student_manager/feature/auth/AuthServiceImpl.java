@@ -15,6 +15,11 @@ import org.springframework.transaction.annotation.Transactional;
 // registered/logged in and when — not a restatement of the request path, and
 // each one carries data (username, generated id) that RequestLoggingFilter
 // (shared/config) can't see. Same category as InviteAuditAspect.
+/**
+ * Default {@link AuthService} implementation. Handles password hashing,
+ * username/email uniqueness checks, optional registration-invite claiming,
+ * and JWT issuance for both registration and login.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -25,6 +30,16 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final RegistrationInviteService registrationInviteService;
 
+    /**
+     * Registers a new account. The account is always created with the
+     * STUDENT role and {@code active = true}; if a registration code is
+     * supplied, the invite is claimed and overrides the final role and
+     * profile link.
+     *
+     * @param request the registration payload
+     * @return a JWT and account summary for the newly created user
+     * @throws ValidationException if the username or email is already taken
+     */
     @Override
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -61,6 +76,16 @@ public class AuthServiceImpl implements AuthService {
         return new AuthResponse(token, saved.getUsername(), saved.getEmail(), saved.getRole());
     }
 
+    /**
+     * Authenticates an account by username and password. Every failure mode
+     * (unknown username, inactive account, wrong password) is reported via
+     * the same exception so a caller cannot enumerate valid usernames.
+     *
+     * @param request the login credentials
+     * @return a JWT and account summary for the authenticated user
+     * @throws InvalidCredentialsException if the username is unknown, the account
+     *                                      is inactive, or the password does not match
+     */
     @Override
     public AuthResponse login(LoginRequest request) {
         log.info("Login attempt: {}", request.getUsername());

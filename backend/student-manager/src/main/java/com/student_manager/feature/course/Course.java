@@ -8,6 +8,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * JPA entity representing a course offered by the institution. A course has a
+ * unique code, belongs to an optional {@link Term} and an optional
+ * {@link Teacher}, and carries a {@link CourseStatus} lifecycle state.
+ */
 @Entity
 @Table(name = "courses")
 @Getter
@@ -43,6 +48,11 @@ public class Course extends BaseEntity {
     @JoinColumn(name = "teacher_id")
     private Teacher teacher;
 
+    /**
+     * Checks whether this course's status is {@link CourseStatus#ACTIVE}.
+     *
+     * @return {@code true} if the course status is {@code ACTIVE}, {@code false} otherwise
+     */
     public boolean isActive() {
         return CourseStatus.ACTIVE.equals(this.status);
     }

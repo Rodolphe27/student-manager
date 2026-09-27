@@ -9,6 +9,12 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
+/**
+ * Common JPA base for entities: a generated identity id plus
+ * automatically-managed {@code createdAt}/{@code updatedAt} timestamps,
+ * populated via {@link AuditingEntityListener} (see
+ * {@code @EnableJpaAuditing} on {@code StudentManagerApplication}).
+ */
 @Getter
 @Setter
 @MappedSuperclass

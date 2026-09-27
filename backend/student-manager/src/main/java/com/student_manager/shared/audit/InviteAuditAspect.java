@@ -26,6 +26,15 @@ public class InviteAuditAspect {
                     + "&& args(role, targetType, targetId, issuerUsername)",
             returning = "invite",
             argNames = "role,targetType,targetId,issuerUsername,invite")
+    /**
+     * Logs an audit line after a registration invite is successfully issued.
+     *
+     * @param role           the role the invite grants once claimed
+     * @param targetType     the type of profile (student/teacher) the invite links to
+     * @param targetId       the id of the target profile
+     * @param issuerUsername the username of the admin who issued the invite
+     * @param invite         the issued invite, used here only for its expiry timestamp
+     */
     public void afterIssue(Role role, ProfileType targetType, Long targetId, String issuerUsername,
                             RegistrationInviteDTO invite) {
         log.info("AUDIT invite issued: issuer={} role={} targetType={} targetId={} expiresAt={}",
@@ -37,6 +46,14 @@ public class InviteAuditAspect {
                     + "&& args(code, user)",
             returning = "savedUser",
             argNames = "code,user,savedUser")
+    /**
+     * Logs an audit line after a registration invite is successfully claimed.
+     * Deliberately never logs the raw invite {@code code}.
+     *
+     * @param code      the claimed invite code (unused in the log line, kept for pointcut binding)
+     * @param user      the user object passed into the claim call, prior to persistence
+     * @param savedUser the persisted account after the claim, carrying its final id and role
+     */
     public void afterClaim(String code, User user, User savedUser) {
         log.info("AUDIT invite claimed: account={} userId={} role={}",
                 savedUser.getUsername(), savedUser.getId(), savedUser.getRole());

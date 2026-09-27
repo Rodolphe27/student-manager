@@ -28,11 +28,23 @@ import java.util.stream.Collectors;
  */
 public abstract class CrudServiceSupport<E, D> {
 
+    /**
+     * The subclass's already-injected JPA repository, used for every template
+     * operation in this class.
+     *
+     * @return the entity repository
+     */
     protected abstract JpaRepository<E, Long> repository();
 
     /** Used only in {@link ResourceNotFoundException} messages, e.g. "Student". */
     protected abstract String resourceName();
 
+    /**
+     * Converts a persisted entity to the DTO type returned to callers.
+     *
+     * @param entity the entity to convert
+     * @return the corresponding DTO
+     */
     protected abstract D toDTO(E entity);
 
     /** Loads the entity or throws {@link ResourceNotFoundException} — for use by create()/update() too. */
@@ -41,10 +53,22 @@ public abstract class CrudServiceSupport<E, D> {
                 .orElseThrow(() -> new ResourceNotFoundException(resourceName(), id));
     }
 
+    /**
+     * Loads a single entity by id and converts it to its DTO.
+     *
+     * @param id the entity id to load
+     * @return the corresponding DTO
+     * @throws ResourceNotFoundException if no entity with that id exists
+     */
     public D findById(Long id) {
         return toDTO(loadOrThrow(id));
     }
 
+    /**
+     * Loads every entity in the table and converts each to its DTO.
+     *
+     * @return a list of all entities as DTOs
+     */
     // TODO(SEC-8) [MEDIUM]: unbounded — returns the entire table with no pagination. Switch
     // to Page<D> findAll(Pageable pageable) and thread page/size query params through the
     // controllers that call this (StudentController, TeacherController).
@@ -55,6 +79,12 @@ public abstract class CrudServiceSupport<E, D> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Deletes the entity with the given id.
+     *
+     * @param id the entity id to delete
+     * @throws ResourceNotFoundException if no entity with that id exists
+     */
     public void delete(Long id) {
         if (!repository().existsById(id)) {
             throw new ResourceNotFoundException(resourceName(), id);

@@ -23,6 +23,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import java.util.Arrays;
 
+/**
+ * Central Spring Security configuration: stateless JWT authentication, CORS,
+ * HSTS, and the per-endpoint authorization rules for every feature area
+ * (auth, courses, students, teachers, enrollments).
+ */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -37,6 +42,16 @@ public class SecurityConfig {
     @Value("${cors.allowed-origin-patterns:}")
     private String allowedOriginPatterns;
 
+    /**
+     * Builds the main security filter chain: disables CSRF (stateless JWT
+     * API), enforces stateless sessions, enables HSTS, installs the
+     * per-endpoint authorization rules, and inserts {@link JwtFilter} ahead of
+     * Spring Security's own username/password filter.
+     *
+     * @param http the {@link HttpSecurity} builder to configure
+     * @return the configured {@link SecurityFilterChain}
+     * @throws Exception if the security configuration fails to build
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -96,6 +111,11 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * Password encoder used for hashing and verifying account passwords.
+     *
+     * @return a {@link BCryptPasswordEncoder} bean
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -105,6 +125,13 @@ public class SecurityConfig {
     // with allowCredentials(true) below — if this property is ever set to a broad wildcard in
     // production it becomes a permissive credentialed CORS policy. Validate/reject wildcard
     // patterns at startup, or drop pattern-based origins entirely in favor of an explicit list.
+    /**
+     * Builds the CORS configuration applied to every endpoint, from the
+     * {@code cors.allowed-origins} and {@code cors.allowed-origin-patterns}
+     * properties.
+     *
+     * @return a {@link CorsConfigurationSource} registered for all paths
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();

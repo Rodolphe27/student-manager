@@ -4,6 +4,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Data transfer object exposing a {@link Teacher} to API clients, decoupling
+ * the wire representation from the JPA entity.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

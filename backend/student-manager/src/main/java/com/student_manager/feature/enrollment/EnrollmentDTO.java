@@ -6,6 +6,11 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
+/**
+ * Flattened, client-facing view of an {@link Enrollment}, denormalizing the
+ * related student's name and the course's title/code so callers don't need
+ * separate lookups.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

@@ -21,6 +21,11 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Base64;
 
+/**
+ * A single-use, time-limited token that lets a new user account claim
+ * (link itself to) an existing Student or Teacher profile and be assigned
+ * the corresponding {@link Role}.
+ */
 @Entity
 @Table(name = "registration_invites")
 @Getter
@@ -59,6 +64,13 @@ public class RegistrationInvite extends BaseEntity {
      * Factory method instead of a public setter-driven build: guarantees the
      * code is high-entropy (never {@code Math.random()} — this token grants
      * account access to a specific profile) and the expiry is always set.
+     *
+     * @param role the role to grant the account that claims this invite
+     * @param targetType the kind of profile (Student or Teacher) this invite targets
+     * @param targetId the id of the target profile
+     * @param issuedBy the user issuing the invite, may be {@code null}
+     * @param ttl how long the invite remains valid, added to the current time
+     * @return a new, unused invite with a freshly generated code and expiry
      */
     public static RegistrationInvite issue(Role role, ProfileType targetType, Long targetId,
                                             User issuedBy, Duration ttl) {
@@ -78,14 +90,27 @@ public class RegistrationInvite extends BaseEntity {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
+    /**
+     * Checks whether this invite's expiry time has passed.
+     *
+     * @return {@code true} if the current time is after {@code expiresAt}
+     */
     public boolean isExpired() {
         return LocalDateTime.now().isAfter(expiresAt);
     }
 
+    /**
+     * Checks whether this invite has already been claimed.
+     *
+     * @return {@code true} if the invite has a recorded usage timestamp
+     */
     public boolean isUsed() {
         return usedAt != null;
     }
 
+    /**
+     * Marks this invite as used by recording the current time.
+     */
     public void markUsed() {
         this.usedAt = LocalDateTime.now();
     }

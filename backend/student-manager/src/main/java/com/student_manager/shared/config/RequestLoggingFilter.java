@@ -30,11 +30,27 @@ import java.io.IOException;
 @Component
 public class RequestLoggingFilter extends OncePerRequestFilter {
 
+    /**
+     * Excludes actuator endpoints (health/liveness probes) from request logging.
+     *
+     * @param request the incoming HTTP request
+     * @return {@code true} if the request path starts with {@code /actuator}
+     */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         return request.getRequestURI().startsWith("/actuator");
     }
 
+    /**
+     * Times the downstream filter chain and logs one line with the request
+     * method, path, resulting status code, and duration in milliseconds.
+     *
+     * @param request     the incoming HTTP request
+     * @param response    the outgoing HTTP response
+     * @param filterChain the remaining filter chain to invoke
+     * @throws ServletException if the underlying filter chain throws one
+     * @throws IOException      if the underlying filter chain throws one
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                      FilterChain filterChain) throws ServletException, IOException {

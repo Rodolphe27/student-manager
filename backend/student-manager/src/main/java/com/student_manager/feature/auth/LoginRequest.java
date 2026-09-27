@@ -5,6 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Request payload for {@code POST /api/auth/login}: username and password.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

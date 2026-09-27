@@ -7,6 +7,10 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+/**
+ * Data transfer object exposing a {@link RegistrationInvite} to API clients,
+ * omitting internal fields (issuer, usage timestamp) not needed by callers.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

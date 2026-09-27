@@ -13,6 +13,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * JPA entity representing a teacher profile. A teacher profile may exist
+ * before any user account is linked to it (e.g. created by an ADMIN ahead of
+ * a registration invite), so {@link #account} is nullable.
+ */
 @Entity
 @Table(name = "teachers")
 @Getter
@@ -41,6 +46,11 @@ public class Teacher extends BaseEntity {
     @JoinColumn(name = "user_id", unique = true)
     private User account;
 
+    /**
+     * Builds the teacher's display name from their first and last name.
+     *
+     * @return the concatenation of first name and last name, separated by a space
+     */
     public String getFullName() {
         return firstName + " " + lastName;
     }

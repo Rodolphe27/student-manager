@@ -20,6 +20,10 @@ import java.util.stream.Collectors;
 // just the path variable. create()'s lines are kept: the student/course ids
 // come from the request body, and the new enrollment id doesn't exist until
 // after the save.
+/**
+ * Default {@link EnrollmentService} implementation backed by JPA
+ * repositories for enrollments, students, and courses.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -29,6 +33,13 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     private final StudentRepository studentRepository;
     private final CourseRepository courseRepository;
 
+    /**
+     * Looks up a single enrollment by id.
+     *
+     * @param id the enrollment id
+     * @return the matching enrollment
+     * @throws ResourceNotFoundException if no enrollment has that id
+     */
     @Override
     public EnrollmentDTO findById(Long id) {
         // log.info("Fetching enrollment with id: {}", id);
@@ -37,6 +48,11 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         return toDTO(enrollment);
     }
 
+    /**
+     * Lists every enrollment in the system.
+     *
+     * @return all enrollments
+     */
     // TODO(SEC-8) [MEDIUM]: unbounded — returns every enrollment row, no pagination. Switch to
     // Page<EnrollmentDTO> findAll(Pageable pageable) and thread page/size params through EnrollmentController.
     @Override
@@ -48,6 +64,12 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Lists all enrollments belonging to a given student.
+     *
+     * @param studentId the student id
+     * @return that student's enrollments
+     */
     @Override
     public List<EnrollmentDTO> findByStudentId(Long studentId) {
         // log.info("Fetching enrollments for student: {}", studentId);
@@ -57,6 +79,12 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Lists all enrollments (the roster) for a given course.
+     *
+     * @param courseId the course id
+     * @return that course's enrollments
+     */
     @Override
     public List<EnrollmentDTO> findByCourseId(Long courseId) {
         // log.info("Fetching enrollments for course: {}", courseId);
@@ -66,6 +94,16 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Enrolls a student in a course. The student and course must exist, the
+     * course must be active, and the student must not already have an
+     * enrollment row for it (see {@link Enrollment}'s unique constraint).
+     *
+     * @param request the student/course pair to enroll
+     * @return the newly created enrollment
+     * @throws ResourceNotFoundException if the student or course does not exist
+     * @throws ValidationException if the course is inactive or the student is already enrolled in it
+     */
     @Override
     public EnrollmentDTO create(CreateEnrollmentRequest request) {
         log.info("Enrolling student {} in course {}", request.getStudentId(), request.getCourseId());
@@ -97,6 +135,14 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         return toDTO(saved);
     }
 
+    /**
+     * Confirms a pending enrollment.
+     *
+     * @param id the enrollment id
+     * @return the confirmed enrollment
+     * @throws ResourceNotFoundException if no enrollment has that id
+     * @throws ValidationException if the enrollment is already confirmed or has been cancelled
+     */
     @Override
     public EnrollmentDTO confirm(Long id) {
         // log.info("Confirming enrollment with id: {}", id);
@@ -114,6 +160,16 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         return toDTO(enrollmentRepository.save(enrollment));
     }
 
+    /**
+     * Cancels (withdraws) an enrollment. Since a cancelled enrollment cannot
+     * carry a grade (see the note below and issue #33), any existing grade is
+     * cleared back to {@link Grade#NOT_GRADED} as part of the transition.
+     *
+     * @param id the enrollment id
+     * @return the cancelled enrollment
+     * @throws ResourceNotFoundException if no enrollment has that id
+     * @throws ValidationException if the enrollment is already cancelled
+     */
     @Override
     public EnrollmentDTO cancel(Long id) {
         // log.info("Cancelling enrollment with id: {}", id);
@@ -131,6 +187,15 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         return toDTO(enrollmentRepository.save(enrollment));
     }
 
+    /**
+     * Assigns a grade to a confirmed enrollment.
+     *
+     * @param id the enrollment id
+     * @param request the grade to assign
+     * @return the updated enrollment
+     * @throws ResourceNotFoundException if no enrollment has that id
+     * @throws ValidationException if the enrollment is not confirmed
+     */
     @Override
     public EnrollmentDTO updateGrade(Long id, UpdateGradeRequest request) {
         // log.info("Updating grade for enrollment: {}", id);
@@ -145,6 +210,12 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         return toDTO(enrollmentRepository.save(enrollment));
     }
 
+    /**
+     * Deletes an enrollment outright.
+     *
+     * @param id the enrollment id
+     * @throws ResourceNotFoundException if no enrollment has that id
+     */
     @Override
     public void delete(Long id) {
         // log.info("Deleting enrollment with id: {}", id);
@@ -154,6 +225,13 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         enrollmentRepository.deleteById(id);
     }
 
+    /**
+     * Maps an {@link Enrollment} entity to its client-facing {@link EnrollmentDTO},
+     * denormalizing the related student's name and course's title/code.
+     *
+     * @param enrollment the entity to map
+     * @return the resulting DTO
+     */
     private EnrollmentDTO toDTO(Enrollment enrollment) {
         EnrollmentDTO dto = new EnrollmentDTO();
         dto.setId(enrollment.getId());

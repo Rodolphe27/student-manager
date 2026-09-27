@@ -15,6 +15,10 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 
+/**
+ * A student's academic profile: personal details, matriculation number, and
+ * (once registration is claimed) the linked login {@link #account}.
+ */
 @Entity
 @Table(name = "students")
 @Getter
@@ -46,6 +50,11 @@ public class Student extends BaseEntity {
     @JoinColumn(name = "user_id", unique = true)
     private User account;
 
+    /**
+     * The student's display name.
+     *
+     * @return {@link #getFirstName()} and {@link #getLastName()} joined by a space
+     */
     public String getFullName() {
         return firstName + " " + lastName;
     }

@@ -7,6 +7,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * A login account: credentials, role, and active/inactive status. Distinct
+ * from {@code Student}/{@code Teacher}, which hold the person's profile data
+ * and are linked to a {@code User} via a registration invite or direct
+ * association.
+ */
 @Entity
 @Table(name = "users")
 @Getter
@@ -31,6 +37,13 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private boolean active = true;
 
+    /**
+     * Whether this account is enabled and may authenticate. Declared
+     * explicitly (rather than relying on Lombok's boolean-getter naming) so
+     * the accessor is unambiguously named {@code isActive()}.
+     *
+     * @return {@code true} if the account is active
+     */
     public boolean isActive() {
         return active;
     }

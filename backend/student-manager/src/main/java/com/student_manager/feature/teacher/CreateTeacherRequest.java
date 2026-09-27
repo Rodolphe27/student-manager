@@ -5,6 +5,9 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Validated request payload for creating or updating a {@link Teacher} via the API.
+ */
 @Data
 @NoArgsConstructor
 public class CreateTeacherRequest {

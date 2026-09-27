@@ -11,6 +11,10 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 
+/**
+ * JPA entity representing an academic term (e.g. a semester), used to group
+ * {@link Course} offerings by a unique name and an optional date range.
+ */
 @Entity
 @Table(name = "terms")
 @Getter

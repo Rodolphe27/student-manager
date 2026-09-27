@@ -2,7 +2,19 @@ package com.student_manager.feature.student;
 
 import java.util.List;
 
+/**
+ * Business operations for managing student profiles: CRUD plus the
+ * account-linkage lookups used for self-service access and authorization.
+ */
 public interface StudentService {
+
+    /**
+     * Looks up a single student by id.
+     *
+     * @param id the student id
+     * @return the matching student
+     * @throws com.student_manager.shared.exception.ResourceNotFoundException if no student has that id
+     */
     StudentDTO findById(Long id);
 
     /**
@@ -24,8 +36,38 @@ public interface StudentService {
      */
     boolean accountOwnsStudent(String username, Long studentId);
 
+    /**
+     * Lists every student in the system.
+     *
+     * @return all students
+     */
     List<StudentDTO> findAll();
+
+    /**
+     * Creates a new student profile.
+     *
+     * @param request the student's details
+     * @return the created student
+     * @throws com.student_manager.shared.exception.ValidationException if the email or matriculation number is already in use
+     */
     StudentDTO create(CreateStudentRequest request);
+
+    /**
+     * Updates an existing student's details.
+     *
+     * @param id the student id
+     * @param request the new details
+     * @return the updated student
+     * @throws com.student_manager.shared.exception.ResourceNotFoundException if no student has that id
+     * @throws com.student_manager.shared.exception.ValidationException if the email or matriculation number is already used by another student
+     */
     StudentDTO update(Long id, CreateStudentRequest request);
+
+    /**
+     * Deletes a student profile.
+     *
+     * @param id the student id
+     * @throws com.student_manager.shared.exception.ResourceNotFoundException if no student has that id
+     */
     void delete(Long id);
 }

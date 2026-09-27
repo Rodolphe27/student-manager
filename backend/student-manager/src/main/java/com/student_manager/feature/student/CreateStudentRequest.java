@@ -7,6 +7,10 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
+/**
+ * Request payload for creating or updating a student
+ * (used by {@code POST /api/students} and {@code PUT /api/students/{id}}).
+ */
 @Data
 @NoArgsConstructor
 public class CreateStudentRequest {
