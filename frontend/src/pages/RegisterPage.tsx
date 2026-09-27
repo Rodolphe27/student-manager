@@ -32,6 +32,7 @@ export default function RegisterPage() {
       await register(code ? form : { username: form.username, email: form.email, password: form.password });
       navigate('/');
     } catch (err: unknown) {
+      // TODO(FE-8) [MEDIUM]: raw backend error message rendered verbatim — see LoginPage.tsx.
       const error = err as { response?: { data?: { message?: string } } };
       setError(error.response?.data?.message || 'Registration failed');
     } finally {
@@ -100,6 +101,9 @@ export default function RegisterPage() {
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
               Password
             </label>
+            {/* TODO(FE-10) [MEDIUM]: no client-side validation beyond `required` — no minimum
+                length/strength check here, relying solely on the browser's native checks. Add a
+                basic length/strength hint for UX; the backend must still be the source of truth. */}
             <input
               id="password"
               type="password"

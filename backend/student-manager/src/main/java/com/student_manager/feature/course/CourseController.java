@@ -13,6 +13,7 @@ import java.util.List;
 // are commented out, not deleted, for reference.
 @Slf4j
 @RestController
+// TODO(SEC-12) [LOW]: no API versioning — see AuthController.
 @RequestMapping("/api/courses")
 @RequiredArgsConstructor
 public class CourseController {

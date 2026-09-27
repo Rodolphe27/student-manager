@@ -29,6 +29,8 @@ public class CourseServiceImpl implements CourseService {
         return toDTO(course);
     }
 
+    // TODO(SEC-8) [MEDIUM]: unbounded — returns every course row, no pagination. Switch to
+    // Page<CourseDTO> findAll(Pageable pageable) and thread page/size params through CourseController.
     @Override
     public List<CourseDTO> findAll() {
         // log.info("Fetching all courses");

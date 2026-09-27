@@ -5,6 +5,10 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
+// TODO(FE-6) [HIGH]: only checks isAuthenticated, never role — /students, /teachers, /courses,
+// /enrollments are reachable by any logged-in user (e.g. a STUDENT) by navigating directly to
+// the URL; Sidebar.tsx only hides the nav links. Add a role-aware guard (e.g. accept an allowed
+// `roles` prop) as defense-in-depth — this must never replace server-side authorization.
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, loading } = useAuth();
 

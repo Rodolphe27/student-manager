@@ -65,6 +65,8 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
+		<!-- TODO(SEC-11) [LOW]: unused — no resource-server config/filter/oauth2 reference
+		     exists anywhere in source. Dead dependency, unnecessary attack surface; remove it. -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-oauth2-resource-server</artifactId>

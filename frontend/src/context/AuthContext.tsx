@@ -22,6 +22,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthResponse | null>(readStoredUser);
   const [loading] = useState<boolean>(false);
 
+  // TODO(FE-1) [CRITICAL]: token + full user object stored in localStorage, readable by any JS
+  // on the page — a single XSS bug anywhere (including a future dependency) yields full token
+  // theft with no HttpOnly protection. Move the token to an HttpOnly/Secure/SameSite cookie set
+  // by the backend, or at minimum keep it in memory paired with a refresh-token-in-cookie flow.
   const login = async (data: LoginRequest): Promise<void> => {
     const response = await authService.login(data);
     const authData  = response.data;

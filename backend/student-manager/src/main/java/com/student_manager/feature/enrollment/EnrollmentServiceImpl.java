@@ -37,6 +37,8 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         return toDTO(enrollment);
     }
 
+    // TODO(SEC-8) [MEDIUM]: unbounded — returns every enrollment row, no pagination. Switch to
+    // Page<EnrollmentDTO> findAll(Pageable pageable) and thread page/size params through EnrollmentController.
     @Override
     public List<EnrollmentDTO> findAll() {
         // log.info("Fetching all enrollments");

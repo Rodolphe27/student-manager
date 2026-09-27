@@ -19,5 +19,6 @@ public class CreateTeacherRequest {
     @Email(message = "Email is invalid")
     private String email;
 
+    // TODO: add @Pattern regex to constrain department to a known code/format
     private String department;
 }

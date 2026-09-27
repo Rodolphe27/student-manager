@@ -6,6 +6,9 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // TODO(FE-9) [MEDIUM]: sourcemap: false is only Vite's implicit production default, not pinned
+  // here — a future config/plugin change could silently start shipping source maps (leaking
+  // source code) in the nginx-served dist/. Add build: { sourcemap: false } to make it explicit.
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],

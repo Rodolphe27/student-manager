@@ -7,6 +7,8 @@ const api = axios.create({
   },
 });
 
+// TODO(FE-2) [CRITICAL]: reads the token from localStorage, same XSS-exfiltration surface as
+// AuthContext.login/register — see the TODO there for the fix direction.
 // Request interceptor — adds JWT token to every request
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
@@ -25,6 +27,8 @@ api.interceptors.response.use(
     const url: string = error.config?.url ?? '';
     const isAuthRequest = url.includes('/auth/');
     if (error.response?.status === 401 && !isAuthRequest) {
+      // TODO(FE-11) [LOW]: doesn't clear the stored 'user' object (stale role/user data survives
+      // a forced logout), and uses a hard reload instead of router-based navigation.
       localStorage.removeItem('token');
       window.location.href = '/login';
     }

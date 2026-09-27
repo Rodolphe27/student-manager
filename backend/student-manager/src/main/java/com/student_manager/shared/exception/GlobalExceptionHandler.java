@@ -68,6 +68,10 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(403, "Access denied", null, LocalDateTime.now()));
     }
 
+    // TODO(SEC-7) [MEDIUM]: no dedicated handler for Spring binding/deserialization exceptions
+    // (MethodArgumentTypeMismatchException, HttpMessageNotReadableException) — e.g. an invalid
+    // enum path variable or malformed JSON body falls through to the catch-all below and returns
+    // 500 instead of 400. Add explicit @ExceptionHandler methods for these.
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneral(Exception ex) {
         log.error("Unexpected error: {}", ex.getMessage(), ex);

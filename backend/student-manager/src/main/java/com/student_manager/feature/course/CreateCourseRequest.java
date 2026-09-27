@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class CreateCourseRequest {
 
+    // TODO: add @Pattern regex to enforce course code format (e.g. "CS-101")
     @NotBlank(message = "Course code is required")
     private String code;
 

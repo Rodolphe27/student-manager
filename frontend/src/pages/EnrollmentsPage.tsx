@@ -58,6 +58,7 @@ export default function EnrollmentsPage() {
       setShowForm(false);
       loadEnrollments();
     } catch (err: unknown) {
+      // TODO(FE-8) [MEDIUM]: raw backend error message rendered verbatim — see LoginPage.tsx.
       const error = err as { response?: { data?: { message?: string } } };
       setError(error.response?.data?.message || 'Error creating enrollment');
     }

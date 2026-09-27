@@ -11,6 +11,10 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
+// TODO(SEC-5) [HIGH]: no revocation/logout mechanism — a token stays valid for the full
+// jwt.expiration window (default 24h) with no server-side denylist or refresh-token rotation,
+// so a leaked/stolen token can't be invalidated before it expires. Add a jti denylist (e.g.
+// Redis) checked in JwtFilter, or move to short-lived access tokens + refresh tokens.
 @Slf4j
 @Component
 public class JwtUtil {
@@ -43,6 +47,8 @@ public class JwtUtil {
         return getClaims(token).get("role", String.class);
     }
 
+    // TODO(SEC-13) [LOW]: catches generic Exception instead of io.jsonwebtoken.JwtException —
+    // masks unrelated bugs (e.g. NPEs) as "invalid token" and hides real parsing failures.
     public boolean isTokenValid(String token) {
         try {
             getClaims(token);

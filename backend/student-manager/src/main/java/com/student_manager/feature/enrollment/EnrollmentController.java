@@ -14,6 +14,7 @@ import java.util.List;
 // are commented out, not deleted, for reference.
 @Slf4j
 @RestController
+// TODO(SEC-12) [LOW]: no API versioning — see AuthController.
 @RequestMapping("/api/enrollments")
 @RequiredArgsConstructor
 public class EnrollmentController {
@@ -39,6 +40,9 @@ public class EnrollmentController {
         return ResponseEntity.ok(service.findByStudentId(studentId));
     }
 
+    // TODO(SEC-10) [MEDIUM]: IDOR — any TEACHER can read the full roster + grades of ANY
+    // course, not just one they're assigned to; Course.teacher ownership is never checked here.
+    // Extend OwnershipGuard with a course-ownership check for TEACHER role (ADMIN unrestricted).
     @GetMapping("course/{courseId}")
     public ResponseEntity<List<EnrollmentDTO>> getByCourse(@PathVariable Long courseId) {
         // log.info("GET /api/enrollments/course/{}", courseId);

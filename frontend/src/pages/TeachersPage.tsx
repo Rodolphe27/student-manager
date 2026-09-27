@@ -1,19 +1,19 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import type { Student, CreateStudentRequest, RegistrationInvite } from '../types';
-import studentService from '../services/studentService';
+import type { Teacher, CreateTeacherRequest, RegistrationInvite } from '../types';
+import teacherService from '../services/teacherService';
 import InviteModal from '../components/InviteModal';
 
 const PAGE_SIZE = 10;
 
-const emptyForm: CreateStudentRequest = {
+const emptyForm: CreateTeacherRequest = {
   firstName: '',
   lastName: '',
-  matriculationNumber: '',
   email: '',
+  department: '',
 };
 
-export default function StudentsPage() {
-  const [students, setStudents]   = useState<Student[]>([]);
+export default function TeachersPage() {
+  const [teachers, setTeachers]   = useState<Teacher[]>([]);
   const [showForm, setShowForm]   = useState<boolean>(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading]     = useState<boolean>(true);
@@ -21,19 +21,19 @@ export default function StudentsPage() {
   const [error, setError]         = useState<string>('');
   const [query, setQuery]         = useState<string>('');
   const [page, setPage]           = useState<number>(1);
-  const [invite, setInvite]       = useState<{ data: RegistrationInvite; studentName: string } | null>(null);
+  const [invite, setInvite]       = useState<{ data: RegistrationInvite; teacherName: string } | null>(null);
   const [inviteError, setInviteError] = useState<string>('');
 
-  const [form, setForm] = useState<CreateStudentRequest>(emptyForm);
+  const [form, setForm] = useState<CreateTeacherRequest>(emptyForm);
 
-  const loadStudents = useCallback(async (): Promise<void> => {
+  const loadTeachers = useCallback(async (): Promise<void> => {
     try {
-      const r = await studentService.getAll();
-      setStudents(r.data);
+      const r = await teacherService.getAll();
+      setTeachers(r.data);
       setLoadError('');
     } catch (err) {
       console.error(err);
-      setLoadError('Could not load students. Check your connection and try again.');
+      setLoadError('Could not load teachers. Check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -41,7 +41,7 @@ export default function StudentsPage() {
 
   // Fetch-on-mount; result lands via setState. See CoursesPage for the rationale.
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { void loadStudents(); }, [loadStudents]);
+  useEffect(() => { void loadTeachers(); }, [loadTeachers]);
 
   const openCreateForm = (): void => {
     setEditingId(null);
@@ -50,14 +50,13 @@ export default function StudentsPage() {
     setShowForm(true);
   };
 
-  const openEditForm = (s: Student): void => {
-    setEditingId(s.id);
+  const openEditForm = (t: Teacher): void => {
+    setEditingId(t.id);
     setForm({
-      firstName: s.firstName,
-      lastName: s.lastName,
-      matriculationNumber: s.matriculationNumber,
-      email: s.email,
-      birthDate: s.birthDate ?? undefined,
+      firstName: t.firstName,
+      lastName: t.lastName,
+      email: t.email,
+      department: t.department ?? '',
     });
     setError('');
     setShowForm(true);
@@ -74,55 +73,53 @@ export default function StudentsPage() {
     setError('');
     try {
       if (editingId !== null) {
-        await studentService.update(editingId, form);
+        await teacherService.update(editingId, form);
       } else {
-        await studentService.create(form);
+        await teacherService.create(form);
       }
       closeForm();
       setForm(emptyForm);
-      loadStudents();
+      loadTeachers();
     } catch (err: unknown) {
-      // TODO(FE-8) [MEDIUM]: raw backend error message rendered verbatim — see LoginPage.tsx.
       const error = err as { response?: { data?: { message?: string } } };
-      setError(error.response?.data?.message || `Error ${editingId !== null ? 'updating' : 'creating'} student`);
+      setError(error.response?.data?.message || `Error ${editingId !== null ? 'updating' : 'creating'} teacher`);
     }
   };
 
   const handleDelete = async (id: number): Promise<void> => {
-    if (!confirm('Delete this student?')) return;
+    if (!confirm('Delete this teacher?')) return;
     try {
-      await studentService.delete(id);
-      loadStudents();
+      await teacherService.delete(id);
+      loadTeachers();
     } catch (err) {
       console.error(err);
     }
   };
 
-  const handleInvite = async (s: Student): Promise<void> => {
+  const handleInvite = async (t: Teacher): Promise<void> => {
     setInviteError('');
     try {
-      const r = await studentService.issueInvite(s.id);
-      setInvite({ data: r.data, studentName: s.fullName });
+      const r = await teacherService.issueInvite(t.id);
+      setInvite({ data: r.data, teacherName: t.fullName });
     } catch (err: unknown) {
-      // TODO(FE-8) [MEDIUM]: raw backend error message rendered verbatim — see LoginPage.tsx.
       const error = err as { response?: { data?: { message?: string } } };
-      setInviteError(error.response?.data?.message || `Could not send invite for ${s.fullName}`);
+      setInviteError(error.response?.data?.message || `Could not send invite for ${t.fullName}`);
     }
   };
 
-  const filteredStudents = students.filter((s: Student) => {
+  const filteredTeachers = teachers.filter((t: Teacher) => {
     const q = query.trim().toLowerCase();
     if (!q) return true;
     return (
-      s.fullName.toLowerCase().includes(q) ||
-      s.matriculationNumber.toLowerCase().includes(q) ||
-      s.email.toLowerCase().includes(q)
+      t.fullName.toLowerCase().includes(q) ||
+      t.email.toLowerCase().includes(q) ||
+      (t.department ?? '').toLowerCase().includes(q)
     );
   });
 
-  const totalPages = Math.max(1, Math.ceil(filteredStudents.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filteredTeachers.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
-  const pagedStudents = filteredStudents.slice(
+  const pagedTeachers = filteredTeachers.slice(
     (currentPage - 1) * PAGE_SIZE,
     currentPage * PAGE_SIZE
   );
@@ -141,7 +138,7 @@ export default function StudentsPage() {
         <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-lg flex items-center justify-between gap-4">
           <span>{loadError}</span>
           <button
-            onClick={() => { setLoading(true); loadStudents(); }}
+            onClick={() => { setLoading(true); loadTeachers(); }}
             className="text-red-700 font-medium hover:underline whitespace-nowrap"
           >
             Retry
@@ -156,9 +153,9 @@ export default function StudentsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
         <div>
-          <h1 className="text-xl font-bold text-gray-800">Students</h1>
+          <h1 className="text-xl font-bold text-gray-800">Teachers</h1>
           <p className="text-sm text-gray-400">
-            {filteredStudents.length} of {students.length}
+            {filteredTeachers.length} of {teachers.length}
           </p>
         </div>
         <div className="flex gap-2">
@@ -166,14 +163,14 @@ export default function StudentsPage() {
             type="search"
             value={query}
             onChange={(e) => { setQuery(e.target.value); setPage(1); }}
-            placeholder="Search by name, matriculation, or email…"
+            placeholder="Search by name, email, or department…"
             className="flex-1 sm:w-72 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
             onClick={() => (showForm ? closeForm() : openCreateForm())}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors whitespace-nowrap"
           >
-            + Add Student
+            + Add Teacher
           </button>
         </div>
       </div>
@@ -190,7 +187,7 @@ export default function StudentsPage() {
       {invite && (
         <InviteModal
           invite={invite.data}
-          targetName={invite.studentName}
+          targetName={invite.teacherName}
           onClose={() => setInvite(null)}
         />
       )}
@@ -198,7 +195,7 @@ export default function StudentsPage() {
       {/* Form */}
       {showForm && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
-          <h2 className="font-semibold text-gray-700 mb-4">{editingId !== null ? 'Edit Student' : 'New Student'}</h2>
+          <h2 className="font-semibold text-gray-700 mb-4">{editingId !== null ? 'Edit Teacher' : 'New Teacher'}</h2>
           {error && (
             <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">
               {error}
@@ -209,7 +206,7 @@ export default function StudentsPage() {
               <label className="block text-xs font-medium text-gray-500 mb-1">First Name</label>
               <input
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Anna"
+                placeholder="Jan"
                 value={form.firstName}
                 onChange={(e) => setForm({ ...form, firstName: e.target.value })}
                 required
@@ -219,19 +216,9 @@ export default function StudentsPage() {
               <label className="block text-xs font-medium text-gray-500 mb-1">Last Name</label>
               <input
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Müller"
+                placeholder="Schmidt"
                 value={form.lastName}
                 onChange={(e) => setForm({ ...form, lastName: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Matriculation Number</label>
-              <input
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="MT-12345"
-                value={form.matriculationNumber}
-                onChange={(e) => setForm({ ...form, matriculationNumber: e.target.value })}
                 required
               />
             </div>
@@ -240,10 +227,19 @@ export default function StudentsPage() {
               <input
                 type="email"
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="anna@fh-dortmund.de"
+                placeholder="jan.schmidt@fh-dortmund.de"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 required
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Department</label>
+              <input
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Computer Science"
+                value={form.department}
+                onChange={(e) => setForm({ ...form, department: e.target.value })}
               />
             </div>
             <div className="col-span-2 flex gap-2">
@@ -251,7 +247,7 @@ export default function StudentsPage() {
                 type="submit"
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
               >
-                {editingId !== null ? 'Update Student' : 'Save Student'}
+                {editingId !== null ? 'Update Teacher' : 'Save Teacher'}
               </button>
               <button
                 type="button"
@@ -267,36 +263,36 @@ export default function StudentsPage() {
 
       {/* Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
-        <table className="w-full text-sm min-w-[560px]">
+        <table className="w-full text-sm min-w-[640px]">
           <thead className="bg-gray-50 text-gray-400 text-xs uppercase">
             <tr>
               <th className="px-5 py-3 text-left">Name</th>
-              <th className="px-5 py-3 text-left">Matriculation</th>
               <th className="px-5 py-3 text-left">Email</th>
+              <th className="px-5 py-3 text-left">Department</th>
               <th className="px-5 py-3 text-left">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {pagedStudents.map((s: Student) => (
-              <tr key={s.id} className="hover:bg-gray-50">
-                <td className="px-5 py-3 font-medium text-gray-800">{s.fullName}</td>
-                <td className="px-5 py-3 text-gray-500 font-mono">{s.matriculationNumber}</td>
-                <td className="px-5 py-3 text-gray-500">{s.email}</td>
+            {pagedTeachers.map((t: Teacher) => (
+              <tr key={t.id} className="hover:bg-gray-50">
+                <td className="px-5 py-3 font-medium text-gray-800">{t.fullName}</td>
+                <td className="px-5 py-3 text-gray-500">{t.email}</td>
+                <td className="px-5 py-3 text-gray-500">{t.department || '—'}</td>
                 <td className="px-5 py-3 flex gap-3">
                   <button
-                    onClick={() => handleInvite(s)}
+                    onClick={() => handleInvite(t)}
                     className="text-green-600 hover:text-green-800 text-xs font-medium"
                   >
                     Send Invite
                   </button>
                   <button
-                    onClick={() => openEditForm(s)}
+                    onClick={() => openEditForm(t)}
                     className="text-blue-600 hover:text-blue-800 text-xs font-medium"
                   >
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDelete(s.id)}
+                    onClick={() => handleDelete(t.id)}
                     className="text-red-500 hover:text-red-700 text-xs font-medium"
                   >
                     Delete
@@ -304,16 +300,16 @@ export default function StudentsPage() {
                 </td>
               </tr>
             ))}
-            {filteredStudents.length === 0 && (
+            {filteredTeachers.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-5 py-8 text-center text-gray-400 text-sm">
-                  {students.length === 0 ? 'No students yet — add one above' : 'No students match your search'}
+                  {teachers.length === 0 ? 'No teachers yet — add one above' : 'No teachers match your search'}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-        {filteredStudents.length > 0 && (
+        {filteredTeachers.length > 0 && (
           <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
             <span className="text-xs text-gray-400">
               Page {currentPage} of {totalPages}

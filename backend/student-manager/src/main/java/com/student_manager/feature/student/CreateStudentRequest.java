@@ -17,6 +17,7 @@ public class CreateStudentRequest {
     @NotBlank(message = "Last name is required")
     private String lastName;
 
+    // TODO: add @Pattern regex to enforce the institution's matriculation number format
     @NotBlank(message = "Matriculation number is required")
     private String matriculationNumber;
 
