@@ -45,4 +45,14 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
      * @return {@code true} if an enrollment already exists for that pair
      */
     boolean existsByStudentIdAndCourseId(Long studentId, Long courseId);
+
+    /**
+     * Checks whether the given account teaches the course this enrollment belongs to.
+     * Used by {@code OwnershipGuard} to restrict a TEACHER to grading only their own courses.
+     *
+     * @param id the enrollment id
+     * @param username the account username to check
+     * @return {@code true} if that account is the teacher of this enrollment's course
+     */
+    boolean existsByIdAndCourse_Teacher_Account_Username(Long id, String username);
 }

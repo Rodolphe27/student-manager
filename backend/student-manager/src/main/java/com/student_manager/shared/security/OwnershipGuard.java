@@ -2,6 +2,7 @@ package com.student_manager.shared.security;
 
 import com.student_manager.feature.auth.Role;
 import com.student_manager.feature.course.CourseRepository;
+import com.student_manager.feature.enrollment.EnrollmentRepository;
 import com.student_manager.feature.student.StudentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,7 @@ public class OwnershipGuard {
 
     private final StudentService studentService;
     private final CourseRepository courseRepository;
+    private final EnrollmentRepository enrollmentRepository;
 
     /**
      * Determines whether the current caller may access a given student's
@@ -84,6 +86,39 @@ public class OwnershipGuard {
         if (!teaches) {
             log.warn("Blocked cross-course access: {} tried to read course {} roster",
                     authentication.getName(), courseId);
+        }
+        return teaches;
+    }
+
+    /**
+     * SecurityConfig already restricts the enrollment confirm/cancel/grade endpoints to
+     * TEACHER/ADMIN, so this only needs to further narrow TEACHER to enrollments in courses
+     * they actually teach — ADMIN is unrestricted. Mirrors {@link #canAccessCourseData}, but
+     * resolves the course through the enrollment id since these endpoints are keyed by
+     * enrollment, not course. Shared by confirm, cancel, and grade — all three have identical
+     * "must teach this course" access rules.
+     *
+     * @param enrollmentId   the id of the enrollment being confirmed/cancelled/graded
+     * @param authentication the caller's authentication, or {@code null} if unauthenticated
+     * @return {@code true} if access is allowed
+     */
+    public boolean canManageEnrollment(Long enrollmentId, Authentication authentication) {
+        if (authentication == null || enrollmentId == null) {
+            return false;
+        }
+
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(("ROLE_" + Role.ADMIN.name())::equals);
+        if (isAdmin) {
+            return true;
+        }
+
+        boolean teaches = enrollmentRepository.existsByIdAndCourse_Teacher_Account_Username(
+                enrollmentId, authentication.getName());
+        if (!teaches) {
+            log.warn("Blocked cross-course enrollment management: {} tried to act on enrollment {}",
+                    authentication.getName(), enrollmentId);
         }
         return teaches;
     }

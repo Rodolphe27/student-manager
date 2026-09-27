@@ -100,7 +100,9 @@ public class EnrollmentController {
     }
 
     /**
-     * Confirms a pending enrollment.
+     * Confirms a pending enrollment. Access is restricted by
+     * {@code @ownershipGuard}: ADMIN may confirm any enrollment, but a TEACHER
+     * may only confirm enrollments in courses they teach.
      *
      * @param id the enrollment id
      * @return the confirmed enrollment
@@ -108,13 +110,16 @@ public class EnrollmentController {
      * @throws com.student_manager.shared.exception.ValidationException if the enrollment is already confirmed or has been cancelled
      */
     @PatchMapping("{id}/confirm")
+    @PreAuthorize("@ownershipGuard.canManageEnrollment(#id, authentication)")
     public ResponseEntity<EnrollmentDTO> confirm(@PathVariable Long id) {
         // log.info("PATCH /api/enrollments/{}/confirm", id);
         return ResponseEntity.ok(service.confirm(id));
     }
 
     /**
-     * Cancels (withdraws) an enrollment, clearing any grade it carried.
+     * Cancels (withdraws) an enrollment, clearing any grade it carried. Access
+     * is restricted by {@code @ownershipGuard}: ADMIN may cancel any
+     * enrollment, but a TEACHER may only cancel enrollments in courses they teach.
      *
      * @param id the enrollment id
      * @return the cancelled enrollment
@@ -122,13 +127,16 @@ public class EnrollmentController {
      * @throws com.student_manager.shared.exception.ValidationException if the enrollment is already cancelled
      */
     @PatchMapping("{id}/cancel")
+    @PreAuthorize("@ownershipGuard.canManageEnrollment(#id, authentication)")
     public ResponseEntity<EnrollmentDTO> cancel(@PathVariable Long id) {
         // log.info("PATCH /api/enrollments/{}/cancel", id);
         return ResponseEntity.ok(service.cancel(id));
     }
 
     /**
-     * Assigns a grade to a confirmed enrollment.
+     * Assigns a grade to a confirmed enrollment. Access is restricted by
+     * {@code @ownershipGuard}: ADMIN may grade any enrollment, but a TEACHER
+     * may only grade enrollments in courses they teach.
      *
      * @param id the enrollment id
      * @param request the grade to assign
@@ -137,6 +145,7 @@ public class EnrollmentController {
      * @throws com.student_manager.shared.exception.ValidationException if the enrollment is not confirmed
      */
     @PatchMapping("{id}/grade")
+    @PreAuthorize("@ownershipGuard.canManageEnrollment(#id, authentication)")
     public ResponseEntity<EnrollmentDTO> updateGrade(
             @PathVariable Long id,
             @Valid @RequestBody UpdateGradeRequest request) {
