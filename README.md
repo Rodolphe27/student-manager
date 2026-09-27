@@ -219,7 +219,7 @@ All three are required status checks for merging to `main`.
 | `SPRING_DATASOURCE_USERNAME` | `postgres` | Database user |
 | `SPRING_DATASOURCE_PASSWORD` | `postgres` | Database password |
 | `JWT_SECRET` | *(baked-in dev key)* | HMAC signing key for JWTs — **must** be overridden in any deployed environment |
-| `JWT_EXPIRATION` | `86400000` | Token lifetime in milliseconds |
+| `JWT_EXPIRATION` | `3600000` (1h) | Token lifetime in milliseconds — kept short since the token is stored in `localStorage` on the frontend (see FE-1/2/3) |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost` | Comma-separated allowed browser origins |
 | `CORS_ALLOWED_ORIGIN_PATTERNS` | *(empty)* | Comma-separated origin patterns (e.g. `https://*.example.com`) |
 | `SPRING_JPA_DDL_AUTO` | `update` | Hibernate schema mode; set `validate` once migrations exist |

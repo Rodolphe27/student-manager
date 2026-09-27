@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
+import { getErrorMessage } from '../services/errorMessage';
 import type { LoginRequest } from '../types';
 
 export default function LoginPage() {
@@ -20,12 +21,7 @@ export default function LoginPage() {
       await login(form);
       navigate('/');
     } catch (err: unknown) {
-      // TODO(FE-8) [MEDIUM]: backend error message is rendered to the user verbatim with no
-      // filtering (same pattern in RegisterPage/StudentsPage/CoursesPage/EnrollmentsPage) — if the
-      // backend ever leaks internal details in this field, they'd be shown directly in the UI.
-      // Only display messages from a backend-defined allowlist; log the raw response elsewhere.
-      const error = err as { response?: { data?: { message?: string } } };
-      setError(error.response?.data?.message || 'Invalid username or password');
+      setError(getErrorMessage(err, 'Invalid username or password'));
     } finally {
       setLoading(false);
     }

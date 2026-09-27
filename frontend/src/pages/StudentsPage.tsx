@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import type { Student, CreateStudentRequest, RegistrationInvite } from '../types';
 import studentService from '../services/studentService';
+import { getErrorMessage } from '../services/errorMessage';
 import InviteModal from '../components/InviteModal';
 
 const PAGE_SIZE = 10;
@@ -82,9 +83,7 @@ export default function StudentsPage() {
       setForm(emptyForm);
       loadStudents();
     } catch (err: unknown) {
-      // TODO(FE-8) [MEDIUM]: raw backend error message rendered verbatim — see LoginPage.tsx.
-      const error = err as { response?: { data?: { message?: string } } };
-      setError(error.response?.data?.message || `Error ${editingId !== null ? 'updating' : 'creating'} student`);
+      setError(getErrorMessage(err, `Error ${editingId !== null ? 'updating' : 'creating'} student`));
     }
   };
 
@@ -104,9 +103,7 @@ export default function StudentsPage() {
       const r = await studentService.issueInvite(s.id);
       setInvite({ data: r.data, studentName: s.fullName });
     } catch (err: unknown) {
-      // TODO(FE-8) [MEDIUM]: raw backend error message rendered verbatim — see LoginPage.tsx.
-      const error = err as { response?: { data?: { message?: string } } };
-      setInviteError(error.response?.data?.message || `Could not send invite for ${s.fullName}`);
+      setInviteError(getErrorMessage(err, `Could not send invite for ${s.fullName}`));
     }
   };
 

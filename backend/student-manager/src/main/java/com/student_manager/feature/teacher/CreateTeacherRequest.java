@@ -2,6 +2,7 @@ package com.student_manager.feature.teacher;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -22,6 +23,9 @@ public class CreateTeacherRequest {
     @Email(message = "Email is invalid")
     private String email;
 
-    // TODO: add @Pattern regex to constrain department to a known code/format
+    // Optional field — @Pattern only validates non-null values, so a caller that omits
+    // department entirely is still valid.
+    @Pattern(regexp = "^[A-Za-z .'-]{2,100}$",
+            message = "Department must be 2-100 characters: letters, spaces, '.', ''' or '-'")
     private String department;
 }

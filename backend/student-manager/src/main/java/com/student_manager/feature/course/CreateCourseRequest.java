@@ -3,6 +3,7 @@ package com.student_manager.feature.course;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -13,8 +14,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class CreateCourseRequest {
 
-    // TODO: add @Pattern regex to enforce course code format (e.g. "CS-101")
     @NotBlank(message = "Course code is required")
+    @Pattern(regexp = "^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$",
+            message = "Course code must be alphanumeric segments separated by '-' (e.g. CS-101)")
     private String code;
 
     @NotBlank(message = "Course title is required")

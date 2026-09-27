@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
+import { getErrorMessage } from '../services/errorMessage';
 import  type { RegisterRequest } from '../types';
 
 export default function RegisterPage() {
@@ -32,9 +33,7 @@ export default function RegisterPage() {
       await register(code ? form : { username: form.username, email: form.email, password: form.password });
       navigate('/');
     } catch (err: unknown) {
-      // TODO(FE-8) [MEDIUM]: raw backend error message rendered verbatim — see LoginPage.tsx.
-      const error = err as { response?: { data?: { message?: string } } };
-      setError(error.response?.data?.message || 'Registration failed');
+      setError(getErrorMessage(err, 'Registration failed'));
     } finally {
       setLoading(false);
     }
@@ -101,9 +100,8 @@ export default function RegisterPage() {
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
               Password
             </label>
-            {/* TODO(FE-10) [MEDIUM]: no client-side validation beyond `required` — no minimum
-                length/strength check here, relying solely on the browser's native checks. Add a
-                basic length/strength hint for UX; the backend must still be the source of truth. */}
+            {/* UX-only hint matching the backend's actual rule (RegisterRequest.password
+                @Pattern) — the backend remains the source of truth and re-validates regardless. */}
             <input
               id="password"
               type="password"
@@ -111,8 +109,14 @@ export default function RegisterPage() {
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Choose a password"
+              minLength={8}
+              pattern="(?=.*[A-Za-z])(?=.*\d).{8,}"
+              title="At least 8 characters, including a letter and a digit"
               required
             />
+            <p className="text-xs text-gray-400 mt-1">
+              At least 8 characters, including a letter and a digit.
+            </p>
           </div>
 
           <div>

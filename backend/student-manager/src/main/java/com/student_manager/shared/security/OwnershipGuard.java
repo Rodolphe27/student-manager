@@ -75,10 +75,13 @@ public class OwnershipGuard {
             return false;
         }
 
-        boolean isAdmin = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch(("ROLE_" + Role.ADMIN.name())::equals);
-        if (isAdmin) {
+        if (isAdmin(authentication)) {
+            return true;
+        }
+
+        if (!courseRepository.existsById(courseId)) {
+            // Let a nonexistent id reach the controller so a TEACHER gets the same result
+            // (an empty roster) ADMIN would see, instead of a misleading 403.
             return true;
         }
 
@@ -107,10 +110,13 @@ public class OwnershipGuard {
             return false;
         }
 
-        boolean isAdmin = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch(("ROLE_" + Role.ADMIN.name())::equals);
-        if (isAdmin) {
+        if (isAdmin(authentication)) {
+            return true;
+        }
+
+        if (!enrollmentRepository.existsById(enrollmentId)) {
+            // Let a nonexistent id reach the controller so a TEACHER gets the same 404
+            // (ResourceNotFoundException) ADMIN would see, instead of a misleading 403.
             return true;
         }
 
@@ -121,5 +127,11 @@ public class OwnershipGuard {
                     authentication.getName(), enrollmentId);
         }
         return teaches;
+    }
+
+    private boolean isAdmin(Authentication authentication) {
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(("ROLE_" + Role.ADMIN.name())::equals);
     }
 }

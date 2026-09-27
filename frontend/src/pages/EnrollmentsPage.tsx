@@ -3,6 +3,7 @@ import type { Enrollment, Student, Course, CreateEnrollmentRequest, EnrollmentSt
 import enrollmentService from '../services/enrollmentService';
 import studentService from '../services/studentService';
 import courseService from '../services/courseService';
+import { getErrorMessage } from '../services/errorMessage';
 
 export default function EnrollmentsPage() {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
@@ -58,9 +59,7 @@ export default function EnrollmentsPage() {
       setShowForm(false);
       loadEnrollments();
     } catch (err: unknown) {
-      // TODO(FE-8) [MEDIUM]: raw backend error message rendered verbatim — see LoginPage.tsx.
-      const error = err as { response?: { data?: { message?: string } } };
-      setError(error.response?.data?.message || 'Error creating enrollment');
+      setError(getErrorMessage(err, 'Error creating enrollment'));
     }
   };
 

@@ -2,6 +2,7 @@ package com.student_manager.feature.student;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -21,8 +22,9 @@ public class CreateStudentRequest {
     @NotBlank(message = "Last name is required")
     private String lastName;
 
-    // TODO: add @Pattern regex to enforce the institution's matriculation number format
     @NotBlank(message = "Matriculation number is required")
+    @Pattern(regexp = "^[A-Za-z0-9-]{2,40}$",
+            message = "Matriculation number must be 2-40 characters: letters, digits or '-'")
     private String matriculationNumber;
 
     private LocalDate birthDate;

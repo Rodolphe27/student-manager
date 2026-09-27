@@ -6,66 +6,80 @@ import com.student_manager.feature.student.Student;
 import com.student_manager.feature.student.StudentRepository;
 import com.student_manager.shared.exception.ResourceNotFoundException;
 import com.student_manager.shared.exception.ValidationException;
+import com.student_manager.shared.service.CrudServiceSupport;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
-// Generic "Fetching .../Confirming .../Cancelling ... with id: {}" lines below
-// are commented out, not deleted — RequestLoggingFilter (shared/config)
-// already logs method + path + status, and the id in those lines was always
+// findById/findAll/delete come from CrudServiceSupport — see that class for why
+// the lifecycle transitions (create/confirm/cancel/updateGrade) stay here.
+// Generic "Fetching .../Confirming .../Cancelling ... with id: {}" lines that
+// used to live in the removed methods are gone with them; RequestLoggingFilter
+// (shared/config) already logs method + path + status, and the id was always
 // just the path variable. create()'s lines are kept: the student/course ids
 // come from the request body, and the new enrollment id doesn't exist until
 // after the save.
 /**
- * Default {@link EnrollmentService} implementation backed by JPA
- * repositories for enrollments, students, and courses.
+ * Default {@link EnrollmentService} implementation backed by JPA repositories
+ * for enrollments, students, and courses. {@code findById}/{@code findAll}/
+ * {@code delete} are inherited from {@link CrudServiceSupport}; this class adds
+ * the student/course-scoped lookups and the enrollment lifecycle transitions.
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class EnrollmentServiceImpl implements EnrollmentService {
+public class EnrollmentServiceImpl extends CrudServiceSupport<Enrollment, EnrollmentDTO> implements EnrollmentService {
 
     private final EnrollmentRepository enrollmentRepository;
     private final StudentRepository studentRepository;
     private final CourseRepository courseRepository;
 
     /**
-     * Looks up a single enrollment by id.
-     *
-     * @param id the enrollment id
-     * @return the matching enrollment
-     * @throws ResourceNotFoundException if no enrollment has that id
+     * @return the JPA repository backing the inherited CRUD operations
      */
     @Override
-    public EnrollmentDTO findById(Long id) {
-        // log.info("Fetching enrollment with id: {}", id);
-        Enrollment enrollment = enrollmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Enrollment", id));
-        return toDTO(enrollment);
+    protected JpaRepository<Enrollment, Long> repository() {
+        return enrollmentRepository;
     }
 
     /**
-     * Lists every enrollment in the system.
-     *
-     * @return all enrollments
+     * @return the resource name used in {@link ResourceNotFoundException} messages
      */
-    // TODO(SEC-8) [MEDIUM]: unbounded — returns every enrollment row, no pagination. Switch to
-    // Page<EnrollmentDTO> findAll(Pageable pageable) and thread page/size params through EnrollmentController.
     @Override
-    public List<EnrollmentDTO> findAll() {
-        // log.info("Fetching all enrollments");
-        return enrollmentRepository.findAll()
-                .stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
+    protected String resourceName() {
+        return "Enrollment";
     }
 
     /**
-     * Lists all enrollments belonging to a given student.
+     * Maps an {@link Enrollment} entity to its client-facing {@link EnrollmentDTO},
+     * denormalizing the related student's name and course's title/code.
+     *
+     * @param enrollment the entity to map
+     * @return the resulting DTO
+     */
+    @Override
+    protected EnrollmentDTO toDTO(Enrollment enrollment) {
+        EnrollmentDTO dto = new EnrollmentDTO();
+        dto.setId(enrollment.getId());
+        dto.setStudentId(enrollment.getStudent().getId());
+        dto.setStudentName(enrollment.getStudent().getFullName());
+        dto.setCourseId(enrollment.getCourse().getId());
+        dto.setCourseTitle(enrollment.getCourse().getTitle());
+        dto.setCourseCode(enrollment.getCourse().getCode());
+        dto.setEnrolledAt(enrollment.getEnrolledAt());
+        dto.setStatus(enrollment.getStatus());
+        dto.setGrade(enrollment.getGrade());
+        dto.setConfirmed(enrollment.isConfirmed());
+        return dto;
+    }
+
+    /**
+     * {@inheritDoc}
      *
      * @param studentId the student id
      * @return that student's enrollments
@@ -80,7 +94,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     }
 
     /**
-     * Lists all enrollments (the roster) for a given course.
+     * {@inheritDoc}
      *
      * @param courseId the course id
      * @return that course's enrollments
@@ -136,7 +150,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     }
 
     /**
-     * Confirms a pending enrollment.
+     * {@inheritDoc}
      *
      * @param id the enrollment id
      * @return the confirmed enrollment
@@ -145,9 +159,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
      */
     @Override
     public EnrollmentDTO confirm(Long id) {
-        // log.info("Confirming enrollment with id: {}", id);
-        Enrollment enrollment = enrollmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Enrollment", id));
+        Enrollment enrollment = loadOrThrow(id);
 
         if (EnrollmentStatus.CANCELLED.equals(enrollment.getStatus())) {
             throw new ValidationException("Cannot confirm a cancelled enrollment");
@@ -172,9 +184,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
      */
     @Override
     public EnrollmentDTO cancel(Long id) {
-        // log.info("Cancelling enrollment with id: {}", id);
-        Enrollment enrollment = enrollmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Enrollment", id));
+        Enrollment enrollment = loadOrThrow(id);
 
         if (EnrollmentStatus.CANCELLED.equals(enrollment.getStatus())) {
             throw new ValidationException("Enrollment is already cancelled");
@@ -188,7 +198,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     }
 
     /**
-     * Assigns a grade to a confirmed enrollment.
+     * {@inheritDoc}
      *
      * @param id the enrollment id
      * @param request the grade to assign
@@ -198,9 +208,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
      */
     @Override
     public EnrollmentDTO updateGrade(Long id, UpdateGradeRequest request) {
-        // log.info("Updating grade for enrollment: {}", id);
-        Enrollment enrollment = enrollmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Enrollment", id));
+        Enrollment enrollment = loadOrThrow(id);
 
         if (!EnrollmentStatus.CONFIRMED.equals(enrollment.getStatus())) {
             throw new ValidationException("Can only assign grade to confirmed enrollments");
@@ -208,42 +216,5 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
         enrollment.setGrade(request.getGrade());
         return toDTO(enrollmentRepository.save(enrollment));
-    }
-
-    /**
-     * Deletes an enrollment outright.
-     *
-     * @param id the enrollment id
-     * @throws ResourceNotFoundException if no enrollment has that id
-     */
-    @Override
-    public void delete(Long id) {
-        // log.info("Deleting enrollment with id: {}", id);
-        if (!enrollmentRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Enrollment", id);
-        }
-        enrollmentRepository.deleteById(id);
-    }
-
-    /**
-     * Maps an {@link Enrollment} entity to its client-facing {@link EnrollmentDTO},
-     * denormalizing the related student's name and course's title/code.
-     *
-     * @param enrollment the entity to map
-     * @return the resulting DTO
-     */
-    private EnrollmentDTO toDTO(Enrollment enrollment) {
-        EnrollmentDTO dto = new EnrollmentDTO();
-        dto.setId(enrollment.getId());
-        dto.setStudentId(enrollment.getStudent().getId());
-        dto.setStudentName(enrollment.getStudent().getFullName());
-        dto.setCourseId(enrollment.getCourse().getId());
-        dto.setCourseTitle(enrollment.getCourse().getTitle());
-        dto.setCourseCode(enrollment.getCourse().getCode());
-        dto.setEnrolledAt(enrollment.getEnrolledAt());
-        dto.setStatus(enrollment.getStatus());
-        dto.setGrade(enrollment.getGrade());
-        dto.setConfirmed(enrollment.isConfirmed());
-        return dto;
     }
 }

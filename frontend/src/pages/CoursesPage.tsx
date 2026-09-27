@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import type { Course, CreateCourseRequest, CourseStatus } from '../types';
 import  courseService from '../services/courseService';
+import { getErrorMessage } from '../services/errorMessage';
 
 const emptyForm: CreateCourseRequest = {
   code: '',
@@ -79,9 +80,7 @@ export default function CoursesPage() {
       setForm(emptyForm);
       loadCourses();
     } catch (err: unknown) {
-      // TODO(FE-8) [MEDIUM]: raw backend error message rendered verbatim — see LoginPage.tsx.
-      const error = err as { response?: { data?: { message?: string } } };
-      setError(error.response?.data?.message || `Error ${editingId !== null ? 'updating' : 'creating'} course`);
+      setError(getErrorMessage(err, `Error ${editingId !== null ? 'updating' : 'creating'} course`));
     }
   };
 
