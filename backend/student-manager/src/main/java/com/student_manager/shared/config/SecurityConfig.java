@@ -51,10 +51,11 @@ public class SecurityConfig {
                                 .maxAgeInSeconds(31_536_000)))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        // TODO(SEC-6) [MEDIUM]: exposed unconditionally in every profile, including
-                        // prod — leaks the full API surface (endpoint shapes, staff-only routes) to
-                        // anyone. Gate behind a non-prod profile check or require authentication.
-                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        // Requires a valid JWT to view — was permitAll(), which let anyone on the
+                        // internet browse the full API surface (including staff-only endpoint
+                        // shapes) with no login. To use Swagger UI locally, paste a Bearer token
+                        // into its "Authorize" dialog, same as testing any other protected endpoint.
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").authenticated()
                         .requestMatchers("/actuator/health/**").permitAll()
 
                         // Course catalogue: any authenticated user may browse it;

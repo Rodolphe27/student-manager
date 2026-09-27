@@ -3,11 +3,13 @@ package com.student_manager.shared.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -68,10 +70,23 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(403, "Access denied", null, LocalDateTime.now()));
     }
 
-    // TODO(SEC-7) [MEDIUM]: no dedicated handler for Spring binding/deserialization exceptions
-    // (MethodArgumentTypeMismatchException, HttpMessageNotReadableException) — e.g. an invalid
-    // enum path variable or malformed JSON body falls through to the catch-all below and returns
-    // 500 instead of 400. Add explicit @ExceptionHandler methods for these.
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        // e.g. an invalid enum value in a path variable like /api/courses/status/{status}.
+        String message = "Invalid value for parameter '" + ex.getName() + "'";
+        log.warn("{}: {}", message, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(400, message, null, LocalDateTime.now()));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleUnreadableBody(HttpMessageNotReadableException ex) {
+        // Malformed/unparseable JSON request body.
+        log.warn("Malformed request body: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(400, "Malformed request body", null, LocalDateTime.now()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneral(Exception ex) {
         log.error("Unexpected error: {}", ex.getMessage(), ex);

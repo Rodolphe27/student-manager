@@ -27,9 +27,8 @@ api.interceptors.response.use(
     const url: string = error.config?.url ?? '';
     const isAuthRequest = url.includes('/auth/');
     if (error.response?.status === 401 && !isAuthRequest) {
-      // TODO(FE-11) [LOW]: doesn't clear the stored 'user' object (stale role/user data survives
-      // a forced logout), and uses a hard reload instead of router-based navigation.
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       window.location.href = '/login';
     }
     return Promise.reject(error);

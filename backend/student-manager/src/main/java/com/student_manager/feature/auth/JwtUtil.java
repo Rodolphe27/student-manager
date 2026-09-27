@@ -1,6 +1,7 @@
 package com.student_manager.feature.auth;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
@@ -47,14 +48,19 @@ public class JwtUtil {
         return getClaims(token).get("role", String.class);
     }
 
-    // TODO(SEC-13) [LOW]: catches generic Exception instead of io.jsonwebtoken.JwtException —
-    // masks unrelated bugs (e.g. NPEs) as "invalid token" and hides real parsing failures.
     public boolean isTokenValid(String token) {
         try {
             getClaims(token);
             return true;
-        } catch (Exception e) {
+        } catch (JwtException e) {
+            // Expected case: expired, malformed, or tampered token.
             log.warn("Invalid JWT token: {}", e.getMessage());
+            return false;
+        } catch (Exception e) {
+            // Unexpected — a real bug, not a bad token. Still fail closed (unauthenticated)
+            // since this runs in JwtFilter, outside @RestControllerAdvice's coverage, but log
+            // loudly so it doesn't get silently mislabeled as "invalid token".
+            log.error("Unexpected error validating JWT token", e);
             return false;
         }
     }

@@ -53,10 +53,13 @@ export default function App() {
           }
         >
           <Route index          element={<Dashboard />} />
-          <Route path="students"    element={<StudentsPage />} />
-          <Route path="teachers"    element={<TeachersPage />} />
+          {/* Backend restricts these rosters' GET to TEACHER/ADMIN — mirror it here so a
+              STUDENT navigating directly to the URL gets redirected instead of an API 403. */}
+          <Route path="students"    element={<ProtectedRoute roles={['TEACHER', 'ADMIN']}><StudentsPage /></ProtectedRoute>} />
+          <Route path="teachers"    element={<ProtectedRoute roles={['TEACHER', 'ADMIN']}><TeachersPage /></ProtectedRoute>} />
+          {/* Course catalogue GET is open to any authenticated role (see SecurityConfig) — no restriction. */}
           <Route path="courses"     element={<CoursesPage />} />
-          <Route path="enrollments" element={<EnrollmentsPage />} />
+          <Route path="enrollments" element={<ProtectedRoute roles={['TEACHER', 'ADMIN']}><EnrollmentsPage /></ProtectedRoute>} />
           <Route path="my-courses" element={<MyCoursesPage />} />
         </Route>
 

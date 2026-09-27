@@ -40,10 +40,8 @@ public class EnrollmentController {
         return ResponseEntity.ok(service.findByStudentId(studentId));
     }
 
-    // TODO(SEC-10) [MEDIUM]: IDOR — any TEACHER can read the full roster + grades of ANY
-    // course, not just one they're assigned to; Course.teacher ownership is never checked here.
-    // Extend OwnershipGuard with a course-ownership check for TEACHER role (ADMIN unrestricted).
     @GetMapping("course/{courseId}")
+    @PreAuthorize("@ownershipGuard.canAccessCourseData(#courseId, authentication)")
     public ResponseEntity<List<EnrollmentDTO>> getByCourse(@PathVariable Long courseId) {
         // log.info("GET /api/enrollments/course/{}", courseId);
         return ResponseEntity.ok(service.findByCourseId(courseId));
