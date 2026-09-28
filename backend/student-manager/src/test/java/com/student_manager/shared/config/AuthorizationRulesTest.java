@@ -10,9 +10,16 @@ import com.student_manager.feature.course.CourseRepository;
 import com.student_manager.feature.course.CourseStatus;
 import com.student_manager.feature.course.CreateCourseRequest;
 import com.student_manager.feature.enrollment.CreateEnrollmentRequest;
+import com.student_manager.feature.enrollment.Enrollment;
+import com.student_manager.feature.enrollment.EnrollmentRepository;
+import com.student_manager.feature.enrollment.EnrollmentStatus;
+import com.student_manager.feature.enrollment.Grade;
+import com.student_manager.feature.enrollment.UpdateGradeRequest;
 import com.student_manager.feature.student.CreateStudentRequest;
 import com.student_manager.feature.student.Student;
 import com.student_manager.feature.student.StudentRepository;
+import com.student_manager.feature.teacher.Teacher;
+import com.student_manager.feature.teacher.TeacherRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -21,9 +28,13 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -42,6 +53,8 @@ class AuthorizationRulesTest {
     @Autowired private StudentRepository studentRepository;
     @Autowired private UserRepository userRepository;
     @Autowired private CourseRepository courseRepository;
+    @Autowired private TeacherRepository teacherRepository;
+    @Autowired private EnrollmentRepository enrollmentRepository;
 
     private String bearer(String role) {
         return "Bearer " + jwtUtil.generateToken(role.toLowerCase() + "-user", role);
@@ -77,6 +90,56 @@ class AuthorizationRulesTest {
         course.setCreditHours(3);
         course.setStatus(CourseStatus.ACTIVE);
         return courseRepository.save(course).getId();
+    }
+
+    /** Persists a User + Teacher linked via the account FK (not email matching, unlike students). */
+    private Teacher linkedTeacherFor(String username, String email) {
+        User account = new User();
+        account.setUsername(username);
+        account.setEmail(email);
+        account.setPasswordHash("irrelevant-for-authz");
+        account.setRole(Role.TEACHER);
+        account.setActive(true);
+        User savedAccount = userRepository.save(account);
+
+        Teacher teacher = new Teacher();
+        teacher.setFirstName("Owning");
+        teacher.setLastName("Teacher");
+        teacher.setEmail(email);
+        teacher.setAccount(savedAccount);
+        return teacherRepository.save(teacher);
+    }
+
+    /** Persists an ACTIVE course taught by the given teacher and returns its id. */
+    private long courseTaughtBy(Teacher teacher, String codeSuffix) {
+        Course course = new Course();
+        course.setCode("AUTHZ-OWN-" + codeSuffix);
+        course.setTitle("Ownership Fixture");
+        course.setCreditHours(3);
+        course.setStatus(CourseStatus.ACTIVE);
+        course.setTeacher(teacher);
+        return courseRepository.save(course).getId();
+    }
+
+    /** Persists a PENDING enrollment linking the given student and course, and returns its id. */
+    private long enrollmentFor(long studentId, long courseId) {
+        Enrollment enrollment = new Enrollment();
+        enrollment.setStudent(studentRepository.findById(studentId).orElseThrow());
+        enrollment.setCourse(courseRepository.findById(courseId).orElseThrow());
+        enrollment.setEnrolledAt(LocalDate.now());
+        enrollment.setStatus(EnrollmentStatus.PENDING);
+        enrollment.setGrade(Grade.NOT_GRADED);
+        return enrollmentRepository.save(enrollment).getId();
+    }
+
+    /** Persists a bare Student row with no linked account, for invite-claiming tests. */
+    private long unclaimedStudentFor(String suffix) {
+        Student student = new Student();
+        student.setFirstName("Invite");
+        student.setLastName("Target");
+        student.setMatriculationNumber("M-INV-" + suffix);
+        student.setEmail("invite." + suffix + "@example.com");
+        return studentRepository.save(student).getId();
     }
 
     // ── students ────────────────────────────────────────────────────
@@ -237,6 +300,164 @@ class AuthorizationRulesTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden());
+    }
+
+    // ── ownership: course rosters (OwnershipGuard.canAccessCourseData) ─
+
+    @Test
+    void teacherCanViewTheRosterOfACourseTheyTeach() throws Exception {
+        Teacher teacher = linkedTeacherFor("owning-teacher", "owning.teacher@example.com");
+        long courseId = courseTaughtBy(teacher, "own1");
+
+        mockMvc.perform(get("/api/enrollments/course/" + courseId)
+                        .header("Authorization", bearerFor("owning-teacher", "TEACHER")))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void teacherCannotViewTheRosterOfAnotherTeachersCourse() throws Exception {
+        Teacher otherTeacher = linkedTeacherFor("other-teacher", "other.teacher@example.com");
+        long courseId = courseTaughtBy(otherTeacher, "own2");
+
+        mockMvc.perform(get("/api/enrollments/course/" + courseId)
+                        .header("Authorization", bearer("TEACHER")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void teacherRequestingANonexistentCourseRosterGetsAnEmptyListNotForbidden() throws Exception {
+        // Regression test for the OwnershipGuard fix: a TEACHER hitting a nonexistent
+        // course id must see the same result ADMIN would (an empty roster), not a
+        // misleading 403 that masks "doesn't exist" as "not yours".
+        mockMvc.perform(get("/api/enrollments/course/999999")
+                        .header("Authorization", bearer("TEACHER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
+    void adminCanViewTheRosterOfAnyCourse() throws Exception {
+        Teacher teacher = linkedTeacherFor("admin-view-teacher", "admin.view.teacher@example.com");
+        long courseId = courseTaughtBy(teacher, "own3");
+
+        mockMvc.perform(get("/api/enrollments/course/" + courseId)
+                        .header("Authorization", bearer("ADMIN")))
+                .andExpect(status().isOk());
+    }
+
+    // ── ownership: enrollment management (OwnershipGuard.canManageEnrollment) ─
+
+    @Test
+    void teacherCanConfirmAnEnrollmentInACourseTheyTeach() throws Exception {
+        Teacher teacher = linkedTeacherFor("confirm-teacher", "confirm.teacher@example.com");
+        long courseId = courseTaughtBy(teacher, "conf1");
+        long studentId = linkedStudentFor("confirm-student", "confirm.student@example.com");
+        long enrollmentId = enrollmentFor(studentId, courseId);
+
+        mockMvc.perform(patch("/api/enrollments/" + enrollmentId + "/confirm")
+                        .header("Authorization", bearerFor("confirm-teacher", "TEACHER")))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void teacherCannotConfirmAnEnrollmentInAnotherTeachersCourse() throws Exception {
+        Teacher otherTeacher = linkedTeacherFor("other-confirm-teacher", "other.confirm.teacher@example.com");
+        long courseId = courseTaughtBy(otherTeacher, "conf2");
+        long studentId = linkedStudentFor("other-confirm-student", "other.confirm.student@example.com");
+        long enrollmentId = enrollmentFor(studentId, courseId);
+
+        mockMvc.perform(patch("/api/enrollments/" + enrollmentId + "/confirm")
+                        .header("Authorization", bearer("TEACHER")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void teacherGradingANonexistentEnrollmentGetsNotFoundNotForbidden() throws Exception {
+        // Regression test for the OwnershipGuard fix: a TEACHER hitting a nonexistent
+        // enrollment id must see the same 404 ADMIN would, not a misleading 403.
+        UpdateGradeRequest request = new UpdateGradeRequest();
+        request.setGrade(Grade.A);
+
+        mockMvc.perform(patch("/api/enrollments/999999/grade")
+                        .header("Authorization", bearer("TEACHER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void adminCanConfirmAnEnrollmentInAnyCourse() throws Exception {
+        Teacher teacher = linkedTeacherFor("admin-confirm-teacher", "admin.confirm.teacher@example.com");
+        long courseId = courseTaughtBy(teacher, "conf3");
+        long studentId = linkedStudentFor("admin-confirm-student", "admin.confirm.student@example.com");
+        long enrollmentId = enrollmentFor(studentId, courseId);
+
+        mockMvc.perform(patch("/api/enrollments/" + enrollmentId + "/confirm")
+                        .header("Authorization", bearer("ADMIN")))
+                .andExpect(status().isOk());
+    }
+
+    // ── registration invites ────────────────────────────────────────
+
+    @Test
+    void adminIssuedStudentInviteCanBeClaimedViaRegistration() throws Exception {
+        long studentId = unclaimedStudentFor("claim1");
+
+        String issueResponse = mockMvc.perform(post("/api/students/" + studentId + "/invite")
+                        .header("Authorization", bearer("ADMIN")))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        String code = objectMapper.readTree(issueResponse).get("code").asText();
+
+        String registerBody = """
+                {"username":"claimed-student","email":"claimed.student@example.com","password":"Password123","registrationCode":"%s"}
+                """.formatted(code);
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerBody))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.role").value("STUDENT"));
+    }
+
+    @Test
+    void teacherCannotIssueAStudentInvite() throws Exception {
+        long studentId = unclaimedStudentFor("noaccess");
+
+        mockMvc.perform(post("/api/students/" + studentId + "/invite")
+                        .header("Authorization", bearer("TEACHER")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void claimingAMalformedRegistrationCodeIsRejectedAsABadRequest() throws Exception {
+        // The registrationCode @Pattern rejects this before it ever reaches the invite
+        // service — proves the new validation is actually wired into the real endpoint.
+        String registerBody = """
+                {"username":"bad-code-user","email":"bad.code.user@example.com","password":"Password123","registrationCode":"not-a-real-code"}
+                """;
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerBody))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void claimingAWellFormedButUnknownRegistrationCodeIsRejected() throws Exception {
+        // Well-formed (passes the @Pattern) but doesn't exist — rejected by the invite
+        // service itself, not the DTO validator.
+        String unknownCode = "Z".repeat(32);
+        String registerBody = """
+                {"username":"unknown-code-user","email":"unknown.code.user@example.com","password":"Password123","registrationCode":"%s"}
+                """.formatted(unknownCode);
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerBody))
+                .andExpect(status().isBadRequest());
     }
 
     // ── unauthenticated ─────────────────────────────────────────────
