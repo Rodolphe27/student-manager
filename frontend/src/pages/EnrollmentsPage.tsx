@@ -4,8 +4,13 @@ import enrollmentService from '../services/enrollmentService';
 import studentService from '../services/studentService';
 import courseService from '../services/courseService';
 import { getErrorMessage } from '../services/errorMessage';
+import { useAuth } from '../context/useAuth';
 
 export default function EnrollmentsPage() {
+  // DELETE /api/enrollments/** is ADMIN-only (see SecurityConfig); TEACHER can
+  // confirm/cancel but would get a 403 on delete, so hide the action for them.
+  const { user } = useAuth();
+  const canDelete = user?.role === 'ADMIN';
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [students, setStudents]       = useState<Student[]>([]);
   const [courses, setCourses]         = useState<Course[]>([]);
@@ -284,12 +289,14 @@ export default function EnrollmentsPage() {
                       Cancel
                     </button>
                   )}
-                  <button
-                    onClick={() => handleUnenroll(e.id)}
-                    className="text-red-500 hover:text-red-700 text-xs font-medium"
-                  >
-                    Unenroll
-                  </button>
+                  {canDelete && (
+                    <button
+                      onClick={() => handleUnenroll(e.id)}
+                      className="text-red-500 hover:text-red-700 text-xs font-medium"
+                    >
+                      Unenroll
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

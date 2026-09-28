@@ -77,8 +77,15 @@ export default function RegisterPage() {
               onChange={(e) => setForm({ ...form, username: e.target.value })}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Choose a username"
+              minLength={3}
+              maxLength={32}
+              pattern="[a-zA-Z0-9_.-]{3,32}"
+              title="3-32 characters: letters, digits, '.', '_' or '-'"
               required
             />
+            <p className="text-xs text-gray-400 mt-1">
+              3-32 characters: letters, digits, &apos;.&apos;, &apos;_&apos; or &apos;-&apos;.
+            </p>
           </div>
 
           <div>
@@ -130,6 +137,8 @@ export default function RegisterPage() {
               onChange={(e) => setForm({ ...form, registrationCode: e.target.value })}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="From your invite link, if you have one"
+              pattern="[A-Za-z0-9_-]{32}"
+              title="32 characters: letters, digits, '_' or '-'"
             />
             <p className="text-xs text-gray-400 mt-1">
               Links your account to a student or teacher profile an admin already set up for you.

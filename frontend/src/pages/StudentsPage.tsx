@@ -229,6 +229,10 @@ export default function StudentsPage() {
                 placeholder="MT-12345"
                 value={form.matriculationNumber}
                 onChange={(e) => setForm({ ...form, matriculationNumber: e.target.value })}
+                minLength={2}
+                maxLength={40}
+                pattern="[A-Za-z0-9-]{2,40}"
+                title="2-40 characters: letters, digits or '-'"
                 required
               />
             </div>

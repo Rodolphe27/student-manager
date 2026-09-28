@@ -174,6 +174,8 @@ export default function CoursesPage() {
                 placeholder="ALG-101"
                 value={form.code}
                 onChange={(e) => setForm({ ...form, code: e.target.value })}
+                pattern="[A-Za-z0-9]+(-[A-Za-z0-9]+)*"
+                title="Alphanumeric segments separated by '-' (e.g. CS-101)"
                 required
               />
             </div>

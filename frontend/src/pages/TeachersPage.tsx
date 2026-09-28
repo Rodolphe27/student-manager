@@ -72,10 +72,18 @@ export default function TeachersPage() {
     e.preventDefault();
     setError('');
     try {
+      // department is optional on the backend, but its @Pattern only treats a
+      // missing (null) value as valid — an empty string still has to match the
+      // 2-100 char pattern and would be rejected. Omit it entirely when blank.
+      const trimmedDepartment = form.department?.trim();
+      const payload: CreateTeacherRequest = {
+        ...form,
+        department: trimmedDepartment ? trimmedDepartment : undefined,
+      };
       if (editingId !== null) {
-        await teacherService.update(editingId, form);
+        await teacherService.update(editingId, payload);
       } else {
-        await teacherService.create(form);
+        await teacherService.create(payload);
       }
       closeForm();
       setForm(emptyForm);
@@ -240,6 +248,8 @@ export default function TeachersPage() {
                 placeholder="Computer Science"
                 value={form.department}
                 onChange={(e) => setForm({ ...form, department: e.target.value })}
+                pattern="[A-Za-z .'-]{2,100}"
+                title="2-100 characters: letters, spaces, '.', &apos;&apos; or '-' — leave blank to omit"
               />
             </div>
             <div className="col-span-2 flex gap-2">
