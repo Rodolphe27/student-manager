@@ -1,5 +1,8 @@
 package com.student_manager.feature.course;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 
 /**
@@ -18,11 +21,22 @@ public interface CourseService {
     CourseDTO findById(Long id);
 
     /**
-     * Retrieves every course in the system.
+     * Returns one page of courses, optionally filtered by a search text
+     * (code or title) and/or a status.
      *
-     * @return the list of all courses
+     * @param query    the search text, or {@code null}/blank for no text filter
+     * @param status   the status to keep, or {@code null} for every status
+     * @param pageable the requested page, size and sort
+     * @return the requested page of courses
      */
-    List<CourseDTO> findAll();
+    Page<CourseDTO> search(String query, CourseStatus status, Pageable pageable);
+
+    /**
+     * Lists every course as a lightweight {@link CourseOption}, for selection lists.
+     *
+     * @return all courses, ordered by code
+     */
+    List<CourseOption> options();
 
     /**
      * Retrieves all courses with the given status.

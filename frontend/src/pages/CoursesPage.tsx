@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import type { Course, CreateCourseRequest, CourseStatus } from '../types';
+import type { Course, CreateCourseRequest, CourseStatus, Page } from '../types';
 import  courseService from '../services/courseService';
 import { getErrorMessage } from '../services/errorMessage';
+import Pagination from '../components/Pagination';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
+
+const PAGE_SIZE = 10;
 
 const emptyForm: CreateCourseRequest = {
   code: '',
@@ -12,20 +16,29 @@ const emptyForm: CreateCourseRequest = {
 };
 
 export default function CoursesPage() {
-  const [courses, setCourses]   = useState<Course[]>([]);
+  const [data, setData]         = useState<Page<Course> | null>(null);
   const [showForm, setShowForm] = useState<boolean>(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading]   = useState<boolean>(true);
   const [loadError, setLoadError] = useState<string>('');
   const [error, setError]       = useState<string>('');
   const [query, setQuery]       = useState<string>('');
+  const [page, setPage]         = useState<number>(1);
 
   const [form, setForm] = useState<CreateCourseRequest>(emptyForm);
 
+  // Search and paging run on the server; the query waits for a typing pause.
+  const debouncedQuery = useDebouncedValue(query.trim(), 300);
+
   const loadCourses = useCallback(async (): Promise<void> => {
     try {
-      const r = await courseService.getAll();
-      setCourses(r.data);
+      const r = await courseService.search({ q: debouncedQuery || undefined, page: page - 1, size: PAGE_SIZE });
+      // Deleting the last row of the last page leaves it empty — step back one page.
+      if (r.data.content.length === 0 && page > 1) {
+        setPage(page - 1);
+        return;
+      }
+      setData(r.data);
       setLoadError('');
     } catch (err) {
       console.error(err);
@@ -33,7 +46,7 @@ export default function CoursesPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [debouncedQuery, page]);
 
   // Fetch-on-mount: the effect kicks off an async load whose result lands via
   // setState. react-hooks/set-state-in-effect flags every such pattern; it's
@@ -56,6 +69,7 @@ export default function CoursesPage() {
       description: c.description ?? '',
       creditHours: c.creditHours,
       status: c.status,
+      version: c.version,
     });
     setError('');
     setShowForm(true);
@@ -100,11 +114,9 @@ export default function CoursesPage() {
     ARCHIVED: 'bg-red-100 text-red-600',
   };
 
-  const filteredCourses = courses.filter((c: Course) => {
-    const q = query.trim().toLowerCase();
-    if (!q) return true;
-    return c.code.toLowerCase().includes(q) || c.title.toLowerCase().includes(q);
-  });
+  const courses    = data?.content ?? [];
+  const total      = data?.page.totalElements ?? 0;
+  const totalPages = data?.page.totalPages ?? 1;
 
   if (loading) {
     return (
@@ -137,14 +149,14 @@ export default function CoursesPage() {
         <div>
           <h1 className="text-xl font-bold text-gray-800">Courses</h1>
           <p className="text-sm text-gray-400">
-            {filteredCourses.length} of {courses.length}
+            {total} {debouncedQuery ? 'matching' : 'total'}
           </p>
         </div>
         <div className="flex gap-2">
           <input
             type="search"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => { setQuery(e.target.value); setPage(1); }}
             placeholder="Search by code or title…"
             className="flex-1 sm:w-72 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -254,7 +266,7 @@ export default function CoursesPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {filteredCourses.map((c: Course) => (
+            {courses.map((c: Course) => (
               <tr key={c.id} className="hover:bg-gray-50">
                 <td className="px-5 py-3 font-mono text-blue-600 font-medium">{c.code}</td>
                 <td className="px-5 py-3 text-gray-800">{c.title}</td>
@@ -280,15 +292,16 @@ export default function CoursesPage() {
                 </td>
               </tr>
             ))}
-            {filteredCourses.length === 0 && (
+            {total === 0 && (
               <tr>
                 <td colSpan={5} className="px-5 py-8 text-center text-gray-400 text-sm">
-                  {courses.length === 0 ? 'No courses yet — add one above' : 'No courses match your search'}
+                  {debouncedQuery ? 'No courses match your search' : 'No courses yet — add one above'}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+        {total > 0 && <Pagination page={page} totalPages={totalPages} onChange={setPage} />}
       </div>
     </div>
   );

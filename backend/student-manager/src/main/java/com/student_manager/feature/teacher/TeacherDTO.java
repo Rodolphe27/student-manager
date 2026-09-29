@@ -18,4 +18,6 @@ public class TeacherDTO {
     private String email;
     private String department;
     private String fullName;
+    // Optimistic-lock version; send it back on update so a stale edit is rejected (409).
+    private long version;
 }

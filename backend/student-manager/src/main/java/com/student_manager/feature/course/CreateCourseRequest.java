@@ -29,4 +29,8 @@ public class CreateCourseRequest {
     private int creditHours;
 
     private CourseStatus status = CourseStatus.ACTIVE;
+
+    // Version of the record the client edited (from its DTO). Optional: when present and
+    // outdated, the update is rejected with 409 instead of overwriting a newer change.
+    private Long version;
 }

@@ -4,13 +4,16 @@ import { test, expect } from '@playwright/test';
 // startup session check (GET /api/auth/me) instead of seeding localStorage.
 const user = { username: 'tester', email: 'tester@example.com' };
 
+// List endpoints are paged (Spring Data PagedModel shape).
+const emptyPage = { content: [], page: { size: 10, number: 0, totalElements: 0, totalPages: 0 } };
+
 test.describe('Dashboard — staff', () => {
   test.beforeEach(async ({ page }) => {
     await page.route('**/api/auth/me', (route) => route.fulfill({ json: { ...user, role: 'ADMIN' } }));
 
-    await page.route('**/api/students**', (route) => route.fulfill({ json: [] }));
-    await page.route('**/api/courses**', (route) => route.fulfill({ json: [] }));
-    await page.route('**/api/enrollments**', (route) => route.fulfill({ json: [] }));
+    await page.route('**/api/students**', (route) => route.fulfill({ json: emptyPage }));
+    await page.route('**/api/courses**', (route) => route.fulfill({ json: emptyPage }));
+    await page.route('**/api/enrollments**', (route) => route.fulfill({ json: emptyPage }));
   });
 
   test('has no horizontal overflow', async ({ page }) => {
@@ -50,7 +53,7 @@ test.describe('Dashboard — student', () => {
     await page.route('**/api/students/me', (route) =>
       route.fulfill({ json: { id: 1, firstName: 'T', lastName: 'Ester', email: user.email } }),
     );
-    await page.route('**/api/courses**', (route) => route.fulfill({ json: [] }));
+    await page.route('**/api/courses**', (route) => route.fulfill({ json: emptyPage }));
     await page.route('**/api/enrollments/student/**', (route) => route.fulfill({ json: [] }));
   });
 

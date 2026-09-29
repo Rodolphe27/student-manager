@@ -12,14 +12,19 @@ vi.mock('../services/authService', () => ({
   default: { me: vi.fn(), login: vi.fn(), register: vi.fn(), logout: vi.fn() },
 }));
 vi.mock('../services/studentService', () => ({
-  default: { getAll: vi.fn(), getMe: vi.fn() },
+  default: { search: vi.fn(), getMe: vi.fn() },
 }));
 vi.mock('../services/courseService', () => ({
-  default: { getAll: vi.fn() },
+  default: { search: vi.fn() },
 }));
 vi.mock('../services/enrollmentService', () => ({
-  default: { getAll: vi.fn(), getByStudent: vi.fn() },
+  default: { search: vi.fn(), getByStudent: vi.fn() },
 }));
+
+// A paged API response carrying `totalElements` rows in total.
+function page<T>(content: T[], totalElements = content.length) {
+  return { data: { content, page: { size: content.length, number: 0, totalElements, totalPages: 1 } } } as never;
+}
 
 function renderDashboard(role: 'STUDENT' | 'TEACHER' | 'ADMIN') {
   // The startup session check (/auth/me) resolves to this user.
@@ -40,7 +45,7 @@ describe('Dashboard', () => {
   });
 
   it('for a STUDENT, scopes to their own data and never calls the staff-only list endpoints', async () => {
-    vi.mocked(courseService.getAll).mockResolvedValue({ data: [{ id: 1 }, { id: 2 }] } as never);
+    vi.mocked(courseService.search).mockResolvedValue(page([{ id: 1 }], 2));
     vi.mocked(studentService.getMe).mockResolvedValue({ data: { id: 9 } } as never);
     vi.mocked(enrollmentService.getByStudent).mockResolvedValue({
       data: [
@@ -56,13 +61,13 @@ describe('Dashboard', () => {
     expect(screen.queryByText('Total Students')).not.toBeInTheDocument();
     expect(screen.queryByText(/could not load dashboard data/i)).not.toBeInTheDocument();
 
-    expect(studentService.getAll).not.toHaveBeenCalled();
-    expect(enrollmentService.getAll).not.toHaveBeenCalled();
+    expect(studentService.search).not.toHaveBeenCalled();
+    expect(enrollmentService.search).not.toHaveBeenCalled();
     expect(enrollmentService.getByStudent).toHaveBeenCalledWith(9);
   });
 
   it('for a STUDENT with no linked student record (404), still renders without error', async () => {
-    vi.mocked(courseService.getAll).mockResolvedValue({ data: [{ id: 1 }] } as never);
+    vi.mocked(courseService.search).mockResolvedValue(page([{ id: 1 }]));
     vi.mocked(studentService.getMe).mockRejectedValue({ response: { status: 404 } });
 
     renderDashboard('STUDENT');
@@ -72,17 +77,23 @@ describe('Dashboard', () => {
     expect(enrollmentService.getByStudent).not.toHaveBeenCalled();
   });
 
-  it('for staff, loads totals across everyone', async () => {
-    vi.mocked(studentService.getAll).mockResolvedValue({ data: [{ id: 1 }, { id: 2 }, { id: 3 }] } as never);
-    vi.mocked(courseService.getAll).mockResolvedValue({ data: [{ id: 1 }] } as never);
-    vi.mocked(enrollmentService.getAll).mockResolvedValue({
-      data: [{ id: 1, status: 'PENDING', studentName: 'A', courseTitle: 'C', enrolledAt: '2026-01-01', grade: 'NOT_GRADED' }],
-    } as never);
+  it('for staff, reads totals from page counts instead of downloading every row', async () => {
+    vi.mocked(studentService.search).mockResolvedValue(page([{ id: 1 }], 42));
+    vi.mocked(courseService.search).mockResolvedValue(page([{ id: 1 }], 8));
+    vi.mocked(enrollmentService.search).mockImplementation((params) =>
+      Promise.resolve(params?.status === 'PENDING'
+        ? page([{ id: 1 }], 6)
+        : page([{ id: 1, status: 'PENDING', studentName: 'A', courseTitle: 'C', enrolledAt: '2026-01-01', grade: 'NOT_GRADED' }], 57)),
+    );
 
     renderDashboard('ADMIN');
 
     expect(await screen.findByText('Total Students')).toBeInTheDocument();
-    expect(studentService.getAll).toHaveBeenCalled();
-    expect(enrollmentService.getAll).toHaveBeenCalled();
+    expect(screen.getByText('42')).toBeInTheDocument();
+    expect(screen.getByText('57')).toBeInTheDocument();
+    expect(screen.getByText('6')).toBeInTheDocument();
+    expect(studentService.search).toHaveBeenCalledWith({ size: 1 });
+    expect(courseService.search).toHaveBeenCalledWith({ status: 'ACTIVE', size: 1 });
+    expect(enrollmentService.search).toHaveBeenCalledWith({ status: 'PENDING', size: 1 });
   });
 });

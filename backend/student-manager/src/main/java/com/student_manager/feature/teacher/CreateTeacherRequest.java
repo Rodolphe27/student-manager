@@ -27,5 +27,8 @@ public class CreateTeacherRequest {
     // department entirely is still valid.
     @Pattern(regexp = "^[A-Za-z .'-]{2,100}$",
             message = "Department must be 2-100 characters: letters, spaces, '.', ''' or '-'")
-    private String department;
+    private String department;
+    // Version of the record the client edited (from its DTO). Optional: when present and
+    // outdated, the update is rejected with 409 instead of overwriting a newer change.
+    private Long version;
 }

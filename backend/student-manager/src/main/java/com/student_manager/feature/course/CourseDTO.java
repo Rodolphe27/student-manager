@@ -19,4 +19,6 @@ public class CourseDTO {
     private int creditHours;
     private CourseStatus status;
     private boolean active;
+    // Optimistic-lock version; send it back on update so a stale edit is rejected (409).
+    private long version;
 }

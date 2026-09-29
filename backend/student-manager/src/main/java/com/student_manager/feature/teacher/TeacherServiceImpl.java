@@ -3,9 +3,12 @@ package com.student_manager.feature.teacher;
 import com.student_manager.shared.exception.ValidationException;
 import com.student_manager.shared.service.CrudServiceSupport;
 import lombok.RequiredArgsConstructor;
+import com.student_manager.shared.repository.BaseRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 // findById/findAll/delete come from CrudServiceSupport — see that class for
 // why create()/update() stay here. Generic "Fetching .../Updating .../
@@ -16,22 +19,29 @@ import org.springframework.stereotype.Service;
  * Default {@link TeacherService} implementation. Reuses the load-or-404 /
  * list-all / delete-or-404 behavior from {@link CrudServiceSupport} and adds
  * teacher-specific creation and update logic, including email uniqueness checks.
+ * Reads run in read-only transactions (class default); writes override it.
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class TeacherServiceImpl extends CrudServiceSupport<Teacher, TeacherDTO> implements TeacherService {
 
     private final TeacherRepository repository;
 
     /**
-     * Supplies the underlying JPA repository for the shared CRUD template methods.
+     * Supplies the underlying repository for the shared CRUD template methods.
      *
      * @return the {@link TeacherRepository} used for persistence
      */
     @Override
-    protected JpaRepository<Teacher, Long> repository() {
+    protected BaseRepository<Teacher> repository() {
         return repository;
+    }
+
+    @Override
+    public Page<TeacherDTO> search(String query, Pageable pageable) {
+        return search(TeacherSpecifications.matching(query), pageable);
     }
 
     /**
@@ -59,6 +69,7 @@ public class TeacherServiceImpl extends CrudServiceSupport<Teacher, TeacherDTO> 
         dto.setEmail(teacher.getEmail());
         dto.setDepartment(teacher.getDepartment());
         dto.setFullName(teacher.getFullName());
+        dto.setVersion(teacher.getVersion());
         return dto;
     }
 
@@ -70,6 +81,7 @@ public class TeacherServiceImpl extends CrudServiceSupport<Teacher, TeacherDTO> 
      * @throws ValidationException if the email is already in use
      */
     @Override
+    @Transactional
     public TeacherDTO create(CreateTeacherRequest request) {
         log.info("Creating teacher: {}", request.getEmail());
 
@@ -96,10 +108,13 @@ public class TeacherServiceImpl extends CrudServiceSupport<Teacher, TeacherDTO> 
      * @return the updated teacher
      * @throws com.student_manager.shared.exception.ResourceNotFoundException if no teacher exists with the given id
      * @throws ValidationException if the new email is already used by another teacher
+     * @throws org.springframework.orm.ObjectOptimisticLockingFailureException if the request's version is outdated
      */
     @Override
+    @Transactional
     public TeacherDTO update(Long id, CreateTeacherRequest request) {
         Teacher teacher = loadOrThrow(id);
+        checkVersion(teacher, request.getVersion());
 
         if (repository.existsByEmailAndIdNot(request.getEmail(), id)) {
             throw new ValidationException("Email already exists: " + request.getEmail());
@@ -110,7 +125,8 @@ public class TeacherServiceImpl extends CrudServiceSupport<Teacher, TeacherDTO> 
         teacher.setEmail(request.getEmail());
         teacher.setDepartment(request.getDepartment());
 
-        Teacher saved = repository.save(teacher);
+        // Flush now so the returned DTO carries the incremented version.
+        Teacher saved = repository.saveAndFlush(teacher);
         return toDTO(saved);
     }
 }

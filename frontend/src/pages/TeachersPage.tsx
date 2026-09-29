@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import type { Teacher, CreateTeacherRequest, RegistrationInvite } from '../types';
+import type { Teacher, CreateTeacherRequest, RegistrationInvite, Page } from '../types';
 import teacherService from '../services/teacherService';
 import InviteModal from '../components/InviteModal';
+import Pagination from '../components/Pagination';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 
 const PAGE_SIZE = 10;
 
@@ -13,7 +15,7 @@ const emptyForm: CreateTeacherRequest = {
 };
 
 export default function TeachersPage() {
-  const [teachers, setTeachers]   = useState<Teacher[]>([]);
+  const [data, setData]           = useState<Page<Teacher> | null>(null);
   const [showForm, setShowForm]   = useState<boolean>(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading]     = useState<boolean>(true);
@@ -26,10 +28,18 @@ export default function TeachersPage() {
 
   const [form, setForm] = useState<CreateTeacherRequest>(emptyForm);
 
+  // Search and paging run on the server; the query waits for a typing pause.
+  const debouncedQuery = useDebouncedValue(query.trim(), 300);
+
   const loadTeachers = useCallback(async (): Promise<void> => {
     try {
-      const r = await teacherService.getAll();
-      setTeachers(r.data);
+      const r = await teacherService.search({ q: debouncedQuery || undefined, page: page - 1, size: PAGE_SIZE });
+      // Deleting the last row of the last page leaves it empty — step back one page.
+      if (r.data.content.length === 0 && page > 1) {
+        setPage(page - 1);
+        return;
+      }
+      setData(r.data);
       setLoadError('');
     } catch (err) {
       console.error(err);
@@ -37,9 +47,10 @@ export default function TeachersPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [debouncedQuery, page]);
 
-  // Fetch-on-mount; result lands via setState. See CoursesPage for the rationale.
+  // Fetch on mount and whenever the search or page changes; result lands via setState.
+  // See CoursesPage for the rationale.
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void loadTeachers(); }, [loadTeachers]);
 
@@ -57,6 +68,7 @@ export default function TeachersPage() {
       lastName: t.lastName,
       email: t.email,
       department: t.department ?? '',
+      version: t.version,
     });
     setError('');
     setShowForm(true);
@@ -115,22 +127,9 @@ export default function TeachersPage() {
     }
   };
 
-  const filteredTeachers = teachers.filter((t: Teacher) => {
-    const q = query.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      t.fullName.toLowerCase().includes(q) ||
-      t.email.toLowerCase().includes(q) ||
-      (t.department ?? '').toLowerCase().includes(q)
-    );
-  });
-
-  const totalPages = Math.max(1, Math.ceil(filteredTeachers.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const pagedTeachers = filteredTeachers.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
-  );
+  const teachers   = data?.content ?? [];
+  const total      = data?.page.totalElements ?? 0;
+  const totalPages = data?.page.totalPages ?? 1;
 
   if (loading) {
     return (
@@ -163,7 +162,7 @@ export default function TeachersPage() {
         <div>
           <h1 className="text-xl font-bold text-gray-800">Teachers</h1>
           <p className="text-sm text-gray-400">
-            {filteredTeachers.length} of {teachers.length}
+            {total} {debouncedQuery ? 'matching' : 'total'}
           </p>
         </div>
         <div className="flex gap-2">
@@ -283,7 +282,7 @@ export default function TeachersPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {pagedTeachers.map((t: Teacher) => (
+            {teachers.map((t: Teacher) => (
               <tr key={t.id} className="hover:bg-gray-50">
                 <td className="px-5 py-3 font-medium text-gray-800">{t.fullName}</td>
                 <td className="px-5 py-3 text-gray-500">{t.email}</td>
@@ -310,38 +309,16 @@ export default function TeachersPage() {
                 </td>
               </tr>
             ))}
-            {filteredTeachers.length === 0 && (
+            {total === 0 && (
               <tr>
                 <td colSpan={4} className="px-5 py-8 text-center text-gray-400 text-sm">
-                  {teachers.length === 0 ? 'No teachers yet — add one above' : 'No teachers match your search'}
+                  {debouncedQuery ? 'No teachers match your search' : 'No teachers yet — add one above'}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-        {filteredTeachers.length > 0 && (
-          <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
-            <span className="text-xs text-gray-400">
-              Page {currentPage} of {totalPages}
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
+        {total > 0 && <Pagination page={page} totalPages={totalPages} onChange={setPage} />}
       </div>
     </div>
   );

@@ -1,5 +1,8 @@
 package com.student_manager.feature.student;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 
 /**
@@ -37,11 +40,21 @@ public interface StudentService {
     boolean accountOwnsStudent(String username, Long studentId);
 
     /**
-     * Lists every student in the system.
+     * Returns one page of students, optionally filtered by a search text
+     * matched against name, matriculation number and email.
      *
-     * @return all students
+     * @param query    the search text, or {@code null}/blank for all students
+     * @param pageable the requested page, size and sort
+     * @return the requested page of students
      */
-    List<StudentDTO> findAll();
+    Page<StudentDTO> search(String query, Pageable pageable);
+
+    /**
+     * Lists every student as a lightweight {@link StudentOption}, for selection lists.
+     *
+     * @return all students, ordered by name
+     */
+    List<StudentOption> options();
 
     /**
      * Creates a new student profile.

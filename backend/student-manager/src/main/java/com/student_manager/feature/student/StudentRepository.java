@@ -1,13 +1,32 @@
 package com.student_manager.feature.student;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import com.student_manager.shared.repository.BaseRepository;
+import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
- * Spring Data JPA repository for {@link Student}.
+ * Spring Data JPA repository for {@link Student}. Paged search comes from
+ * {@link BaseRepository} ({@code findAll(Specification, Pageable)}).
  */
-public interface StudentRepository extends JpaRepository<Student, Long> {
+public interface StudentRepository extends BaseRepository<Student> {
+
+    /**
+     * Every student as a lightweight {@link StudentOption}, for dropdowns.
+     * A JPQL constructor-expression projection: only the three needed columns
+     * are selected (no full entities loaded), and the display name is built
+     * in the query.
+     *
+     * @return all students, ordered by last then first name
+     */
+    @Query("""
+            select new com.student_manager.feature.student.StudentOption(
+                s.id, concat(s.firstName, ' ', s.lastName), s.matriculationNumber)
+            from Student s
+            order by s.lastName, s.firstName
+            """)
+    List<StudentOption> findAllOptions();
 
     /**
      * Finds the student with the given email.

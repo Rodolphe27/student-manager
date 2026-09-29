@@ -1,6 +1,7 @@
 package com.student_manager.feature.teacher;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 /**
  * Service contract for managing {@link Teacher} resources, covering lookup,
@@ -18,11 +19,14 @@ public interface TeacherService {
     TeacherDTO findById(Long id);
 
     /**
-     * Retrieves every teacher in the system.
+     * Returns one page of teachers, optionally filtered by a search text
+     * matched against name, email and department.
      *
-     * @return the list of all teachers
+     * @param query    the search text, or {@code null}/blank for all teachers
+     * @param pageable the requested page, size and sort
+     * @return the requested page of teachers
      */
-    List<TeacherDTO> findAll();
+    Page<TeacherDTO> search(String query, Pageable pageable);
 
     /**
      * Creates a new teacher profile.

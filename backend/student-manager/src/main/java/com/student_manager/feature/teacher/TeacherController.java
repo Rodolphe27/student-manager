@@ -7,11 +7,12 @@ import com.student_manager.feature.invite.RegistrationInviteService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 // Per-method entry logging removed — RequestLoggingFilter (shared/config) now
 // logs method + path + status + duration for every request. The lines below
@@ -33,14 +34,18 @@ public class TeacherController {
     private final RegistrationInviteService registrationInviteService;
 
     /**
-     * Lists every teacher in the system.
+     * Returns one page of teachers, optionally filtered by {@code q} (name,
+     * email, or department). Default order: last name, first name.
      *
-     * @return 200 OK with the list of all teachers
+     * @param q        optional search text
+     * @param pageable {@code page} (0-based), {@code size} (max 100) and {@code sort} query params
+     * @return 200 OK with the requested page of teachers
      */
     @GetMapping
-    public ResponseEntity<List<TeacherDTO>> getAll() {
-        // log.info("GET /api/teachers");
-        return ResponseEntity.ok(service.findAll());
+    public ResponseEntity<Page<TeacherDTO>> getAll(
+            @RequestParam(required = false) String q,
+            @PageableDefault(sort = {"lastName", "firstName"}) Pageable pageable) {
+        return ResponseEntity.ok(service.search(q, pageable));
     }
 
     /**

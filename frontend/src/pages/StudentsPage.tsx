@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import type { Student, CreateStudentRequest, RegistrationInvite } from '../types';
+import type { Student, CreateStudentRequest, RegistrationInvite, Page } from '../types';
 import studentService from '../services/studentService';
 import { getErrorMessage } from '../services/errorMessage';
 import InviteModal from '../components/InviteModal';
+import Pagination from '../components/Pagination';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 
 const PAGE_SIZE = 10;
 
@@ -14,7 +16,7 @@ const emptyForm: CreateStudentRequest = {
 };
 
 export default function StudentsPage() {
-  const [students, setStudents]   = useState<Student[]>([]);
+  const [data, setData]           = useState<Page<Student> | null>(null);
   const [showForm, setShowForm]   = useState<boolean>(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading]     = useState<boolean>(true);
@@ -27,10 +29,18 @@ export default function StudentsPage() {
 
   const [form, setForm] = useState<CreateStudentRequest>(emptyForm);
 
+  // Search and paging run on the server; the query waits for a typing pause.
+  const debouncedQuery = useDebouncedValue(query.trim(), 300);
+
   const loadStudents = useCallback(async (): Promise<void> => {
     try {
-      const r = await studentService.getAll();
-      setStudents(r.data);
+      const r = await studentService.search({ q: debouncedQuery || undefined, page: page - 1, size: PAGE_SIZE });
+      // Deleting the last row of the last page leaves it empty — step back one page.
+      if (r.data.content.length === 0 && page > 1) {
+        setPage(page - 1);
+        return;
+      }
+      setData(r.data);
       setLoadError('');
     } catch (err) {
       console.error(err);
@@ -38,9 +48,10 @@ export default function StudentsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [debouncedQuery, page]);
 
-  // Fetch-on-mount; result lands via setState. See CoursesPage for the rationale.
+  // Fetch on mount and whenever the search or page changes; result lands via setState.
+  // See CoursesPage for the rationale.
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void loadStudents(); }, [loadStudents]);
 
@@ -59,6 +70,7 @@ export default function StudentsPage() {
       matriculationNumber: s.matriculationNumber,
       email: s.email,
       birthDate: s.birthDate ?? undefined,
+      version: s.version,
     });
     setError('');
     setShowForm(true);
@@ -107,22 +119,9 @@ export default function StudentsPage() {
     }
   };
 
-  const filteredStudents = students.filter((s: Student) => {
-    const q = query.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      s.fullName.toLowerCase().includes(q) ||
-      s.matriculationNumber.toLowerCase().includes(q) ||
-      s.email.toLowerCase().includes(q)
-    );
-  });
-
-  const totalPages = Math.max(1, Math.ceil(filteredStudents.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const pagedStudents = filteredStudents.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
-  );
+  const students   = data?.content ?? [];
+  const total      = data?.page.totalElements ?? 0;
+  const totalPages = data?.page.totalPages ?? 1;
 
   if (loading) {
     return (
@@ -155,7 +154,7 @@ export default function StudentsPage() {
         <div>
           <h1 className="text-xl font-bold text-gray-800">Students</h1>
           <p className="text-sm text-gray-400">
-            {filteredStudents.length} of {students.length}
+            {total} {debouncedQuery ? 'matching' : 'total'}
           </p>
         </div>
         <div className="flex gap-2">
@@ -278,7 +277,7 @@ export default function StudentsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {pagedStudents.map((s: Student) => (
+            {students.map((s: Student) => (
               <tr key={s.id} className="hover:bg-gray-50">
                 <td className="px-5 py-3 font-medium text-gray-800">{s.fullName}</td>
                 <td className="px-5 py-3 text-gray-500 font-mono">{s.matriculationNumber}</td>
@@ -305,38 +304,16 @@ export default function StudentsPage() {
                 </td>
               </tr>
             ))}
-            {filteredStudents.length === 0 && (
+            {total === 0 && (
               <tr>
                 <td colSpan={4} className="px-5 py-8 text-center text-gray-400 text-sm">
-                  {students.length === 0 ? 'No students yet — add one above' : 'No students match your search'}
+                  {debouncedQuery ? 'No students match your search' : 'No students yet — add one above'}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-        {filteredStudents.length > 0 && (
-          <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
-            <span className="text-xs text-gray-400">
-              Page {currentPage} of {totalPages}
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
+        {total > 0 && <Pagination page={page} totalPages={totalPages} onChange={setPage} />}
       </div>
     </div>
   );

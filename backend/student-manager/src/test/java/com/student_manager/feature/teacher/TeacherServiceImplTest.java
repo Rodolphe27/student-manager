@@ -78,7 +78,7 @@ class TeacherServiceImplTest {
         CreateTeacherRequest request = requestWith("grace@example.com");
         when(repository.findById(1L)).thenReturn(Optional.of(existing));
         when(repository.existsByEmailAndIdNot("grace@example.com", 1L)).thenReturn(false);
-        when(repository.save(any(Teacher.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(repository.saveAndFlush(any(Teacher.class))).thenAnswer(inv -> inv.getArgument(0));
 
         TeacherDTO result = teacherService.update(1L, request);
 
@@ -95,7 +95,7 @@ class TeacherServiceImplTest {
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("Email already exists: other@example.com");
 
-        verify(repository, never()).save(any());
+        verify(repository, never()).saveAndFlush(any());
     }
 
     @Test

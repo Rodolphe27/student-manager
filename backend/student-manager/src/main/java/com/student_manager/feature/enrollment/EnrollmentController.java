@@ -3,6 +3,10 @@ package com.student_manager.feature.enrollment;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -26,14 +30,22 @@ public class EnrollmentController {
     private final EnrollmentService service;
 
     /**
-     * Lists every enrollment in the system.
+     * Returns one page of enrollments, optionally filtered by {@code status},
+     * {@code studentId} and/or {@code courseId}. Default order: newest first.
      *
-     * @return all enrollments
+     * @param status    optional status filter
+     * @param studentId optional student filter
+     * @param courseId  optional course filter
+     * @param pageable  {@code page} (0-based), {@code size} (max 100) and {@code sort} query params
+     * @return the requested page of enrollments
      */
     @GetMapping
-    public ResponseEntity<List<EnrollmentDTO>> getAll() {
-        // log.info("GET /api/enrollments");
-        return ResponseEntity.ok(service.findAll());
+    public ResponseEntity<Page<EnrollmentDTO>> getAll(
+            @RequestParam(required = false) EnrollmentStatus status,
+            @RequestParam(required = false) Long studentId,
+            @RequestParam(required = false) Long courseId,
+            @PageableDefault(sort = {"enrolledAt", "id"}, direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(service.search(status, studentId, courseId, pageable));
     }
 
     /**

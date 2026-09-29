@@ -4,9 +4,13 @@ import com.student_manager.shared.exception.ResourceNotFoundException;
 import com.student_manager.shared.exception.ValidationException;
 import com.student_manager.shared.service.CrudServiceSupport;
 import lombok.RequiredArgsConstructor;
+import com.student_manager.shared.repository.BaseRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,20 +26,32 @@ import java.util.stream.Collectors;
  * {@code findById}/{@code findAll}/{@code delete} are inherited from {@link
  * CrudServiceSupport}; this class adds status filtering and the {@code create}/
  * {@code update} operations whose code-uniqueness checks are specific to courses.
+ * Reads run in read-only transactions (class default); writes override it.
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class CourseServiceImpl extends CrudServiceSupport<Course, CourseDTO> implements CourseService {
 
     private final CourseRepository repository;
 
     /**
-     * @return the JPA repository backing the inherited CRUD operations
+     * @return the repository backing the inherited CRUD operations
      */
     @Override
-    protected JpaRepository<Course, Long> repository() {
+    protected BaseRepository<Course> repository() {
         return repository;
+    }
+
+    @Override
+    public Page<CourseDTO> search(String query, CourseStatus status, Pageable pageable) {
+        return search(CourseSpecifications.matching(query, status), pageable);
+    }
+
+    @Override
+    public List<CourseOption> options() {
+        return repository.findAllProjectedBy(Sort.by("code"));
     }
 
     /**
@@ -62,6 +78,7 @@ public class CourseServiceImpl extends CrudServiceSupport<Course, CourseDTO> imp
         dto.setCreditHours(course.getCreditHours());
         dto.setStatus(course.getStatus());
         dto.setActive(course.isActive());
+        dto.setVersion(course.getVersion());
         return dto;
     }
 
@@ -88,6 +105,7 @@ public class CourseServiceImpl extends CrudServiceSupport<Course, CourseDTO> imp
      * @throws ValidationException if the course code is already in use
      */
     @Override
+    @Transactional
     public CourseDTO create(CreateCourseRequest request) {
         log.info("Creating course: {}", request.getCode());
 
@@ -115,10 +133,13 @@ public class CourseServiceImpl extends CrudServiceSupport<Course, CourseDTO> imp
      * @return the updated course
      * @throws ResourceNotFoundException if no course exists with the given id
      * @throws ValidationException if the new course code is already used by another course
+     * @throws org.springframework.orm.ObjectOptimisticLockingFailureException if the request's version is outdated
      */
     @Override
+    @Transactional
     public CourseDTO update(Long id, CreateCourseRequest request) {
         Course course = loadOrThrow(id);
+        checkVersion(course, request.getVersion());
 
         if (repository.existsByCodeAndIdNot(request.getCode(), id)) {
             throw new ValidationException("Course code already exists: " + request.getCode());
@@ -132,7 +153,8 @@ public class CourseServiceImpl extends CrudServiceSupport<Course, CourseDTO> imp
             course.setStatus(request.getStatus());
         }
 
-        Course saved = repository.save(course);
+        // Flush now so the returned DTO carries the incremented version.
+        Course saved = repository.saveAndFlush(course);
         return toDTO(saved);
     }
 }

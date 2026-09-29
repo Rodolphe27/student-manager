@@ -5,10 +5,14 @@ import com.student_manager.shared.exception.ResourceNotFoundException;
 import com.student_manager.shared.exception.ValidationException;
 import com.student_manager.shared.service.CrudServiceSupport;
 import lombok.RequiredArgsConstructor;
+import com.student_manager.shared.repository.BaseRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -22,21 +26,33 @@ import java.util.Optional;
  * findAll}/{@code delete} are inherited from {@link CrudServiceSupport};
  * this class adds the account-linkage lookups and the {@code create}/{@code
  * update} operations whose uniqueness checks are specific to students.
+ * Reads run in read-only transactions (class default); writes override it.
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class StudentServiceImpl extends CrudServiceSupport<Student, StudentDTO> implements StudentService {
 
     private final StudentRepository repository;
     private final UserRepository userRepository;
 
     /**
-     * @return the JPA repository backing the inherited CRUD operations
+     * @return the repository backing the inherited CRUD operations
      */
     @Override
-    protected JpaRepository<Student, Long> repository() {
+    protected BaseRepository<Student> repository() {
         return repository;
+    }
+
+    @Override
+    public Page<StudentDTO> search(String query, Pageable pageable) {
+        return search(StudentSpecifications.matching(query), pageable);
+    }
+
+    @Override
+    public List<StudentOption> options() {
+        return repository.findAllOptions();
     }
 
     /**
@@ -63,6 +79,7 @@ public class StudentServiceImpl extends CrudServiceSupport<Student, StudentDTO> 
         dto.setBirthDate(student.getBirthDate());
         dto.setEmail(student.getEmail());
         dto.setFullName(student.getFullName());
+        dto.setVersion(student.getVersion());
         return dto;
     }
 
@@ -115,6 +132,7 @@ public class StudentServiceImpl extends CrudServiceSupport<Student, StudentDTO> 
      * @throws ValidationException if the email or matriculation number is already in use
      */
     @Override
+    @Transactional
     public StudentDTO create(CreateStudentRequest request) {
         log.info("Creating student: {}", request.getEmail());
 
@@ -145,10 +163,13 @@ public class StudentServiceImpl extends CrudServiceSupport<Student, StudentDTO> 
      * @return the updated student
      * @throws com.student_manager.shared.exception.ResourceNotFoundException if no student has that id
      * @throws ValidationException if the email or matriculation number is already used by another student
+     * @throws org.springframework.orm.ObjectOptimisticLockingFailureException if the request's version is outdated
      */
     @Override
+    @Transactional
     public StudentDTO update(Long id, CreateStudentRequest request) {
         Student student = loadOrThrow(id);
+        checkVersion(student, request.getVersion());
 
         if (repository.existsByEmailAndIdNot(request.getEmail(), id)) {
             throw new ValidationException("Email already exists: " + request.getEmail());
@@ -163,7 +184,8 @@ public class StudentServiceImpl extends CrudServiceSupport<Student, StudentDTO> 
         student.setBirthDate(request.getBirthDate());
         student.setEmail(request.getEmail());
 
-        Student saved = repository.save(student);
+        // Flush now so the returned DTO carries the incremented version.
+        Student saved = repository.saveAndFlush(student);
         return toDTO(saved);
     }
 }

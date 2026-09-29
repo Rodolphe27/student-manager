@@ -1,13 +1,14 @@
 package com.student_manager.feature.teacher;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import com.student_manager.shared.repository.BaseRepository;
 
 import java.util.Optional;
 
 /**
- * Spring Data repository providing CRUD and lookup operations for {@link Teacher} entities.
+ * Spring Data repository providing CRUD, paged search ({@link BaseRepository})
+ * and lookup operations for {@link Teacher} entities.
  */
-public interface TeacherRepository extends JpaRepository<Teacher, Long> {
+public interface TeacherRepository extends BaseRepository<Teacher> {
 
     /**
      * Finds a teacher by their unique email address.

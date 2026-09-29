@@ -3,6 +3,9 @@ package com.student_manager.feature.course;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,14 +30,31 @@ public class CourseController {
     private final CourseService service;
 
     /**
-     * Lists every course in the system.
+     * Returns one page of courses, optionally filtered by {@code q} (code or
+     * title) and/or {@code status}. Default order: course code.
      *
-     * @return 200 OK with the list of all courses
+     * @param q        optional search text
+     * @param status   optional status filter
+     * @param pageable {@code page} (0-based), {@code size} (max 100) and {@code sort} query params
+     * @return 200 OK with the requested page of courses
      */
     @GetMapping
-    public ResponseEntity<List<CourseDTO>> getAll() {
-        // log.info("GET /api/courses");
-        return ResponseEntity.ok(service.findAll());
+    public ResponseEntity<Page<CourseDTO>> getAll(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) CourseStatus status,
+            @PageableDefault(sort = "code") Pageable pageable) {
+        return ResponseEntity.ok(service.search(q, status, pageable));
+    }
+
+    /**
+     * Every course as a lightweight id/code/title option, for selection lists
+     * such as the enrollment form.
+     *
+     * @return 200 OK with all courses, ordered by code
+     */
+    @GetMapping("options")
+    public ResponseEntity<List<CourseOption>> getOptions() {
+        return ResponseEntity.ok(service.options());
     }
 
     /**

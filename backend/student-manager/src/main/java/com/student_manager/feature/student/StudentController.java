@@ -7,6 +7,9 @@ import com.student_manager.feature.invite.RegistrationInviteService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -32,14 +35,29 @@ public class StudentController {
     private final RegistrationInviteService registrationInviteService;
 
     /**
-     * Lists every student in the system.
+     * Returns one page of students, optionally filtered by {@code q} (name,
+     * matriculation number, or email). Default order: last name, first name.
      *
-     * @return all students
+     * @param q        optional search text
+     * @param pageable {@code page} (0-based), {@code size} (max 100) and {@code sort} query params
+     * @return the requested page of students
      */
     @GetMapping
-    public ResponseEntity<List<StudentDTO>> getAll() {
-        // log.info("GET /api/students");
-        return ResponseEntity.ok(service.findAll());
+    public ResponseEntity<Page<StudentDTO>> getAll(
+            @RequestParam(required = false) String q,
+            @PageableDefault(sort = {"lastName", "firstName"}) Pageable pageable) {
+        return ResponseEntity.ok(service.search(q, pageable));
+    }
+
+    /**
+     * Every student as a lightweight id/name/matriculation option, for
+     * selection lists such as the enrollment form.
+     *
+     * @return all students, ordered by name
+     */
+    @GetMapping("options")
+    public ResponseEntity<List<StudentOption>> getOptions() {
+        return ResponseEntity.ok(service.options());
     }
 
     /**

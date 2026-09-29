@@ -1,7 +1,9 @@
 package com.student_manager.shared.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -142,6 +144,36 @@ public class GlobalExceptionHandler {
         log.warn("Malformed request body: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResponse(400, "Malformed request body", null, LocalDateTime.now()));
+    }
+
+    /**
+     * Handles an update based on an outdated copy of a record (optimistic
+     * locking, see {@code BaseEntity#version}): someone else saved it first.
+     *
+     * @param ex the thrown exception
+     * @return 409 Conflict asking the user to reload
+     */
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handleOptimisticLock(ObjectOptimisticLockingFailureException ex) {
+        log.warn("Optimistic lock conflict: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(409,
+                        "This record was changed by someone else. Reload it and try again.",
+                        null, LocalDateTime.now()));
+    }
+
+    /**
+     * Handles a {@code ?sort=} on a property the entity doesn't have.
+     *
+     * @param ex the thrown exception, naming the unknown property
+     * @return 400 Bad Request naming the invalid sort property
+     */
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ResponseEntity<ErrorResponse> handleBadSortProperty(PropertyReferenceException ex) {
+        log.warn("Invalid sort property: {}", ex.getPropertyName());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(400, "Invalid sort property '" + ex.getPropertyName() + "'",
+                        null, LocalDateTime.now()));
     }
 
     /**

@@ -66,7 +66,7 @@ class CourseServiceImplTest {
         CreateCourseRequest request = requestWith("CS102");
         when(repository.findById(1L)).thenReturn(Optional.of(existing));
         when(repository.existsByCodeAndIdNot("CS102", 1L)).thenReturn(false);
-        when(repository.save(any(Course.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(repository.saveAndFlush(any(Course.class))).thenAnswer(inv -> inv.getArgument(0));
 
         CourseDTO result = courseService.update(1L, request);
 
@@ -83,7 +83,7 @@ class CourseServiceImplTest {
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("Course code already exists: CS999");
 
-        verify(repository, never()).save(any());
+        verify(repository, never()).saveAndFlush(any());
     }
 
     @Test

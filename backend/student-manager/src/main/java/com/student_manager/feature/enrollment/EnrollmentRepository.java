@@ -1,7 +1,10 @@
 package com.student_manager.feature.enrollment;
 
+import com.student_manager.shared.repository.BaseRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -15,16 +18,19 @@ import java.util.List;
  * per enrollment (N+1).
  */
 @Repository
-public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
+public interface EnrollmentRepository extends BaseRepository<Enrollment> {
 
     /**
-     * Finds all enrollments, with their student and course fetched in the same query.
+     * One page of enrollments matching {@code spec}, with their student and
+     * course fetched in the same query (the separate count query is unaffected).
      *
-     * @return every enrollment
+     * @param spec     the filter criteria
+     * @param pageable the requested page, size and sort
+     * @return the requested page of enrollments
      */
     @Override
     @EntityGraph(attributePaths = {"student", "course"})
-    List<Enrollment> findAll();
+    Page<Enrollment> findAll(Specification<Enrollment> spec, Pageable pageable);
 
     /**
      * Finds all enrollments belonging to a given student.

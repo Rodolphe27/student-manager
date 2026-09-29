@@ -11,6 +11,7 @@ export interface Student {
   birthDate: string | null;
   email: string;
   fullName: string;
+  version: number;
 }
 
 export interface CreateStudentRequest {
@@ -19,6 +20,8 @@ export interface CreateStudentRequest {
   matriculationNumber: string;
   birthDate?: string;
   email: string;
+  // Version of the record being edited; a stale one makes the update fail with 409.
+  version?: number;
 }
 
 export interface Course {
@@ -29,6 +32,7 @@ export interface Course {
   creditHours: number;
   status: CourseStatus;
   active: boolean;
+  version: number;
 }
 
 export interface CreateCourseRequest {
@@ -37,6 +41,7 @@ export interface CreateCourseRequest {
   description?: string;
   creditHours: number;
   status?: CourseStatus;
+  version?: number;
 }
 
 export interface Enrollment {
@@ -68,6 +73,7 @@ export interface Teacher {
   email: string;
   department: string | null;
   fullName: string;
+  version: number;
 }
 
 export interface CreateTeacherRequest {
@@ -75,6 +81,7 @@ export interface CreateTeacherRequest {
   lastName: string;
   email: string;
   department?: string;
+  version?: number;
 }
 
 export type ProfileType = 'STUDENT' | 'TEACHER';
@@ -104,4 +111,36 @@ export interface RegisterRequest {
   email: string;
   password: string;
   registrationCode?: string;
+}
+
+// ── Paging ─────────────────────────────────────────────────────────
+// Shape of every paged list endpoint (Spring Data's PagedModel).
+export interface Page<T> {
+  content: T[];
+  page: {
+    size: number;
+    number: number;        // 0-based
+    totalElements: number;
+    totalPages: number;
+  };
+}
+
+export interface PageRequest {
+  page?: number;           // 0-based
+  size?: number;
+  sort?: string;           // e.g. 'enrolledAt,desc'
+}
+
+// Lightweight projections for selection lists.
+export interface StudentOption {
+  id: number;
+  fullName: string;
+  matriculationNumber: string;
+}
+
+export interface CourseOption {
+  id: number;
+  code: string;
+  title: string;
+  status: CourseStatus;
 }

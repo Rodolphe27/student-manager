@@ -1,19 +1,22 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import type { Enrollment, Student, Course, CreateEnrollmentRequest, EnrollmentStatus } from '../types';
+import type { Enrollment, CreateEnrollmentRequest, EnrollmentStatus, Page, StudentOption, CourseOption } from '../types';
 import enrollmentService from '../services/enrollmentService';
 import studentService from '../services/studentService';
 import courseService from '../services/courseService';
 import { getErrorMessage } from '../services/errorMessage';
 import { useAuth } from '../context/useAuth';
+import Pagination from '../components/Pagination';
+
+const PAGE_SIZE = 10;
 
 export default function EnrollmentsPage() {
   // DELETE /api/enrollments/** is ADMIN-only (see SecurityConfig); TEACHER can
   // confirm/cancel but would get a 403 on delete, so hide the action for them.
   const { user } = useAuth();
   const canDelete = user?.role === 'ADMIN';
-  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
-  const [students, setStudents]       = useState<Student[]>([]);
-  const [courses, setCourses]         = useState<Course[]>([]);
+  const [data, setData]               = useState<Page<Enrollment> | null>(null);
+  const [students, setStudents]       = useState<StudentOption[]>([]);
+  const [courses, setCourses]         = useState<CourseOption[]>([]);
   const [showForm, setShowForm]       = useState<boolean>(false);
   const [loading, setLoading]         = useState<boolean>(true);
   const [loadError, setLoadError]     = useState<string>('');
@@ -21,22 +24,36 @@ export default function EnrollmentsPage() {
   const [statusFilter, setStatusFilter] = useState<EnrollmentStatus | 'ALL'>('ALL');
   const [studentFilter, setStudentFilter] = useState<number | 'ALL'>('ALL');
   const [courseFilter, setCourseFilter]   = useState<number | 'ALL'>('ALL');
+  const [page, setPage]               = useState<number>(1);
 
   const [form, setForm] = useState<CreateEnrollmentRequest>({
     studentId: 0,
     courseId: 0,
   });
 
-  const fetchAll = useCallback(async (): Promise<void> => {
+  // Dropdown data: lightweight id/name projections, loaded once.
+  const loadOptions = useCallback(async (): Promise<void> => {
+    const [s, c] = await Promise.all([studentService.options(), courseService.options()]);
+    setStudents(s.data);
+    setCourses(c.data);
+  }, []);
+
+  // The table: one server-side page, filtered by the selected status/student/course.
+  const loadEnrollments = useCallback(async (): Promise<void> => {
     try {
-      const [e, s, c] = await Promise.all([
-        enrollmentService.getAll(),
-        studentService.getAll(),
-        courseService.getAll(),
-      ]);
-      setEnrollments(e.data);
-      setStudents(s.data);
-      setCourses(c.data);
+      const r = await enrollmentService.search({
+        status:    statusFilter  === 'ALL' ? undefined : statusFilter,
+        studentId: studentFilter === 'ALL' ? undefined : studentFilter,
+        courseId:  courseFilter  === 'ALL' ? undefined : courseFilter,
+        page: page - 1,
+        size: PAGE_SIZE,
+      });
+      // Removing the last row of the last page leaves it empty — step back one page.
+      if (r.data.content.length === 0 && page > 1) {
+        setPage(page - 1);
+        return;
+      }
+      setData(r.data);
       setLoadError('');
     } catch (err) {
       console.error(err);
@@ -44,16 +61,15 @@ export default function EnrollmentsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [statusFilter, studentFilter, courseFilter, page]);
 
-  // Fetch-on-mount; result lands via setState. See CoursesPage for the rationale.
+  // Fetch-on-mount (and on filter/page change); results land via setState.
+  // See CoursesPage for the rationale.
+  useEffect(() => {
+    loadOptions().catch((err) => console.error(err));
+  }, [loadOptions]);
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { void fetchAll(); }, [fetchAll]);
-
-  const loadEnrollments = async (): Promise<void> => {
-    const r = await enrollmentService.getAll();
-    setEnrollments(r.data);
-  };
+  useEffect(() => { void loadEnrollments(); }, [loadEnrollments]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
@@ -102,12 +118,10 @@ export default function EnrollmentsPage() {
     CANCELLED: 'bg-red-100 text-red-600',
   };
 
-  const filteredEnrollments = enrollments.filter((e: Enrollment) => {
-    if (statusFilter !== 'ALL' && e.status !== statusFilter) return false;
-    if (studentFilter !== 'ALL' && e.studentId !== studentFilter) return false;
-    if (courseFilter !== 'ALL' && e.courseId !== courseFilter) return false;
-    return true;
-  });
+  const enrollments = data?.content ?? [];
+  const total       = data?.page.totalElements ?? 0;
+  const totalPages  = data?.page.totalPages ?? 1;
+  const filtered    = statusFilter !== 'ALL' || studentFilter !== 'ALL' || courseFilter !== 'ALL';
 
   if (loading) {
     return (
@@ -123,7 +137,7 @@ export default function EnrollmentsPage() {
         <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-lg flex items-center justify-between gap-4">
           <span>{loadError}</span>
           <button
-            onClick={() => { setLoading(true); fetchAll(); }}
+            onClick={() => { setLoading(true); void loadEnrollments(); loadOptions().catch(() => {}); }}
             className="text-red-700 font-medium hover:underline whitespace-nowrap"
           >
             Retry
@@ -140,13 +154,13 @@ export default function EnrollmentsPage() {
         <div>
           <h1 className="text-xl font-bold text-gray-800">Enrollments</h1>
           <p className="text-sm text-gray-400">
-            {filteredEnrollments.length} of {enrollments.length}
+            {total} {filtered ? 'matching' : 'total'}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as EnrollmentStatus | 'ALL')}
+            onChange={(e) => { setStatusFilter(e.target.value as EnrollmentStatus | 'ALL'); setPage(1); }}
             className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="ALL">All statuses</option>
@@ -156,21 +170,21 @@ export default function EnrollmentsPage() {
           </select>
           <select
             value={studentFilter}
-            onChange={(e) => setStudentFilter(e.target.value === 'ALL' ? 'ALL' : parseInt(e.target.value))}
+            onChange={(e) => { setStudentFilter(e.target.value === 'ALL' ? 'ALL' : parseInt(e.target.value)); setPage(1); }}
             className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="ALL">All students</option>
-            {students.map((s: Student) => (
+            {students.map((s: StudentOption) => (
               <option key={s.id} value={s.id}>{s.fullName}</option>
             ))}
           </select>
           <select
             value={courseFilter}
-            onChange={(e) => setCourseFilter(e.target.value === 'ALL' ? 'ALL' : parseInt(e.target.value))}
+            onChange={(e) => { setCourseFilter(e.target.value === 'ALL' ? 'ALL' : parseInt(e.target.value)); setPage(1); }}
             className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="ALL">All courses</option>
-            {courses.map((c: Course) => (
+            {courses.map((c: CourseOption) => (
               <option key={c.id} value={c.id}>{c.code}</option>
             ))}
           </select>
@@ -202,7 +216,7 @@ export default function EnrollmentsPage() {
                 required
               >
                 <option value={0}>Select Student</option>
-                {students.map((s: Student) => (
+                {students.map((s: StudentOption) => (
                   <option key={s.id} value={s.id}>{s.fullName}</option>
                 ))}
               </select>
@@ -217,8 +231,8 @@ export default function EnrollmentsPage() {
               >
                 <option value={0}>Select Course</option>
                 {courses
-                  .filter((c: Course) => c.status === 'ACTIVE')
-                  .map((c: Course) => (
+                  .filter((c: CourseOption) => c.status === 'ACTIVE')
+                  .map((c: CourseOption) => (
                     <option key={c.id} value={c.id}>
                       {c.code} – {c.title}
                     </option>
@@ -258,7 +272,7 @@ export default function EnrollmentsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {filteredEnrollments.map((e: Enrollment) => (
+            {enrollments.map((e: Enrollment) => (
               <tr key={e.id} className="hover:bg-gray-50">
                 <td className="px-5 py-3 font-medium text-gray-800">{e.studentName}</td>
                 <td className="px-5 py-3 text-gray-600">
@@ -300,15 +314,16 @@ export default function EnrollmentsPage() {
                 </td>
               </tr>
             ))}
-            {filteredEnrollments.length === 0 && (
+            {total === 0 && (
               <tr>
                 <td colSpan={6} className="px-5 py-8 text-center text-gray-400 text-sm">
-                  {enrollments.length === 0 ? 'No enrollments yet — add one above' : 'No enrollments match this filter'}
+                  {filtered ? 'No enrollments match this filter' : 'No enrollments yet — add one above'}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+        {total > 0 && <Pagination page={page} totalPages={totalPages} onChange={setPage} />}
       </div>
     </div>
   );

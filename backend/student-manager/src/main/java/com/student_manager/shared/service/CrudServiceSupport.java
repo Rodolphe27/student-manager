@@ -1,15 +1,18 @@
 package com.student_manager.shared.service;
 
+import com.student_manager.shared.domain.BaseEntity;
 import com.student_manager.shared.exception.ResourceNotFoundException;
-import org.springframework.data.jpa.repository.JpaRepository;
-
-import java.util.List;
-import java.util.stream.Collectors;
+import com.student_manager.shared.repository.BaseRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
- * The load-or-404 / list-all / delete-or-404 shape shared by every simple
- * roster feature's {@code *ServiceImpl} (see {@code StudentServiceImpl},
- * {@code TeacherServiceImpl}) — extracted because those two classes were
+ * The load-or-404 / paged-search / delete-or-404 shape shared by every
+ * feature's {@code *ServiceImpl} (see {@code StudentServiceImpl},
+ * {@code TeacherServiceImpl}) — extracted because those classes were
  * ~80% identical otherwise, differing only in entity/DTO type and the
  * resource name used in error messages.
  * <p>
@@ -26,15 +29,15 @@ import java.util.stream.Collectors;
  * @param <E> the JPA entity type
  * @param <D> the DTO type returned to callers
  */
-public abstract class CrudServiceSupport<E, D> {
+public abstract class CrudServiceSupport<E extends BaseEntity, D> {
 
     /**
-     * The subclass's already-injected JPA repository, used for every template
+     * The subclass's already-injected repository, used for every template
      * operation in this class.
      *
      * @return the entity repository
      */
-    protected abstract JpaRepository<E, Long> repository();
+    protected abstract BaseRepository<E> repository();
 
     /** Used only in {@link ResourceNotFoundException} messages, e.g. "Student". */
     protected abstract String resourceName();
@@ -54,29 +57,47 @@ public abstract class CrudServiceSupport<E, D> {
     }
 
     /**
+     * Rejects an update that was based on an outdated copy of the entity. The
+     * client sends back the {@code version} it loaded; if someone else saved
+     * in the meantime the versions differ and the update fails with 409
+     * instead of silently overwriting their change. A {@code null} expected
+     * version (an older client) skips the check — the {@code @Version} column
+     * still guards concurrent transactions.
+     *
+     * @param entity          the freshly loaded entity
+     * @param expectedVersion the version the client based its edit on, or {@code null}
+     * @throws ObjectOptimisticLockingFailureException if the versions differ
+     */
+    protected void checkVersion(E entity, Long expectedVersion) {
+        if (expectedVersion != null && expectedVersion != entity.getVersion()) {
+            throw new ObjectOptimisticLockingFailureException(entity.getClass(), entity.getId());
+        }
+    }
+
+    /**
      * Loads a single entity by id and converts it to its DTO.
      *
      * @param id the entity id to load
      * @return the corresponding DTO
      * @throws ResourceNotFoundException if no entity with that id exists
      */
+    @Transactional(readOnly = true)
     public D findById(Long id) {
         return toDTO(loadOrThrow(id));
     }
 
     /**
-     * Loads every entity in the table and converts each to its DTO.
+     * Returns one page of the entities matching {@code spec}, as DTOs. Paging,
+     * sorting and the page-size cap come from the {@link Pageable} (see
+     * {@code spring.data.web.pageable} in application.yml).
      *
-     * @return a list of all entities as DTOs
+     * @param spec     the search/filter criteria; {@code Specification.unrestricted()} for all rows
+     * @param pageable the requested page, size and sort
+     * @return the requested page of DTOs, with total counts
      */
-    // TODO(SEC-8) [MEDIUM]: unbounded — returns the entire table with no pagination. Switch
-    // to Page<D> findAll(Pageable pageable) and thread page/size query params through the
-    // controllers that call this (StudentController, TeacherController).
-    public List<D> findAll() {
-        return repository().findAll()
-                .stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
+    @Transactional(readOnly = true)
+    public Page<D> search(Specification<E> spec, Pageable pageable) {
+        return repository().findAll(spec, pageable).map(this::toDTO);
     }
 
     /**
@@ -85,6 +106,7 @@ public abstract class CrudServiceSupport<E, D> {
      * @param id the entity id to delete
      * @throws ResourceNotFoundException if no entity with that id exists
      */
+    @Transactional
     public void delete(Long id) {
         if (!repository().existsById(id)) {
             throw new ResourceNotFoundException(resourceName(), id);

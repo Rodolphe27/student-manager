@@ -8,9 +8,12 @@ import com.student_manager.shared.exception.ResourceNotFoundException;
 import com.student_manager.shared.exception.ValidationException;
 import com.student_manager.shared.service.CrudServiceSupport;
 import lombok.RequiredArgsConstructor;
+import com.student_manager.shared.repository.BaseRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -29,10 +32,12 @@ import java.util.stream.Collectors;
  * for enrollments, students, and courses. {@code findById}/{@code findAll}/
  * {@code delete} are inherited from {@link CrudServiceSupport}; this class adds
  * the student/course-scoped lookups and the enrollment lifecycle transitions.
+ * Reads run in read-only transactions (class default); writes override it.
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class EnrollmentServiceImpl extends CrudServiceSupport<Enrollment, EnrollmentDTO> implements EnrollmentService {
 
     private final EnrollmentRepository enrollmentRepository;
@@ -40,11 +45,16 @@ public class EnrollmentServiceImpl extends CrudServiceSupport<Enrollment, Enroll
     private final CourseRepository courseRepository;
 
     /**
-     * @return the JPA repository backing the inherited CRUD operations
+     * @return the repository backing the inherited CRUD operations
      */
     @Override
-    protected JpaRepository<Enrollment, Long> repository() {
+    protected BaseRepository<Enrollment> repository() {
         return enrollmentRepository;
+    }
+
+    @Override
+    public Page<EnrollmentDTO> search(EnrollmentStatus status, Long studentId, Long courseId, Pageable pageable) {
+        return search(EnrollmentSpecifications.filter(status, studentId, courseId), pageable);
     }
 
     /**
@@ -119,6 +129,7 @@ public class EnrollmentServiceImpl extends CrudServiceSupport<Enrollment, Enroll
      * @throws ValidationException if the course is inactive or the student is already enrolled in it
      */
     @Override
+    @Transactional
     public EnrollmentDTO create(CreateEnrollmentRequest request) {
         log.info("Enrolling student {} in course {}", request.getStudentId(), request.getCourseId());
 
@@ -158,6 +169,7 @@ public class EnrollmentServiceImpl extends CrudServiceSupport<Enrollment, Enroll
      * @throws ValidationException if the enrollment is already confirmed or has been cancelled
      */
     @Override
+    @Transactional
     public EnrollmentDTO confirm(Long id) {
         Enrollment enrollment = loadOrThrow(id);
 
@@ -183,6 +195,7 @@ public class EnrollmentServiceImpl extends CrudServiceSupport<Enrollment, Enroll
      * @throws ValidationException if the enrollment is already cancelled
      */
     @Override
+    @Transactional
     public EnrollmentDTO cancel(Long id) {
         Enrollment enrollment = loadOrThrow(id);
 
@@ -207,6 +220,7 @@ public class EnrollmentServiceImpl extends CrudServiceSupport<Enrollment, Enroll
      * @throws ValidationException if the enrollment is not confirmed
      */
     @Override
+    @Transactional
     public EnrollmentDTO updateGrade(Long id, UpdateGradeRequest request) {
         Enrollment enrollment = loadOrThrow(id);
 

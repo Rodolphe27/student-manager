@@ -22,6 +22,16 @@ spring:
     compose:
       file: backend/student-manager/compose.yaml
       enabled: false
+  data:
+    web:
+      pageable:
+        # List endpoints are paged: ?page=0&size=10&sort=lastName,asc
+        default-page-size: 10
+        # Caps ?size= so a client can't ask for the whole table in one request.
+        max-page-size: 100
+        # Page<T> results are serialized via Spring Data's stable PagedModel DTO:
+        # {"content": [...], "page": {"size", "number", "totalElements", "totalPages"}}
+        serialization-mode: via-dto
   session:
     jdbc:
       # Spring Boot only auto-creates the SPRING_SESSION tables for embedded databases;

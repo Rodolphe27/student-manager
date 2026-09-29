@@ -106,7 +106,7 @@ class StudentServiceImplTest {
         when(repository.findById(1L)).thenReturn(Optional.of(existing));
         when(repository.existsByEmailAndIdNot("grace@example.com", 1L)).thenReturn(false);
         when(repository.existsByMatriculationNumberAndIdNot("M-2", 1L)).thenReturn(false);
-        when(repository.save(any(Student.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(repository.saveAndFlush(any(Student.class))).thenAnswer(inv -> inv.getArgument(0));
 
         StudentDTO result = studentService.update(1L, request);
 
@@ -124,7 +124,7 @@ class StudentServiceImplTest {
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("Email already exists: other@example.com");
 
-        verify(repository, never()).save(any());
+        verify(repository, never()).saveAndFlush(any());
     }
 
     @Test
@@ -138,7 +138,7 @@ class StudentServiceImplTest {
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("Matriculation number already exists: M-99");
 
-        verify(repository, never()).save(any());
+        verify(repository, never()).saveAndFlush(any());
     }
 
     @Test

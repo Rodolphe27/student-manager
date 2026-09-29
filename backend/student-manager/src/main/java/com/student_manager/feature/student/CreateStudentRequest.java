@@ -32,4 +32,8 @@ public class CreateStudentRequest {
     @NotBlank(message = "Email is required")
     @Email(message = "Email is invalid")
     private String email;
+
+    // Version of the record the client edited (from its DTO). Optional: when present and
+    // outdated, the update is rejected with 409 instead of overwriting a newer change.
+    private Long version;
 }

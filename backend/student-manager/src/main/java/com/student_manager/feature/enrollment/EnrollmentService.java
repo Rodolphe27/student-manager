@@ -1,5 +1,8 @@
 package com.student_manager.feature.enrollment;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 
 /**
@@ -18,11 +21,16 @@ public interface EnrollmentService {
     EnrollmentDTO findById(Long id);
 
     /**
-     * Lists every enrollment in the system.
+     * Returns one page of enrollments, optionally filtered by status, student
+     * and/or course.
      *
-     * @return all enrollments
+     * @param status    the status to keep, or {@code null}
+     * @param studentId the student to keep, or {@code null}
+     * @param courseId  the course to keep, or {@code null}
+     * @param pageable  the requested page, size and sort
+     * @return the requested page of enrollments
      */
-    List<EnrollmentDTO> findAll();
+    Page<EnrollmentDTO> search(EnrollmentStatus status, Long studentId, Long courseId, Pageable pageable);
 
     /**
      * Lists all enrollments belonging to a given student.

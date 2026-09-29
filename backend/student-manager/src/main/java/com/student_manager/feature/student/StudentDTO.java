@@ -21,4 +21,6 @@ public class StudentDTO {
     private LocalDate birthDate;
     private String email;
     private String fullName;
+    // Optimistic-lock version; send it back on update so a stale edit is rejected (409).
+    private long version;
 }

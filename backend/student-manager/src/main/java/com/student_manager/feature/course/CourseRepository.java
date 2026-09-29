@@ -1,17 +1,29 @@
 package com.student_manager.feature.course;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import com.student_manager.shared.repository.BaseRepository;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
 /**
- * Spring Data repository providing CRUD and lookup operations for
- * {@link Course} entities.
+ * Spring Data repository providing CRUD, paged search ({@link BaseRepository})
+ * and lookup operations for {@link Course} entities.
  */
 @Repository
-public interface CourseRepository extends JpaRepository<Course, Long> {
+public interface CourseRepository extends BaseRepository<Course> {
+
+    /**
+     * Every course as a {@link CourseOption}, for dropdowns. An interface-based
+     * (closed) projection on a derived query: Spring Data selects only the
+     * columns behind the interface's getters ("ProjectedBy" is just a readable
+     * name — the query has no criteria).
+     *
+     * @param sort the ordering, e.g. by code
+     * @return all courses as options
+     */
+    List<CourseOption> findAllProjectedBy(Sort sort);
 
     /**
      * Finds a course by its unique code.
