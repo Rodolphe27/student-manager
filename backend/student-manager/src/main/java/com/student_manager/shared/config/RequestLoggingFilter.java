@@ -22,7 +22,7 @@ import java.io.IOException;
  * duplicated between controller and service, and never added information this
  * filter doesn't already capture.
  * <p>
- * Health/liveness probes are excluded so container-platform polling (Railway
+ * Health/liveness probes are excluded so container-platform polling (Render
  * etc., see {@code management.endpoint.health.probes} in application.yml)
  * doesn't spam the log every few seconds.
  */

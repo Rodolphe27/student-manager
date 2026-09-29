@@ -11,7 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * The Railway service healthcheck points at {@code /actuator/health}, so it must
+ * Render's health check (Health Check Path) points at {@code /actuator/health}, so it must
  * be reachable without authentication and report UP when the app (and its DB) is
  * healthy (issue #40).
  */

@@ -39,11 +39,10 @@ spring:
       initialize-schema: always
 
 server:
-  # Fixed on purpose: hosting platforms are pointed at 5030 (Railway: domain target
-  # port; Render: PORT=5030 in the service's environment) rather than the app
-  # following a platform-assigned $PORT.
+  # Fixed on purpose: the host is pointed at 5030 (Render: PORT=5030 in the
+  # service's environment) rather than the app following a platform-assigned $PORT.
   port: 5030
-  # Honour X-Forwarded-* from the hosting edge (Railway/Render/Vercel) so HTTPS/host are correct.
+  # Honour X-Forwarded-* from the Render/Vercel edge so HTTPS/host are correct.
   forward-headers-strategy: framework
   servlet:
     session:
