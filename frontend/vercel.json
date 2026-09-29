@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://backend-production-8ceca.up.railway.app/api/:path*" },
+    { "source": "/api/:path*", "destination": "https://student-manager-backend-ijo8.onrender.com/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
