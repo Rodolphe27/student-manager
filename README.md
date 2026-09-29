@@ -221,7 +221,10 @@ All three are required status checks for merging to `main`.
 
 The backend runs as a Docker web service built from `backend/student-manager/Dockerfile`;
 the frontend reaches it through the `/api` rewrite in `frontend/vercel.json`.
-Every push to `main` deploys automatically (Render's GitHub app is connected to this repo).
+Deploys are triggered by the [Deploy backend](.github/workflows/deploy-backend.yml)
+workflow: after CI passes on `main` and the commit touched `backend/`, it calls the
+service's Render Deploy Hook (repository secret `RENDER_DEPLOY_HOOK_URL`). Render's own
+auto-deploy is off, so a commit that fails CI never goes live.
 
 | Render setting | Value |
 |---|---|

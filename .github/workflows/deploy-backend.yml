@@ -1,0 +1,62 @@
+name: Deploy backend
+
+# Deploys the backend to Render only after CI has passed on main, so a commit
+# that breaks the build or the tests never goes live. Render's own auto-deploy
+# is off; this workflow calls the service's Deploy Hook instead.
+#
+# Setup: Render → service → Settings → Deploy Hook → copy the URL into the
+# repository secret RENDER_DEPLOY_HOOK_URL.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Only for a successful CI run of a push to main (not a PR), or a manual run.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 2
+
+      - name: Skip unless the backend changed
+        id: changes
+        run: |
+          # main is squash-merged, so each push is one commit: compare it with its parent.
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] \
+             || ! git rev-parse -q --verify HEAD~1 >/dev/null \
+             || git diff --name-only HEAD~1 HEAD | grep -q '^backend/'; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No backend changes in this commit — skipping deploy."
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Trigger Render deploy
+        if: steps.changes.outputs.deploy == 'true'
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "::error::Secret RENDER_DEPLOY_HOOK_URL is not set (see the comment at the top of this file)."
+            exit 1
+          fi
+          curl --fail --silent --show-error -X POST "$RENDER_DEPLOY_HOOK_URL" > /dev/null
+          echo "Render deploy triggered for ${{ github.event.workflow_run.head_sha || github.sha }}"
