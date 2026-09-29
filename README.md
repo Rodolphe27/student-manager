@@ -234,6 +234,7 @@ auto-deploy is off, so a commit that fails CI never goes live.
 | Health check path | `/actuator/health` |
 | `PORT` | `5030` — tells Render which port the app listens on |
 | `SESSION_COOKIE_SECURE` | `true` |
+| `CORS_ALLOWED_ORIGINS` | `https://student-manager-fh.vercel.app` — the frontend's exact public origin. **Required:** browsers send an `Origin` header with every POST, Vercel forwards it, and Spring answers `403 Invalid CORS request` to any origin not listed — even though the `/api` proxy makes the calls look same-origin. Symptom if missing: login/registration fail with 403 while page loads and GET requests work. |
 | `SPRING_DATASOURCE_URL` / `_USERNAME` / `_PASSWORD` | Supabase connection (JDBC URL) — set as secrets in the Render dashboard |
 
 On the free instance type the service sleeps after 15 minutes without traffic, and the
