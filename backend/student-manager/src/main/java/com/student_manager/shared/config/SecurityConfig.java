@@ -71,12 +71,16 @@ public class SecurityConfig {
                         .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT))
                         .deleteCookies("SESSION"))
                 .headers(headers -> headers
-                        // Railway/Vercel terminate TLS upstream; emit HSTS so browsers
+                        // Render/Vercel terminate TLS upstream; emit HSTS so browsers
                         // pin HTTPS even though the app itself sees forwarded HTTP.
                         .httpStrictTransportSecurity(hsts -> hsts
                                 .includeSubDomains(true)
                                 .maxAgeInSeconds(31_536_000)))
                 .authorizeHttpRequests(auth -> auth
+                        // Spring Boot's error page. Rejections such as a missing CSRF token
+                        // (403) are rendered by forwarding to /error; if /error itself needed a
+                        // login, an anonymous caller would get 401 instead of the real status.
+                        .requestMatchers("/error").permitAll()
                         // "Who am I?" — used by the frontend on startup to restore the session.
                         .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
                         .requestMatchers("/api/auth/**").permitAll()

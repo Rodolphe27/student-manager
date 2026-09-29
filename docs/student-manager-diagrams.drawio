@@ -27,7 +27,7 @@
         <mxCell id="a_gVercel" value="Vercel — frontend hosting" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#666666;dashed=1;verticalAlign=top;fontStyle=1;fontSize=13;" vertex="1" parent="1">
           <mxGeometry x="40" y="450" width="320" height="150" as="geometry"/>
         </mxCell>
-        <mxCell id="a_vercel" value="Static build + nginx&#10;Serves SPA bundle&#10;VITE_API_URL → Railway API&#10;TLS terminates here" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalAlign=top;spacingTop=6;" vertex="1" parent="1">
+        <mxCell id="a_vercel" value="Static build + nginx&#10;Serves SPA bundle&#10;/api rewrite → Render API&#10;TLS terminates here" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalAlign=top;spacingTop=6;" vertex="1" parent="1">
           <mxGeometry x="70" y="485" width="260" height="95" as="geometry"/>
         </mxCell>
 
@@ -42,8 +42,8 @@
           <mxGeometry x="70" y="730" width="260" height="185" as="geometry"/>
         </mxCell>
 
-        <!-- RAILWAY BACKEND -->
-        <mxCell id="a_gRailway" value="Railway — backend container (Docker)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#9673a6;dashed=1;verticalAlign=top;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+        <!-- RENDER BACKEND -->
+        <mxCell id="a_gRender" value="Render — backend container (Docker, free plan, Frankfurt)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#9673a6;dashed=1;verticalAlign=top;fontStyle=1;fontSize=13;" vertex="1" parent="1">
           <mxGeometry x="470" y="80" width="560" height="770" as="geometry"/>
         </mxCell>
         <mxCell id="a_boot" value="Spring Boot 3 · Java 21 — port 5030, context path /api&#10;forward-headers-strategy: framework (trusts X-Forwarded-*) · HSTS" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fillColor=#e1d5e7;strokeColor=#9673a6;verticalAlign=top;spacingTop=6;" vertex="1" parent="1">
@@ -73,7 +73,7 @@
         <mxCell id="a_gex" value="GlobalExceptionHandler (@RestControllerAdvice) — maps exceptions → ErrorResponse(status, message, details, timestamp)" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
           <mxGeometry x="500" y="660" width="500" height="45" as="geometry"/>
         </mxCell>
-        <mxCell id="a_act" value="Actuator — /actuator/health (permitAll) · Railway healthcheckPath&#10;Swagger UI — /swagger-ui.html · /v3/api-docs" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fillColor=#e1d5e7;strokeColor=#9673a6;verticalAlign=top;spacingTop=6;" vertex="1" parent="1">
+        <mxCell id="a_act" value="Actuator — /actuator/health (permitAll) · Render health check path + keep-alive ping&#10;Swagger UI — /swagger-ui.html · /v3/api-docs" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fillColor=#e1d5e7;strokeColor=#9673a6;verticalAlign=top;spacingTop=6;" vertex="1" parent="1">
           <mxGeometry x="500" y="720" width="500" height="55" as="geometry"/>
         </mxCell>
         <mxCell id="a_sec" value="Cross-cutting: JWT Bearer (jjwt, HMAC-SHA, JWT_SECRET, 24 h) · BCrypt password hashing · no refresh token / server-side revocation" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fillColor=#fff2cc;strokeColor=#d6b656;verticalAlign=top;spacingTop=6;" vertex="1" parent="1">
@@ -113,10 +113,10 @@
         <mxCell id="a_e7" value="deploy on push" style="endArrow=block;html=1;rounded=0;fontSize=10;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.7;entryDx=0;entryDy=0;" edge="1" parent="1" source="a_actions" target="a_boot">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="440" y="822"/><mxPoint x="440" y="157"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="a_e8" value="health probe" style="endArrow=block;html=1;rounded=0;fontSize=10;dashed=1;exitX=0;exitY=0.85;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="a_gRailway" target="a_act">
+        <mxCell id="a_e8" value="health probe" style="endArrow=block;html=1;rounded=0;fontSize=10;dashed=1;exitX=0;exitY=0.85;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="a_gRender" target="a_act">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="a_flowNote" value="Request path: JwtFilter → SecurityFilterChain (URL role rule) → Controller → @PreAuthorize (OwnershipGuard, where present) → Service → Repository → PostgreSQL" style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontStyle=2;" vertex="1" parent="1">
+        <mxCell id="a_flowNote" value="Request path: SESSION cookie (Spring Session JDBC) + CSRF check → SecurityFilterChain (URL role rule) → Controller → @PreAuthorize (OwnershipGuard, where present) → Service → Repository → PostgreSQL" style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontStyle=2;" vertex="1" parent="1">
           <mxGeometry x="470" y="870" width="960" height="20" as="geometry"/>
         </mxCell>
 
