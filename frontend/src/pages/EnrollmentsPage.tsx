@@ -66,6 +66,7 @@ export default function EnrollmentsPage() {
   // Fetch-on-mount (and on filter/page change); results land via setState.
   // See CoursesPage for the rationale.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadOptions().catch((err) => console.error(err));
   }, [loadOptions]);
   // eslint-disable-next-line react-hooks/set-state-in-effect
