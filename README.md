@@ -221,18 +221,23 @@ All three are required status checks for merging to `main`.
 
 The backend runs as a Docker web service built from `backend/student-manager/Dockerfile`;
 the frontend reaches it through the `/api` rewrite in `frontend/vercel.json`.
+Every push to `main` deploys automatically (Render's GitHub app is connected to this repo).
 
 | Render setting | Value |
 |---|---|
+| Service | `student-manager-backend` — free plan, Frankfurt (same region as the Supabase DB) |
+| URL | https://student-manager-backend-ijo8.onrender.com |
 | Runtime | Docker, root directory `backend/student-manager` |
 | Health check path | `/actuator/health` |
 | `PORT` | `5030` — tells Render which port the app listens on |
 | `SESSION_COOKIE_SECURE` | `true` |
 | `SPRING_DATASOURCE_URL` / `_USERNAME` / `_PASSWORD` | Supabase connection (JDBC URL) — set as secrets in the Render dashboard |
 
-On the free instance type the service sleeps after 15 minutes without traffic; the
-first request afterwards waits about a minute while Spring Boot starts. The JVM heap is
-sized from the container's memory limit (`MaxRAMPercentage=75` in the Dockerfile).
+On the free instance type the service sleeps after 15 minutes without traffic, and the
+first request afterwards waits about a minute while Spring Boot starts. The
+[keep-alive workflow](.github/workflows/keep-alive.yml) pings `/actuator/health` every
+10 minutes to prevent that. The JVM heap is sized from the container's memory limit
+(`MaxRAMPercentage=75` in the Dockerfile).
 
 ---
 
