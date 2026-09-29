@@ -1,5 +1,6 @@
 package com.student_manager.feature.enrollment;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -7,9 +8,23 @@ import java.util.List;
 
 /**
  * Spring Data JPA repository for {@link Enrollment}.
+ *
+ * <p>The list queries fetch {@code student} and {@code course} eagerly via
+ * {@link EntityGraph}: {@code EnrollmentServiceImpl#toDTO} reads both lazy
+ * associations for every row, which would otherwise cost two extra queries
+ * per enrollment (N+1).
  */
 @Repository
 public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
+
+    /**
+     * Finds all enrollments, with their student and course fetched in the same query.
+     *
+     * @return every enrollment
+     */
+    @Override
+    @EntityGraph(attributePaths = {"student", "course"})
+    List<Enrollment> findAll();
 
     /**
      * Finds all enrollments belonging to a given student.
@@ -17,6 +32,7 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
      * @param studentId the student id
      * @return that student's enrollments
      */
+    @EntityGraph(attributePaths = {"student", "course"})
     List<Enrollment> findByStudentId(Long studentId);
 
     /**
@@ -25,6 +41,7 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
      * @param courseId the course id
      * @return that course's enrollments
      */
+    @EntityGraph(attributePaths = {"student", "course"})
     List<Enrollment> findByCourseId(Long courseId);
 
     /**
