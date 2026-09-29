@@ -50,7 +50,6 @@ export default function RegisterPage() {
           </div>
           <div>
             <h1 className="text-lg font-bold text-gray-800">StudentManager</h1>
-            <p className="text-xs text-gray-400">FH Dortmund</p>
           </div>
         </div>
 

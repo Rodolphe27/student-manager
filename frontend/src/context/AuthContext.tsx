@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { AuthResponse, LoginRequest, RegisterRequest } from '../types';
 import authService from '../services/authService';
 import { AuthContext } from './auth-context';
@@ -6,47 +6,44 @@ import { AuthContext } from './auth-context';
 // The hook lives in ./useAuth and the context object in ./auth-context so this
 // file only exports a component (keeps React Fast Refresh working).
 
-function readStoredUser(): AuthResponse | null {
-  try {
-    const stored = localStorage.getItem('user');
-    return stored ? (JSON.parse(stored) as AuthResponse) : null;
-  } catch {
-    return null;
-  }
-}
-
 // ── Provider ───────────────────────────────────────────────────────
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Resolve the session synchronously from localStorage so there is no
-  // logged-out flash and no setState-in-effect on mount.
-  const [user, setUser] = useState<AuthResponse | null>(readStoredUser);
-  const [loading] = useState<boolean>(false);
+  // The session is an HttpOnly cookie JS can't read, so on startup ask the backend
+  // who we are. `loading` stays true until that answer arrives (ProtectedRoute
+  // shows a spinner meanwhile instead of bouncing to /login).
+  const [user, setUser]       = useState<AuthResponse | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  // TODO(FE-1) [CRITICAL]: token + full user object stored in localStorage, readable by any JS
-  // on the page — a single XSS bug anywhere (including a future dependency) yields full token
-  // theft with no HttpOnly protection. Move the token to an HttpOnly/Secure/SameSite cookie set
-  // by the backend, or at minimum keep it in memory paired with a refresh-token-in-cookie flow.
+  useEffect(() => {
+    // Drop credentials left behind by the old localStorage-JWT version of the app.
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+
+    let cancelled = false;
+    authService.me()
+      .then((response) => { if (!cancelled) setUser(response.data); })
+      .catch(() => { /* 401 = not logged in — user stays null */ })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
   const login = async (data: LoginRequest): Promise<void> => {
     const response = await authService.login(data);
-    const authData  = response.data;
-
-    localStorage.setItem('token', authData.token);
-    localStorage.setItem('user', JSON.stringify(authData));
-    setUser(authData);
+    setUser(response.data);
   };
 
   const register = async (data: RegisterRequest): Promise<void> => {
     const response = await authService.register(data);
-    const authData  = response.data;
-
-    localStorage.setItem('token', authData.token);
-    localStorage.setItem('user', JSON.stringify(authData));
-    setUser(authData);
+    setUser(response.data);
   };
 
-  const logout = (): void => {
-    authService.logout();
-    localStorage.removeItem('user');
+  const logout = async (): Promise<void> => {
+    try {
+      await authService.logout();
+    } catch {
+      // Even if the server call fails (e.g. session already expired), the user
+      // asked to leave — clear the client state regardless.
+    }
     setUser(null);
   };
 

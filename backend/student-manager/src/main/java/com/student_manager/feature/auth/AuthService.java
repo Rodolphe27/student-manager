@@ -1,8 +1,8 @@
 package com.student_manager.feature.auth;
 
 /**
- * Application service for account registration and login, backing
- * {@link AuthController}.
+ * Application service for account registration, login, and the current-account
+ * lookup, backing {@link AuthController}.
  */
 public interface AuthService {
 
@@ -10,7 +10,7 @@ public interface AuthService {
      * Registers a new account, optionally claiming a registration invite.
      *
      * @param request the registration payload
-     * @return a JWT and account summary for the newly created user
+     * @return an account summary for the newly created user
      */
     AuthResponse register(RegisterRequest request);
 
@@ -18,7 +18,15 @@ public interface AuthService {
      * Authenticates an account by username and password.
      *
      * @param request the login credentials
-     * @return a JWT and account summary for the authenticated user
+     * @return an account summary for the authenticated user
      */
     AuthResponse login(LoginRequest request);
+
+    /**
+     * Looks up the account behind the current session.
+     *
+     * @param username the session principal's username
+     * @return an account summary for that user
+     */
+    AuthResponse currentAccount(String username);
 }

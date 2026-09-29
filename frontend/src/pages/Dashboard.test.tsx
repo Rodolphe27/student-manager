@@ -6,7 +6,11 @@ import { AuthProvider } from '../context/AuthContext';
 import studentService from '../services/studentService';
 import courseService from '../services/courseService';
 import enrollmentService from '../services/enrollmentService';
+import authService from '../services/authService';
 
+vi.mock('../services/authService', () => ({
+  default: { me: vi.fn(), login: vi.fn(), register: vi.fn(), logout: vi.fn() },
+}));
 vi.mock('../services/studentService', () => ({
   default: { getAll: vi.fn(), getMe: vi.fn() },
 }));
@@ -18,7 +22,8 @@ vi.mock('../services/enrollmentService', () => ({
 }));
 
 function renderDashboard(role: 'STUDENT' | 'TEACHER' | 'ADMIN') {
-  localStorage.setItem('user', JSON.stringify({ token: 't', username: 'r', email: 'r@example.com', role }));
+  // The startup session check (/auth/me) resolves to this user.
+  vi.mocked(authService.me).mockResolvedValue({ data: { username: 'r', email: 'r@example.com', role } } as never);
   return render(
     <MemoryRouter>
       <AuthProvider>

@@ -11,6 +11,8 @@ vi.mock('../services/authService', () => ({
     login: vi.fn(),
     register: vi.fn(),
     logout: vi.fn(),
+    // Startup session check — not logged in yet.
+    me: vi.fn(() => Promise.reject({ response: { status: 401 } })),
   },
 }));
 
@@ -39,10 +41,10 @@ describe('RegisterPage', () => {
     expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument();
   });
 
-  it('submits the form data to authService.register and stores the session on success', async () => {
+  it('submits the form data to authService.register and never stores a credential in the browser', async () => {
     const user = userEvent.setup();
     vi.mocked(authService.register).mockResolvedValueOnce({
-      data: { token: 'fake-token', username: 'newuser', role: 'STUDENT' },
+      data: { username: 'newuser', email: 'newuser@example.com', role: 'STUDENT' },
     } as never);
 
     renderRegisterPage();
@@ -59,7 +61,9 @@ describe('RegisterPage', () => {
         password: 'Password123!',
       });
     });
-    await waitFor(() => expect(localStorage.getItem('token')).toBe('fake-token'));
+    // The session lives in the backend's HttpOnly cookie, not in JS-readable storage.
+    expect(localStorage.getItem('token')).toBeNull();
+    expect(localStorage.getItem('user')).toBeNull();
   });
 
   it('shows the backend error message when registration fails', async () => {

@@ -1,6 +1,6 @@
 # Student Manager
 
-A full-stack student management application built for FH Dortmund. Manage students, courses, and enrollments through a modern web interface secured with JWT authentication.
+A simple student manager app to learn TypeScript and Spring Boot. Manage students, courses, and enrollments through a React + TypeScript web interface backed by a Spring Boot REST API, with session-based login and role-based access.
 
 ---
 
@@ -9,7 +9,7 @@ A full-stack student management application built for FH Dortmund. Manage studen
 | Layer | Technology |
 |-------|-----------|
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS v4 |
-| Backend | Spring Boot 3, Java 21, Spring Security, JWT |
+| Backend | Spring Boot 3, Java 21, Spring Security, Spring Session JDBC |
 | Database | PostgreSQL 16 (Docker Compose) |
 | Containerization | Docker, Docker Compose |
 | CI | GitHub Actions |
@@ -18,7 +18,7 @@ A full-stack student management application built for FH Dortmund. Manage studen
 
 ## Features
 
-- JWT authentication (register / login / logout)
+- Session authentication (register / login / logout) — HttpOnly session cookie stored server-side in Postgres, with CSRF protection; no token in `localStorage`
 - Role-based access (STUDENT, TEACHER, ADMIN)
 - Student management — create, view, delete
 - Course management — create, view, delete, status tracking
@@ -57,15 +57,20 @@ student-manager-app/
 
 ## API Endpoints
 
-Every `/api/**` route except `/api/auth/**` requires a `Bearer` JWT. The
-**Access** column is the role rule enforced by `SecurityConfig` (plus, where
-noted, a method-level ownership check).
+Every `/api/**` route except register/login requires a logged-in session (the
+HttpOnly `SESSION` cookie); without one the API answers `401`, with the wrong
+role `403`. State-changing requests (`POST`/`PUT`/`PATCH`/`DELETE`) must also
+send the `X-XSRF-TOKEN` header matching the `XSRF-TOKEN` cookie — axios does
+this automatically. The **Access** column is the role rule enforced by
+`SecurityConfig` (plus, where noted, a method-level ownership check).
 
-### Auth — public
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/register` | Register a new user. Always creates a `STUDENT`; any `role` in the body is ignored. |
-| POST | `/api/auth/login` | Log in, returns a JWT. Unknown user, wrong password and disabled account all return the same `401 Invalid username or password`. |
+### Auth
+| Method | Endpoint | Access | Description |
+|--------|----------|--------|-------------|
+| POST | `/api/auth/register` | public | Register a new user and log in. Always creates a `STUDENT`; any `role` in the body is ignored. |
+| POST | `/api/auth/login` | public | Log in and start a session. Unknown user, wrong password and disabled account all return the same `401 Invalid username or password`. |
+| GET | `/api/auth/me` | any authenticated | The account behind the current session (used by the frontend on startup). |
+| POST | `/api/auth/logout` | any | End the session (`204`). |
 
 ### Students
 | Method | Endpoint | Access | Description |
@@ -136,7 +141,8 @@ cd frontend
 npm install
 npm run dev
 ```
-Frontend runs on `http://localhost:5173`
+Frontend runs on `http://localhost:5173`; Vite proxies `/api` to the backend, so
+the session cookie stays same-origin.
 
 ### Running the tests
 
@@ -146,7 +152,7 @@ cd backend/student-manager
 ./mvnw clean verify
 ```
 Runs the full build including tests — don't add `-DskipTests`. Most are plain
-Mockito unit tests (e.g. `EnrollmentServiceImplTest`, `JwtUtilTest`) and need
+Mockito unit tests (e.g. `EnrollmentServiceImplTest`, `StudentServiceImplTest`) and need
 nothing external. A few boot the full Spring context with MockMvc (e.g.
 `AuthControllerTest`, `AuthorizationRulesTest`) and need a Postgres at
 `localhost:5432` with a `studentmanager` DB and `postgres`/`postgres`
@@ -183,7 +189,7 @@ docker-compose up --build
 | Service | URL |
 |---------|-----|
 | Frontend | http://localhost |
-| Backend API | http://localhost:5030/api |
+| Backend API | http://localhost/api (proxied by nginx) or http://localhost:5030/api |
 | Swagger UI | http://localhost:5030/swagger-ui.html |
 | PostgreSQL | localhost:5432 |
 
@@ -218,11 +224,11 @@ All three are required status checks for merging to `main`.
 | `SPRING_DATASOURCE_URL` | `jdbc:postgresql://localhost:5432/studentmanager` | Database URL |
 | `SPRING_DATASOURCE_USERNAME` | `postgres` | Database user |
 | `SPRING_DATASOURCE_PASSWORD` | `postgres` | Database password |
-| `JWT_SECRET` | *(baked-in dev key)* | HMAC signing key for JWTs — **must** be overridden in any deployed environment |
-| `JWT_EXPIRATION` | `3600000` (1h) | Token lifetime in milliseconds — kept short since the token is stored in `localStorage` on the frontend (see FE-1/2/3) |
+| `SESSION_TIMEOUT` | `1h` | Idle timeout of the server-side session |
+| `SESSION_COOKIE_SECURE` | `false` | Mark the `SESSION` cookie `Secure` — set `true` in any HTTPS deployment |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost` | Comma-separated allowed browser origins |
 | `CORS_ALLOWED_ORIGIN_PATTERNS` | *(empty)* | Comma-separated origin patterns (e.g. `https://*.example.com`) |
 | `SPRING_JPA_DDL_AUTO` | `update` | Hibernate schema mode; set `validate` once migrations exist |
 | `SPRING_JPA_SHOW_SQL` | `false` | Log every SQL statement (dev only) |
 | `LOG_LEVEL_APP` / `LOG_LEVEL_SECURITY` / `LOG_LEVEL_SQL` | `INFO` / `WARN` / `WARN` | Per-area log levels |
-| `VITE_API_URL` | `http://localhost:5030/api` | Backend API URL (frontend) |
+| `VITE_API_URL` | `/api` | Backend API base URL (frontend). Keep it same-origin — Vite, nginx and the Vercel rewrite proxy `/api` to the backend. |

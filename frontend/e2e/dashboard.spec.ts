@@ -1,13 +1,12 @@
 import { test, expect } from '@playwright/test';
 
-const user = { token: 'fake-token', username: 'tester', email: 'tester@example.com' };
+// The session is an HttpOnly cookie, so a logged-in user is simulated by mocking the
+// startup session check (GET /api/auth/me) instead of seeding localStorage.
+const user = { username: 'tester', email: 'tester@example.com' };
 
 test.describe('Dashboard — staff', () => {
-  test.beforeEach(async ({ context, page }) => {
-    await context.addInitScript((u) => {
-      window.localStorage.setItem('token', u.token);
-      window.localStorage.setItem('user', JSON.stringify(u));
-    }, { ...user, role: 'ADMIN' });
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/api/auth/me', (route) => route.fulfill({ json: { ...user, role: 'ADMIN' } }));
 
     await page.route('**/api/students**', (route) => route.fulfill({ json: [] }));
     await page.route('**/api/courses**', (route) => route.fulfill({ json: [] }));
@@ -42,11 +41,8 @@ test.describe('Dashboard — staff', () => {
 });
 
 test.describe('Dashboard — student', () => {
-  test.beforeEach(async ({ context, page }) => {
-    await context.addInitScript((u) => {
-      window.localStorage.setItem('token', u.token);
-      window.localStorage.setItem('user', JSON.stringify(u));
-    }, { ...user, role: 'STUDENT' });
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/api/auth/me', (route) => route.fulfill({ json: { ...user, role: 'STUDENT' } }));
 
     // A STUDENT only reaches these endpoints; the list endpoints 403.
     await page.route('**/api/students', (route) => route.fulfill({ status: 403, json: {} }));

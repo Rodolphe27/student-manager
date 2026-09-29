@@ -2,9 +2,8 @@ import api from './api';
 import type  { AuthResponse, LoginRequest, RegisterRequest } from '../types';
 import type { AxiosResponse } from 'axios';
 
-// TODO(FE-3) [CRITICAL]: logout/getToken/isAuthenticated all read/write localStorage directly,
-// duplicating the storage decision made in AuthContext/api.ts — any fix for the localStorage
-// token-storage issue (see AuthContext.tsx) must be applied consistently here too.
+// The login itself lives in the HttpOnly SESSION cookie set by the backend — nothing
+// here (or anywhere in the frontend) stores a credential.
 const authService = {
   login: (data: LoginRequest): Promise<AxiosResponse<AuthResponse>> =>
     api.post<AuthResponse>('/auth/login', data),
@@ -12,16 +11,13 @@ const authService = {
   register: (data: RegisterRequest): Promise<AxiosResponse<AuthResponse>> =>
     api.post<AuthResponse>('/auth/register', data),
 
-  logout: (): void => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-  },
+  // The account behind the current session; 401 when not logged in.
+  me: (): Promise<AxiosResponse<AuthResponse>> =>
+    api.get<AuthResponse>('/auth/me'),
 
-  getToken: (): string | null =>
-    localStorage.getItem('token'),
-
-  isAuthenticated: (): boolean =>
-    localStorage.getItem('token') !== null,
+  // Invalidates the server-side session (204).
+  logout: (): Promise<AxiosResponse<void>> =>
+    api.post('/auth/logout'),
 };
 
 export default authService;

@@ -4,10 +4,22 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// The backend is reached same-origin under /api (see src/services/api.ts), so in dev
+// and preview Vite forwards /api to the local Spring Boot server.
+const apiProxy = {
+  '/api': { target: 'http://localhost:5030', changeOrigin: true },
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   build: {
     sourcemap: false,
+  },
+  server: {
+    proxy: apiProxy,
+  },
+  preview: {
+    proxy: apiProxy,
   },
   test: {
     environment: 'jsdom',
@@ -24,7 +36,7 @@ export default defineConfig({
       manifest: {
         name: 'Student Manager',
         short_name: 'StudentManager',
-        description: 'A full-stack student management application built for FH Dortmund.',
+        description: 'A simple student manager app to learn TypeScript and Spring Boot.',
         start_url: '/',
         scope: '/',
         display: 'standalone',

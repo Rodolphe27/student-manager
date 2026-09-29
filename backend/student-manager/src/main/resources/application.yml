@@ -22,11 +22,27 @@ spring:
     compose:
       file: backend/student-manager/compose.yaml
       enabled: false
+  session:
+    jdbc:
+      # Spring Boot only auto-creates the SPRING_SESSION tables for embedded databases;
+      # `always` creates them in Postgres too (idempotent — skipped if they exist).
+      initialize-schema: always
 
 server:
   port: 5030
   # Honour X-Forwarded-* from the Railway/Vercel edge so HTTPS/host are correct.
   forward-headers-strategy: framework
+  servlet:
+    session:
+      # Idle timeout of the server-side session (replaces the old 1h JWT lifetime).
+      timeout: ${SESSION_TIMEOUT:1h}
+      cookie:
+        # SESSION cookie: never readable from JS, sent only to this origin. The frontend
+        # reaches the API same-origin (Vite/nginx/Vercel proxy /api), so Lax is enough.
+        http-only: true
+        same-site: lax
+        # Set SESSION_COOKIE_SECURE=true in production (HTTPS); false for http://localhost.
+        secure: ${SESSION_COOKIE_SECURE:false}
 
 management:
   endpoints:
@@ -47,13 +63,3 @@ logging:
     org.hibernate.SQL: ${LOG_LEVEL_SQL:WARN}
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-
-# TODO(SEC-1) [CRITICAL]: remove this hardcoded default signing secret — it's committed to the
-# repo, so anyone who reads it (or any deployment that forgets to set JWT_SECRET) can forge
-# valid tokens for any user/role. Fail startup instead if JWT_SECRET is unset.
-jwt:
-  secret: ${JWT_SECRET:student-manager-secret-key-2024-very-long-secure-string-minimum-32-chars}
-  # 1h, was 24h — a band-aid for FE-1/2/3 (JWT stored in localStorage, so an XSS-stolen token
-  # stays valid as long as this window). Doesn't fix the underlying issue, just shrinks the
-  # blast radius; the real fix is moving off localStorage to an HttpOnly cookie.
-  expiration: ${JWT_EXPIRATION:3600000}

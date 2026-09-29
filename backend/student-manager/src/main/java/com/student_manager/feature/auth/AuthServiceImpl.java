@@ -17,8 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 // (shared/config) can't see. Same category as InviteAuditAspect.
 /**
  * Default {@link AuthService} implementation. Handles password hashing,
- * username/email uniqueness checks, optional registration-invite claiming,
- * and JWT issuance for both registration and login.
+ * username/email uniqueness checks, and optional registration-invite claiming.
+ * Starting the session after a successful register/login is the controller's
+ * job (see {@link SessionLogin}).
  */
 @Slf4j
 @Service
@@ -26,7 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
-    private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
     private final RegistrationInviteService registrationInviteService;
 
@@ -37,7 +37,7 @@ public class AuthServiceImpl implements AuthService {
      * profile link.
      *
      * @param request the registration payload
-     * @return a JWT and account summary for the newly created user
+     * @return an account summary for the newly created user
      * @throws ValidationException if the username or email is already taken
      */
     @Override
@@ -72,8 +72,7 @@ public class AuthServiceImpl implements AuthService {
         }
         log.info("User registered with id: {}", saved.getId());
 
-        String token = jwtUtil.generateToken(saved.getUsername(), saved.getRole().name());
-        return new AuthResponse(token, saved.getUsername(), saved.getEmail(), saved.getRole());
+        return toResponse(saved);
     }
 
     /**
@@ -82,7 +81,7 @@ public class AuthServiceImpl implements AuthService {
      * the same exception so a caller cannot enumerate valid usernames.
      *
      * @param request the login credentials
-     * @return a JWT and account summary for the authenticated user
+     * @return an account summary for the authenticated user
      * @throws InvalidCredentialsException if the username is unknown, the account
      *                                      is inactive, or the password does not match
      */
@@ -104,8 +103,28 @@ public class AuthServiceImpl implements AuthService {
             throw new InvalidCredentialsException();
         }
 
-        String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
         log.info("User logged in: {}", user.getUsername());
-        return new AuthResponse(token, user.getUsername(), user.getEmail(), user.getRole());
+        return toResponse(user);
+    }
+
+    /**
+     * Looks up the account behind the current session. An account that was
+     * deleted or deactivated after login is treated like a failed login, so
+     * the stale session gets 401 and the frontend logs out.
+     *
+     * @param username the session principal's username
+     * @return an account summary for that user
+     * @throws InvalidCredentialsException if the account no longer exists or is inactive
+     */
+    @Override
+    public AuthResponse currentAccount(String username) {
+        User user = userRepository.findByUsername(username)
+                .filter(User::isActive)
+                .orElseThrow(InvalidCredentialsException::new);
+        return toResponse(user);
+    }
+
+    private AuthResponse toResponse(User user) {
+        return new AuthResponse(user.getUsername(), user.getEmail(), user.getRole());
     }
 }

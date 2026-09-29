@@ -1,34 +1,27 @@
 import axios from 'axios';
 
+// The API is always reached same-origin under /api — proxied by Vite in dev/preview,
+// by nginx in docker-compose, and by a Vercel rewrite in production. That keeps the
+// HttpOnly SESSION cookie first-party, and lets axios copy the XSRF-TOKEN cookie into
+// the X-XSRF-TOKEN header automatically (it only does so for same-origin requests).
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5030/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// TODO(FE-2) [CRITICAL]: reads the token from localStorage, same XSS-exfiltration surface as
-// AuthContext.login/register — see the TODO there for the fix direction.
-// Request interceptor — adds JWT token to every request
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
 // Response interceptor — treat a 401 as an expired session and bounce to login,
-// EXCEPT on the auth endpoints themselves, where a 401 just means "bad
-// credentials" and must surface to the calling page.
+// EXCEPT on the auth endpoints themselves, where a 401 means "bad credentials"
+// (login) or "not logged in yet" (the startup /auth/me check) and must surface
+// to the caller instead.
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     const url: string = error.config?.url ?? '';
     const isAuthRequest = url.includes('/auth/');
     if (error.response?.status === 401 && !isAuthRequest) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
       window.location.href = '/login';
     }
     return Promise.reject(error);
