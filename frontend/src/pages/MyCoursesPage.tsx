@@ -33,7 +33,8 @@ export default function MyCoursesPage() {
       setStudent(mine);
       const [enrollmentsRes, coursesRes] = await Promise.all([
         enrollmentService.getByStudent(mine.id),
-        courseService.getAll(),
+        // Only ACTIVE courses can be enrolled in — ask the API for just those.
+        courseService.getByStatus('ACTIVE'),
       ]);
       setEnrollments(enrollmentsRes.data);
       setCourses(coursesRes.data);

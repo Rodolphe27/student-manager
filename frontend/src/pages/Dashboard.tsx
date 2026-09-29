@@ -26,23 +26,25 @@ export default function Dashboard() {
     try {
       if (isStaff) {
         // Staff see totals across everyone.
-        const [s, c, e] = await Promise.all([
-          studentService.getAll(),
-          courseService.getAll(),
-          enrollmentService.getAll(),
+        // Counts come from each page's totalElements (size=1 → one tiny query each),
+        // and the recent list is simply the newest page of 7.
+        const [students, activeCourses, recent, pending] = await Promise.all([
+          studentService.search({ size: 1 }),
+          courseService.search({ status: 'ACTIVE', size: 1 }),
+          enrollmentService.search({ size: 7 }),   // newest first by default
+          enrollmentService.search({ status: 'PENDING', size: 1 }),
         ]);
-        const all = e.data;
         setCards([
-          { label: 'Total Students',    value: s.data.length, sub: 'All time',       color: 'blue' },
-          { label: 'Active Courses',    value: c.data.length, sub: 'Available now',   color: 'green' },
-          { label: 'Total Enrollments', value: all.length,    sub: 'All time',        color: 'orange' },
-          { label: 'Pending Reviews',   value: all.filter(en => en.status === 'PENDING').length, sub: 'Need attention', color: 'red' },
+          { label: 'Total Students',    value: students.data.page.totalElements,      sub: 'All time',       color: 'blue' },
+          { label: 'Active Courses',    value: activeCourses.data.page.totalElements, sub: 'Available now',  color: 'green' },
+          { label: 'Total Enrollments', value: recent.data.page.totalElements,        sub: 'All time',       color: 'orange' },
+          { label: 'Pending Reviews',   value: pending.data.page.totalElements,       sub: 'Need attention', color: 'red' },
         ]);
-        setEnrollments(all.slice(0, 7));
+        setEnrollments(recent.data.content);
       } else {
         // A STUDENT can't read the full student/enrollment lists (403), so the
         // dashboard is scoped to their own record.
-        const courses = (await courseService.getAll()).data;
+        const activeCourses = (await courseService.search({ status: 'ACTIVE', size: 1 })).data.page.totalElements;
 
         let myId: number | null = null;
         try {
@@ -54,7 +56,7 @@ export default function Dashboard() {
 
         const mine = myId != null ? (await enrollmentService.getByStudent(myId)).data : [];
         setCards([
-          { label: 'Available Courses', value: courses.length, sub: 'In the catalog',    color: 'green' },
+          { label: 'Available Courses', value: activeCourses, sub: 'In the catalog',    color: 'green' },
           { label: 'My Enrollments',    value: mine.length,    sub: 'All time',           color: 'blue' },
           { label: 'Confirmed',         value: mine.filter(en => en.status === 'CONFIRMED').length, sub: 'Active',          color: 'orange' },
           { label: 'Pending',           value: mine.filter(en => en.status === 'PENDING').length,   sub: 'Awaiting review', color: 'red' },

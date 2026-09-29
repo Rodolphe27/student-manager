@@ -1,10 +1,11 @@
 import api from './api';
-import type { Teacher, CreateTeacherRequest, RegistrationInvite } from '../types';
+import type { Teacher, CreateTeacherRequest, RegistrationInvite, Page, PageRequest } from '../types';
 import type { AxiosResponse } from 'axios';
 
 const teacherService = {
-  getAll: (): Promise<AxiosResponse<Teacher[]>> =>
-    api.get<Teacher[]>('/teachers'),
+  // One page of teachers; `q` searches name, email and department.
+  search: (params: PageRequest & { q?: string } = {}): Promise<AxiosResponse<Page<Teacher>>> =>
+    api.get<Page<Teacher>>('/teachers', { params }),
 
   getById: (id: number): Promise<AxiosResponse<Teacher>> =>
     api.get<Teacher>(`/teachers/${id}`),

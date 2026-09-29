@@ -1,10 +1,15 @@
 import api from './api';
-import type { Student, CreateStudentRequest, RegistrationInvite } from '../types';
+import type { Student, CreateStudentRequest, RegistrationInvite, Page, PageRequest, StudentOption } from '../types';
 import type { AxiosResponse } from 'axios';
 
 const studentService = {
-  getAll: (): Promise<AxiosResponse<Student[]>> =>
-    api.get<Student[]>('/students'),
+  // One page of students; `q` searches name, matriculation number and email.
+  search: (params: PageRequest & { q?: string } = {}): Promise<AxiosResponse<Page<Student>>> =>
+    api.get<Page<Student>>('/students', { params }),
+
+  // Every student as id + name, for dropdowns.
+  options: (): Promise<AxiosResponse<StudentOption[]>> =>
+    api.get<StudentOption[]>('/students/options'),
 
   getById: (id: number): Promise<AxiosResponse<Student>> =>
     api.get<Student>(`/students/${id}`),

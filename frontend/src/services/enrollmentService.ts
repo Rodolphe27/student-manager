@@ -1,14 +1,24 @@
 import api from './api';
 import type {
   Enrollment,
+  EnrollmentStatus,
   CreateEnrollmentRequest,
-  UpdateGradeRequest
+  UpdateGradeRequest,
+  Page,
+  PageRequest,
 } from '../types';
 import type { AxiosResponse } from 'axios';
 
+export interface EnrollmentFilter {
+  status?: EnrollmentStatus;
+  studentId?: number;
+  courseId?: number;
+}
+
 const enrollmentService = {
-  getAll: (): Promise<AxiosResponse<Enrollment[]>> =>
-    api.get<Enrollment[]>('/enrollments'),
+  // One page of enrollments (newest first by default), optionally filtered.
+  search: (params: PageRequest & EnrollmentFilter = {}): Promise<AxiosResponse<Page<Enrollment>>> =>
+    api.get<Page<Enrollment>>('/enrollments', { params }),
 
   getById: (id: number): Promise<AxiosResponse<Enrollment>> =>
     api.get<Enrollment>(`/enrollments/${id}`),
