@@ -217,6 +217,25 @@ All three are required status checks for merging to `main`.
 
 ---
 
+## Deploying the backend on Render
+
+The backend runs as a Docker web service built from `backend/student-manager/Dockerfile`;
+the frontend reaches it through the `/api` rewrite in `frontend/vercel.json`.
+
+| Render setting | Value |
+|---|---|
+| Runtime | Docker, root directory `backend/student-manager` |
+| Health check path | `/actuator/health` |
+| `PORT` | `5030` — tells Render which port the app listens on |
+| `SESSION_COOKIE_SECURE` | `true` |
+| `SPRING_DATASOURCE_URL` / `_USERNAME` / `_PASSWORD` | Supabase connection (JDBC URL) — set as secrets in the Render dashboard |
+
+On the free instance type the service sleeps after 15 minutes without traffic; the
+first request afterwards waits about a minute while Spring Boot starts. The JVM heap is
+sized from the container's memory limit (`MaxRAMPercentage=75` in the Dockerfile).
+
+---
+
 ## Environment Variables
 
 | Variable | Default | Description |
