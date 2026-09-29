@@ -13,7 +13,7 @@ interface ProtectedRouteProps {
 export default function ProtectedRoute({ children, roles }: ProtectedRouteProps) {
   const { isAuthenticated, loading, user } = useAuth();
 
-  // Still checking localStorage
+  // Still asking the backend whether the session cookie is valid (/auth/me)
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">

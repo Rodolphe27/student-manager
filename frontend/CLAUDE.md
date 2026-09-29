@@ -13,7 +13,7 @@ system**: the "system" is a set of repeated Tailwind class recipes. Stay consist
 | UI framework | React 19 + TypeScript (strict-ish, `verbatimModuleSyntax`) | `package.json`, `tsconfig.app.json` |
 | Routing | `react-router-dom` v7 (`BrowserRouter`, nested routes, `<Outlet />`) | `src/App.tsx` |
 | Styling | **Tailwind CSS v4** via `@tailwindcss/vite`, utility classes only | `vite.config.ts`, `src/index.css` |
-| HTTP | axios instance with JWT interceptor | `src/services/api.ts` |
+| HTTP | axios instance, same-origin `/api` + session cookie (HttpOnly) + XSRF header | `src/services/api.ts` |
 | Build | Vite 8 (`tsc -b && vite build`), `vite-plugin-pwa` | `vite.config.ts` |
 | Tests | Vitest + Testing Library (jsdom), Playwright e2e | `src/**/*.test.tsx`, `e2e/` |
 | Deploy | Vercel (`vercel.json`) or Docker → nginx (`Dockerfile`, `nginx.conf`) | |
@@ -219,7 +219,7 @@ Each page component follows the same shape. Keep it when you implement a new Fig
 
 ### ⚠️ CSP constraints (they affect Figma exports)
 `vercel.json` and `nginx.conf` set a strict CSP:
-`default-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' <api>`.
+`default-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'`.
 
 - **Never** reference Figma MCP asset URLs (`http://localhost:3845/...`) or any remote image
   in shipped code. Download the asset into `src/assets/` (or `public/`) and import it.

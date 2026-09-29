@@ -54,7 +54,7 @@ describe('ProtectedRoute', () => {
 
   it('renders the children when authenticated and no roles are required', () => {
     vi.mocked(useAuth).mockReturnValue({
-      user: { username: 'stu', email: 'stu@example.com', role: 'STUDENT', token: 't' },
+      user: { username: 'stu', email: 'stu@example.com', role: 'STUDENT' },
       loading: false,
       isAuthenticated: true,
     } as never);
@@ -66,7 +66,7 @@ describe('ProtectedRoute', () => {
 
   it('redirects to / when authenticated but the role is not allowed', () => {
     vi.mocked(useAuth).mockReturnValue({
-      user: { username: 'stu', email: 'stu@example.com', role: 'STUDENT', token: 't' },
+      user: { username: 'stu', email: 'stu@example.com', role: 'STUDENT' },
       loading: false,
       isAuthenticated: true,
     } as never);
@@ -78,7 +78,7 @@ describe('ProtectedRoute', () => {
 
   it('renders the children when the role is allowed', () => {
     vi.mocked(useAuth).mockReturnValue({
-      user: { username: 'admin', email: 'admin@example.com', role: 'ADMIN', token: 't' },
+      user: { username: 'admin', email: 'admin@example.com', role: 'ADMIN' },
       loading: false,
       isAuthenticated: true,
     } as never);

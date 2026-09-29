@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -25,7 +26,7 @@ class AuthControllerTest {
     void registerWithABlankUsernameIsRejectedAsABadRequest() throws Exception {
         RegisterRequest request = new RegisterRequest("", "user@example.com", "Password123!", null);
 
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/auth/register").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -35,7 +36,7 @@ class AuthControllerTest {
     void registerWithABlankPasswordIsRejectedAsABadRequest() throws Exception {
         RegisterRequest request = new RegisterRequest("passwordtestuser", "user@example.com", "", null);
 
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/auth/register").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -45,7 +46,7 @@ class AuthControllerTest {
     void registerWithAnInvalidEmailIsRejectedAsABadRequest() throws Exception {
         RegisterRequest request = new RegisterRequest("emailtestuser", "not-an-email", "Password123!", null);
 
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/auth/register").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -55,7 +56,7 @@ class AuthControllerTest {
     void selfRegistrationAlwaysCreatesAStudentAccount() throws Exception {
         RegisterRequest request = new RegisterRequest("plainuser", "plainuser@example.com", "Password123!", null);
 
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/auth/register").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -70,7 +71,7 @@ class AuthControllerTest {
                 {"username":"escalator","email":"escalator@example.com","password":"Password123!","role":"ADMIN"}
                 """;
 
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/auth/register").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bodyWithAdminRole))
                 .andExpect(status().isCreated())
@@ -81,7 +82,7 @@ class AuthControllerTest {
     void loginWithABlankUsernameIsRejectedAsABadRequest() throws Exception {
         LoginRequest request = new LoginRequest("", "Password123!");
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/auth/login").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -91,7 +92,7 @@ class AuthControllerTest {
     void loginWithAnUnknownUserReturnsAGenericUnauthorized() throws Exception {
         LoginRequest request = new LoginRequest("no-such-user-xyz", "whatever");
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/auth/login").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
@@ -102,14 +103,14 @@ class AuthControllerTest {
     void loginWithTheWrongPasswordReturnsTheSameGenericUnauthorized() throws Exception {
         RegisterRequest signup =
                 new RegisterRequest("pwdcheckuser", "pwdcheckuser@example.com", "Password123!", null);
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/auth/register").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(signup)))
                 .andExpect(status().isCreated());
 
         LoginRequest badLogin = new LoginRequest("pwdcheckuser", "WrongPassword!");
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/auth/login").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(badLogin)))
                 .andExpect(status().isUnauthorized())
