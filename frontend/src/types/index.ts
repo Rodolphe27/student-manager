@@ -20,6 +20,10 @@ export interface CreateStudentRequest {
   matriculationNumber: string;
   birthDate?: string;
   email: string;
+  // Create only: also create a login account for the new profile (see AccountFields).
+  createAccount?: boolean;
+  accountUsername?: string;
+  accountPassword?: string;
   // Version of the record being edited; a stale one makes the update fail with 409.
   version?: number;
 }
@@ -81,6 +85,10 @@ export interface CreateTeacherRequest {
   lastName: string;
   email: string;
   department?: string;
+  // Create only: also create a login account for the new profile (see AccountFields).
+  createAccount?: boolean;
+  accountUsername?: string;
+  accountPassword?: string;
   version?: number;
 }
 

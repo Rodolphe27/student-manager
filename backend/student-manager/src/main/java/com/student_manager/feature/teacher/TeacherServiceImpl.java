@@ -1,5 +1,7 @@
 package com.student_manager.feature.teacher;
 
+import com.student_manager.feature.auth.AccountProvisioner;
+import com.student_manager.feature.auth.Role;
 import com.student_manager.shared.exception.ValidationException;
 import com.student_manager.shared.service.CrudServiceSupport;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class TeacherServiceImpl extends CrudServiceSupport<Teacher, TeacherDTO> implements TeacherService {
 
     private final TeacherRepository repository;
+    private final AccountProvisioner accountProvisioner;
 
     /**
      * Supplies the underlying repository for the shared CRUD template methods.
@@ -96,6 +99,11 @@ public class TeacherServiceImpl extends CrudServiceSupport<Teacher, TeacherDTO> 
         teacher.setDepartment(request.getDepartment());
 
         Teacher saved = repository.save(teacher);
+        if (request.isCreateAccount()) {
+            // Same transaction: a taken username/email rolls the new teacher back too.
+            saved.setAccount(accountProvisioner.create(
+                    request.getAccountUsername(), request.getEmail(), request.getAccountPassword(), Role.TEACHER));
+        }
         log.info("Teacher created with id: {}", saved.getId());
         return toDTO(saved);
     }

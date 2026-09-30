@@ -28,6 +28,22 @@ public class CreateTeacherRequest {
     @Pattern(regexp = "^[A-Za-z .'-]{2,100}$",
             message = "Department must be 2-100 characters: letters, spaces, '.', ''' or '-'")
     private String department;
+    /**
+     * Optional, on create only: also create a login account for this teacher (role
+     * TEACHER) using the profile's email. Ignored by update.
+     */
+    private boolean createAccount;
+
+    // Optional login name for the new account; blank = the email's local part.
+    @Pattern(regexp = "^[a-zA-Z0-9_.-]{3,32}$",
+            message = "Username must be 3-32 characters: letters, digits, '.', '_' or '-'")
+    private String accountUsername;
+
+    // Optional initial password; blank = the configured default password.
+    @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d).{8,}$",
+            message = "Password must be at least 8 characters and include a letter and a digit")
+    private String accountPassword;
+
     // Version of the record the client edited (from its DTO). Optional: when present and
     // outdated, the update is rejected with 409 instead of overwriting a newer change.
     private Long version;

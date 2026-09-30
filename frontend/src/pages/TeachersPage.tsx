@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import type { Teacher, CreateTeacherRequest, Page } from '../types';
 import teacherService from '../services/teacherService';
 import Pagination from '../components/Pagination';
+import AccountFields, { accountPayload } from '../components/AccountFields';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 
 const PAGE_SIZE = 10;
@@ -89,6 +90,7 @@ export default function TeachersPage() {
         ...form,
         department: trimmedDepartment ? trimmedDepartment : undefined,
       };
+      if (editingId === null) Object.assign(payload, accountPayload(form));
       if (editingId !== null) {
         await teacherService.update(editingId, payload);
       } else {
@@ -220,6 +222,9 @@ export default function TeachersPage() {
                 title="2-100 characters: letters, spaces, '.', &apos;&apos; or '-' — leave blank to omit"
               />
             </div>
+            {editingId === null && (
+              <AccountFields values={form} onChange={(patch) => setForm({ ...form, ...patch })} />
+            )}
             <div className="col-span-2 flex gap-2">
               <button
                 type="submit"

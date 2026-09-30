@@ -43,6 +43,13 @@ spring:
       # `always` creates them in Postgres too (idempotent — skipped if they exist).
       initialize-schema: always
 
+app:
+  accounts:
+    # Initial password for accounts an ADMIN creates without typing one (e.g. together
+    # with a new student/teacher). Users can change it on their profile page, but are
+    # not forced to: override it in any environment that is not a throwaway demo.
+    default-password: ${DEFAULT_ACCOUNT_PASSWORD:testuser12}
+
 server:
   # Fixed on purpose: the host is pointed at 5030 (Render: PORT=5030 in the
   # service's environment) rather than the app following a platform-assigned $PORT.

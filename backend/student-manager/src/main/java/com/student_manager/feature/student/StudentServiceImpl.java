@@ -2,6 +2,8 @@ package com.student_manager.feature.student;
 
 import com.student_manager.feature.auth.UserRepository;
 import com.student_manager.shared.exception.ResourceNotFoundException;
+import com.student_manager.feature.auth.AccountProvisioner;
+import com.student_manager.feature.auth.Role;
 import com.student_manager.shared.exception.ValidationException;
 import com.student_manager.shared.service.CrudServiceSupport;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,7 @@ public class StudentServiceImpl extends CrudServiceSupport<Student, StudentDTO> 
 
     private final StudentRepository repository;
     private final UserRepository userRepository;
+    private final AccountProvisioner accountProvisioner;
 
     /**
      * @return the repository backing the inherited CRUD operations
@@ -151,6 +154,11 @@ public class StudentServiceImpl extends CrudServiceSupport<Student, StudentDTO> 
         student.setEmail(request.getEmail());
 
         Student saved = repository.save(student);
+        if (request.isCreateAccount()) {
+            // Same transaction: a taken username/email rolls the new student back too.
+            saved.setAccount(accountProvisioner.create(
+                    request.getAccountUsername(), request.getEmail(), request.getAccountPassword(), Role.STUDENT));
+        }
         log.info("Student created with id: {}", saved.getId());
         return toDTO(saved);
     }

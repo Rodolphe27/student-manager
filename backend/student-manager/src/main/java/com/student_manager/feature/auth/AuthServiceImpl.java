@@ -27,6 +27,7 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AccountProvisioner accountProvisioner;
 
     /**
      * Creates a new account with the requested role and {@code active = true}.
@@ -42,21 +43,8 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse register(RegisterRequest request) {
         log.info("Registering user: {}", request.getUsername());
 
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new ValidationException("Username already exists: " + request.getUsername());
-        }
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new ValidationException("Email already exists: " + request.getEmail());
-        }
-
-        User user = new User();
-        user.setUsername(request.getUsername());
-        user.setEmail(request.getEmail());
-        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        user.setRole(request.getRole());
-        user.setActive(true);
-
-        User saved = userRepository.save(user);
+        User saved = accountProvisioner.create(
+                request.getUsername(), request.getEmail(), request.getPassword(), request.getRole());
         log.info("User registered with id: {}", saved.getId());
 
         return toResponse(saved);

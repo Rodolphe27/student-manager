@@ -2,6 +2,9 @@ package com.student_manager.feature.student;
 
 import com.student_manager.feature.auth.User;
 import com.student_manager.feature.auth.UserRepository;
+import com.student_manager.feature.auth.AccountProvisioner;
+import com.student_manager.feature.auth.Role;
+import com.student_manager.feature.auth.User;
 import com.student_manager.shared.exception.ResourceNotFoundException;
 import com.student_manager.shared.exception.ValidationException;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +26,7 @@ class StudentServiceImplTest {
 
     @Mock private StudentRepository repository;
     @Mock private UserRepository userRepository;
+    @Mock private AccountProvisioner accountProvisioner;
 
     @InjectMocks
     private StudentServiceImpl studentService;
@@ -159,5 +163,32 @@ class StudentServiceImplTest {
                 .isInstanceOf(ResourceNotFoundException.class);
 
         verify(repository, never()).deleteById(any());
+    }
+
+    // ── create with a login account ─────────────────────────────────
+
+    @Test
+    void createWithAccountProvisionsAndLinksAnAccountForTheNewProfile() {
+        CreateStudentRequest request = requestWith("grace@example.com", "M-9");
+        request.setCreateAccount(true);
+        request.setAccountUsername("grace");
+        User account = new User();
+        when(accountProvisioner.create("grace", "grace@example.com", null, Role.STUDENT)).thenReturn(account);
+        when(repository.save(any(Student.class))).thenAnswer(i -> i.getArgument(0));
+
+        var dto = studentService.create(request);
+
+        verify(accountProvisioner).create("grace", "grace@example.com", null, Role.STUDENT);
+        assertThat(dto.getEmail()).isEqualTo("grace@example.com");
+    }
+
+    @Test
+    void createWithoutTheAccountFlagNeverTouchesAccounts() {
+        CreateStudentRequest request = requestWith("grace@example.com", "M-9");
+        when(repository.save(any(Student.class))).thenAnswer(i -> i.getArgument(0));
+
+        studentService.create(request);
+
+        verifyNoInteractions(accountProvisioner);
     }
 }

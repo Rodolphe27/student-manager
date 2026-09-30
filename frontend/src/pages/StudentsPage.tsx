@@ -3,6 +3,7 @@ import type { Student, CreateStudentRequest, Page } from '../types';
 import studentService from '../services/studentService';
 import { getErrorMessage } from '../services/errorMessage';
 import Pagination from '../components/Pagination';
+import AccountFields, { accountPayload } from '../components/AccountFields';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 
 const PAGE_SIZE = 10;
@@ -86,7 +87,7 @@ export default function StudentsPage() {
       if (editingId !== null) {
         await studentService.update(editingId, form);
       } else {
-        await studentService.create(form);
+        await studentService.create({ ...form, ...accountPayload(form) });
       }
       closeForm();
       setForm(emptyForm);
@@ -216,6 +217,9 @@ export default function StudentsPage() {
                 required
               />
             </div>
+            {editingId === null && (
+              <AccountFields values={form} onChange={(patch) => setForm({ ...form, ...patch })} />
+            )}
             <div className="col-span-2 flex gap-2">
               <button
                 type="submit"
