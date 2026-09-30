@@ -42,7 +42,7 @@ public class Student extends BaseEntity {
     private String email;
 
     /**
-     * The account linked to this profile, set when a {@code RegistrationInvite}
+     * The account linked to this profile, set when an admin links an account
      * targeting this student is claimed. Nullable: a profile can exist (created
      * by an ADMIN) before anyone has registered against it.
      */

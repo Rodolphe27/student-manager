@@ -10,8 +10,7 @@ import lombok.Setter;
 /**
  * A login account: credentials, role, and active/inactive status. Distinct
  * from {@code Student}/{@code Teacher}, which hold the person's profile data
- * and are linked to a {@code User} via a registration invite or direct
- * association.
+ * and are matched to a {@code User} by email or a direct association.
  */
 @Entity
 @Table(name = "users")

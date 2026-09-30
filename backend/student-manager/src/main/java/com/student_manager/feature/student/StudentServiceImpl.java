@@ -114,9 +114,9 @@ public class StudentServiceImpl extends CrudServiceSupport<Student, StudentDTO> 
 
     /**
      * Resolves the student linked to an account, preferring the {@code account}
-     * FK set by a claimed {@code RegistrationInvite}. Falls back to matching the
+     * FK set when an admin links an account. Falls back to matching the
      * account's e-mail against {@link Student#getEmail()} for students who
-     * predate the invite flow and were never explicitly linked.
+     * predate account linking and were never explicitly linked.
      */
     private Optional<Student> resolveByAccount(String username) {
         return repository.findByAccountUsername(username)

@@ -43,7 +43,7 @@ public class SecurityConfig {
 
     /**
      * Builds the main security filter chain: session-based authentication
-     * (established by {@code AuthController} on login/register), CSRF via an
+     * (established by {@code AuthController} on login), CSRF via an
      * {@code XSRF-TOKEN} cookie echoed back in the {@code X-XSRF-TOKEN} header,
      * HSTS, the per-endpoint authorization rules, and {@code POST /api/auth/logout}.
      * A request without a valid session gets 401; a valid session with the
@@ -83,7 +83,9 @@ public class SecurityConfig {
                         .requestMatchers("/error").permitAll()
                         // "Who am I?" — used by the frontend on startup to restore the session.
                         .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        // Accounts are created by an ADMIN only — no public self-registration.
+                        .requestMatchers(HttpMethod.POST, "/api/auth/register").hasRole("ADMIN")
                         // Requires a login to view — was permitAll(), which let anyone on the
                         // internet browse the full API surface (including staff-only endpoint
                         // shapes). Log in to the app in the same browser first; Swagger UI then
@@ -102,13 +104,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/enrollments/student/**").authenticated()
 
                         // Student roster: staff may read it; only ADMIN may mutate it.
-                        // (Covers POST /api/students/{id}/invite too — ADMIN-only, same as
-                        // every other non-GET student operation.)
                         .requestMatchers(HttpMethod.GET, "/api/students/**").hasAnyRole("TEACHER", "ADMIN")
                         .requestMatchers("/api/students/**").hasRole("ADMIN")
 
                         // Teacher roster: same shape as students — staff may read, only
-                        // ADMIN may mutate or issue an invite.
+                        // ADMIN may mutate.
                         .requestMatchers(HttpMethod.GET, "/api/teachers/**").hasAnyRole("TEACHER", "ADMIN")
                         .requestMatchers("/api/teachers/**").hasRole("ADMIN")
 

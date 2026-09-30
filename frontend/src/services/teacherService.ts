@@ -1,5 +1,5 @@
 import api from './api';
-import type { Teacher, CreateTeacherRequest, RegistrationInvite, Page, PageRequest } from '../types';
+import type { Teacher, CreateTeacherRequest, Page, PageRequest } from '../types';
 import type { AxiosResponse } from 'axios';
 
 const teacherService = {
@@ -19,8 +19,6 @@ const teacherService = {
   delete: (id: number): Promise<AxiosResponse<void>> =>
     api.delete(`/teachers/${id}`),
 
-  issueInvite: (id: number): Promise<AxiosResponse<RegistrationInvite>> =>
-    api.post<RegistrationInvite>(`/teachers/${id}/invite`),
 };
 
 export default teacherService;

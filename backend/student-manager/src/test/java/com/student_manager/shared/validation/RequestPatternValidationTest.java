@@ -1,6 +1,7 @@
 package com.student_manager.shared.validation;
 
 import com.student_manager.feature.auth.RegisterRequest;
+import com.student_manager.feature.auth.Role;
 import com.student_manager.feature.course.CreateCourseRequest;
 import com.student_manager.feature.student.CreateStudentRequest;
 import com.student_manager.feature.teacher.CreateTeacherRequest;
@@ -50,14 +51,14 @@ class RequestPatternValidationTest {
             "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",   // 40 chars, too long (max 32)
     })
     void invalidUsernamesAreRejected(String username) {
-        RegisterRequest request = new RegisterRequest(username, "user@example.com", "Password123", null);
+        RegisterRequest request = new RegisterRequest(username, "user@example.com", "Password123", Role.STUDENT);
         assertThat(fieldViolations(request, "username")).isNotEmpty();
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"plainuser", "user.name", "user_name", "user-name", "abc"})
     void validUsernamesAreAccepted(String username) {
-        RegisterRequest request = new RegisterRequest(username, "user@example.com", "Password123", null);
+        RegisterRequest request = new RegisterRequest(username, "user@example.com", "Password123", Role.STUDENT);
         assertThat(fieldViolations(request, "username")).isEmpty();
     }
 
@@ -71,38 +72,14 @@ class RequestPatternValidationTest {
             "NoDigitsHere",  // no digit
     })
     void weakPasswordsAreRejected(String password) {
-        RegisterRequest request = new RegisterRequest("plainuser", "user@example.com", password, null);
+        RegisterRequest request = new RegisterRequest("plainuser", "user@example.com", password, Role.STUDENT);
         assertThat(fieldViolations(request, "password")).isNotEmpty();
     }
 
     @Test
     void aPasswordWithALetterAndADigitAndEightCharsIsAccepted() {
-        RegisterRequest request = new RegisterRequest("plainuser", "user@example.com", "Password123", null);
+        RegisterRequest request = new RegisterRequest("plainuser", "user@example.com", "Password123", Role.STUDENT);
         assertThat(fieldViolations(request, "password")).isEmpty();
-    }
-
-    // ── RegisterRequest.registrationCode (optional) ─────────────────
-
-    @Test
-    void aNullRegistrationCodeIsValid() {
-        RegisterRequest request = new RegisterRequest("plainuser", "user@example.com", "Password123", null);
-        assertThat(fieldViolations(request, "registrationCode")).isEmpty();
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"too-short", "not-the-right-shape-at-all!!"})
-    void aMalformedRegistrationCodeIsRejected(String code) {
-        RegisterRequest request = new RegisterRequest("plainuser", "user@example.com", "Password123", code);
-        assertThat(fieldViolations(request, "registrationCode")).isNotEmpty();
-    }
-
-    @Test
-    void aWellFormedRegistrationCodeIsAccepted() {
-        // Matches RegistrationInvite.generateCode()'s actual shape: 24 random bytes,
-        // URL-safe Base64 without padding => exactly 32 chars from [A-Za-z0-9_-].
-        String code = "A".repeat(32);
-        RegisterRequest request = new RegisterRequest("plainuser", "user@example.com", "Password123", code);
-        assertThat(fieldViolations(request, "registrationCode")).isEmpty();
     }
 
     // ── CreateCourseRequest.code ─────────────────────────────────────

@@ -68,19 +68,6 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Handles an invalid, expired, or already-claimed registration invite.
-     *
-     * @param ex the thrown exception, carrying the invite-specific message
-     * @return 400 Bad Request with the exception's message
-     */
-    @ExceptionHandler(InvalidInviteException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidInvite(InvalidInviteException ex) {
-        log.warn("Invalid registration invite: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ErrorResponse(400, ex.getMessage(), null, LocalDateTime.now()));
-    }
-
-    /**
      * Handles bean-validation failures on a {@code @Valid} request body,
      * collecting each field's error message.
      *

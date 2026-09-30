@@ -91,7 +91,7 @@ src/
 │   ├── Layout.tsx         # app shell: Sidebar + mobile top bar + <Outlet/>
 │   ├── Sidebar.tsx        # dark nav, role-dependent items, user chip, sign-out
 │   ├── StatCard.tsx       # KPI tile with a constrained `color` prop
-│   ├── InviteModal.tsx    # the only modal: overlay + panel pattern
+│   ├── (no modals currently)
 │   ├── ProtectedRoute.tsx # auth/role guard (no visual except spinner)
 │   └── ErrorBoundary.tsx  # class component, fallback card
 ├── pages/               # one file per route; each owns its data fetching + local state
@@ -287,7 +287,7 @@ Avatars are the user's first initial in a `rounded-full bg-blue-600` circle.
    - Replace arbitrary values (`text-[#1E293B]`, `p-[18px]`, `rounded-[10px]`) with the
      palette, scale, and radius conventions in §2 and §3.
    - Replace absolute positioning with flex or grid layouts.
-   - Reuse `StatCard`, `InviteModal`'s modal pattern, `Layout`/`Sidebar`, and the recipes in §3
+   - Reuse `StatCard`, `Layout`/`Sidebar`, and the recipes in §3
      instead of re-creating them.
    - Use semantic elements (`button`, `label`, `table`, `nav`, `main`, `h1`/`h2`).
 3. Download image and SVG assets locally (§4 CSP). Never ship localhost asset URLs.

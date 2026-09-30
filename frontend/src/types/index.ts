@@ -84,17 +84,6 @@ export interface CreateTeacherRequest {
   version?: number;
 }
 
-export type ProfileType = 'STUDENT' | 'TEACHER';
-
-export interface RegistrationInvite {
-  id: number;
-  code: string;
-  role: Role;
-  targetType: ProfileType;
-  targetId: number;
-  expiresAt: string;
-}
-
 export interface AuthResponse {
   username: string;
   email: string;
@@ -104,13 +93,6 @@ export interface AuthResponse {
 export interface LoginRequest {
   username: string;
   password: string;
-}
-
-export interface RegisterRequest {
-  username: string;
-  email: string;
-  password: string;
-  registrationCode?: string;
 }
 
 // ── Paging ─────────────────────────────────────────────────────────

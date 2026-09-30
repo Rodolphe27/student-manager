@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import type { AuthResponse, LoginRequest, RegisterRequest } from '../types';
+import type { AuthResponse, LoginRequest } from '../types';
 import authService from '../services/authService';
 import { AuthContext } from './auth-context';
 
@@ -32,11 +32,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(response.data);
   };
 
-  const register = async (data: RegisterRequest): Promise<void> => {
-    const response = await authService.register(data);
-    setUser(response.data);
-  };
-
   const logout = async (): Promise<void> => {
     try {
       await authService.logout();
@@ -52,7 +47,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       loading,
       login,
-      register,
       logout,
       isAuthenticated: user !== null,
     }}>

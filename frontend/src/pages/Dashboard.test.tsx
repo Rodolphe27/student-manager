@@ -9,7 +9,7 @@ import enrollmentService from '../services/enrollmentService';
 import authService from '../services/authService';
 
 vi.mock('../services/authService', () => ({
-  default: { me: vi.fn(), login: vi.fn(), register: vi.fn(), logout: vi.fn() },
+  default: { me: vi.fn(), login: vi.fn(), logout: vi.fn() },
 }));
 vi.mock('../services/studentService', () => ({
   default: { search: vi.fn(), getMe: vi.fn() },

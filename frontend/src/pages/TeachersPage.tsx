@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import type { Teacher, CreateTeacherRequest, RegistrationInvite, Page } from '../types';
+import type { Teacher, CreateTeacherRequest, Page } from '../types';
 import teacherService from '../services/teacherService';
-import InviteModal from '../components/InviteModal';
 import Pagination from '../components/Pagination';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 
@@ -23,8 +22,6 @@ export default function TeachersPage() {
   const [error, setError]         = useState<string>('');
   const [query, setQuery]         = useState<string>('');
   const [page, setPage]           = useState<number>(1);
-  const [invite, setInvite]       = useState<{ data: RegistrationInvite; teacherName: string } | null>(null);
-  const [inviteError, setInviteError] = useState<string>('');
 
   const [form, setForm] = useState<CreateTeacherRequest>(emptyForm);
 
@@ -116,17 +113,6 @@ export default function TeachersPage() {
     }
   };
 
-  const handleInvite = async (t: Teacher): Promise<void> => {
-    setInviteError('');
-    try {
-      const r = await teacherService.issueInvite(t.id);
-      setInvite({ data: r.data, teacherName: t.fullName });
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } };
-      setInviteError(error.response?.data?.message || `Could not send invite for ${t.fullName}`);
-    }
-  };
-
   const teachers   = data?.content ?? [];
   const total      = data?.page.totalElements ?? 0;
   const totalPages = data?.page.totalPages ?? 1;
@@ -181,23 +167,6 @@ export default function TeachersPage() {
           </button>
         </div>
       </div>
-
-      {inviteError && (
-        <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-lg mb-6 flex items-center justify-between gap-4">
-          <span>{inviteError}</span>
-          <button onClick={() => setInviteError('')} className="text-red-700 font-medium hover:underline">
-            Dismiss
-          </button>
-        </div>
-      )}
-
-      {invite && (
-        <InviteModal
-          invite={invite.data}
-          targetName={invite.teacherName}
-          onClose={() => setInvite(null)}
-        />
-      )}
 
       {/* Form */}
       {showForm && (
@@ -288,12 +257,6 @@ export default function TeachersPage() {
                 <td className="px-5 py-3 text-gray-500">{t.email}</td>
                 <td className="px-5 py-3 text-gray-500">{t.department || '—'}</td>
                 <td className="px-5 py-3 flex gap-3">
-                  <button
-                    onClick={() => handleInvite(t)}
-                    className="text-green-600 hover:text-green-800 text-xs font-medium"
-                  >
-                    Send Invite
-                  </button>
                   <button
                     onClick={() => openEditForm(t)}
                     className="text-blue-600 hover:text-blue-800 text-xs font-medium"

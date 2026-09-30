@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import type { Student, CreateStudentRequest, RegistrationInvite, Page } from '../types';
+import type { Student, CreateStudentRequest, Page } from '../types';
 import studentService from '../services/studentService';
 import { getErrorMessage } from '../services/errorMessage';
-import InviteModal from '../components/InviteModal';
 import Pagination from '../components/Pagination';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 
@@ -24,8 +23,6 @@ export default function StudentsPage() {
   const [error, setError]         = useState<string>('');
   const [query, setQuery]         = useState<string>('');
   const [page, setPage]           = useState<number>(1);
-  const [invite, setInvite]       = useState<{ data: RegistrationInvite; studentName: string } | null>(null);
-  const [inviteError, setInviteError] = useState<string>('');
 
   const [form, setForm] = useState<CreateStudentRequest>(emptyForm);
 
@@ -109,16 +106,6 @@ export default function StudentsPage() {
     }
   };
 
-  const handleInvite = async (s: Student): Promise<void> => {
-    setInviteError('');
-    try {
-      const r = await studentService.issueInvite(s.id);
-      setInvite({ data: r.data, studentName: s.fullName });
-    } catch (err: unknown) {
-      setInviteError(getErrorMessage(err, `Could not send invite for ${s.fullName}`));
-    }
-  };
-
   const students   = data?.content ?? [];
   const total      = data?.page.totalElements ?? 0;
   const totalPages = data?.page.totalPages ?? 1;
@@ -173,23 +160,6 @@ export default function StudentsPage() {
           </button>
         </div>
       </div>
-
-      {inviteError && (
-        <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-lg mb-6 flex items-center justify-between gap-4">
-          <span>{inviteError}</span>
-          <button onClick={() => setInviteError('')} className="text-red-700 font-medium hover:underline">
-            Dismiss
-          </button>
-        </div>
-      )}
-
-      {invite && (
-        <InviteModal
-          invite={invite.data}
-          targetName={invite.studentName}
-          onClose={() => setInvite(null)}
-        />
-      )}
 
       {/* Form */}
       {showForm && (
@@ -283,12 +253,6 @@ export default function StudentsPage() {
                 <td className="px-5 py-3 text-gray-500 font-mono">{s.matriculationNumber}</td>
                 <td className="px-5 py-3 text-gray-500">{s.email}</td>
                 <td className="px-5 py-3 flex gap-3">
-                  <button
-                    onClick={() => handleInvite(s)}
-                    className="text-green-600 hover:text-green-800 text-xs font-medium"
-                  >
-                    Send Invite
-                  </button>
                   <button
                     onClick={() => openEditForm(s)}
                     className="text-blue-600 hover:text-blue-800 text-xs font-medium"

@@ -16,7 +16,7 @@ import lombok.Setter;
 /**
  * JPA entity representing a teacher profile. A teacher profile may exist
  * before any user account is linked to it (e.g. created by an ADMIN ahead of
- * a registration invite), so {@link #account} is nullable.
+ * an account being created), so {@link #account} is nullable.
  */
 @Entity
 @Table(name = "teachers")
@@ -38,7 +38,7 @@ public class Teacher extends BaseEntity {
     private String department;
 
     /**
-     * The account linked to this profile, set when a {@code RegistrationInvite}
+     * The account linked to this profile, set when an admin links an account
      * targeting this teacher is claimed. Nullable: a profile can exist (created
      * by an ADMIN) before anyone has registered against it.
      */

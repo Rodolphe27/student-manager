@@ -255,7 +255,7 @@ first request afterwards waits about a minute while Spring Boot starts. The
 | `SESSION_COOKIE_SECURE` | `false` | Mark the `SESSION` cookie `Secure` — set `true` in any HTTPS deployment |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost` | Comma-separated allowed browser origins |
 | `CORS_ALLOWED_ORIGIN_PATTERNS` | *(empty)* | Comma-separated origin patterns (e.g. `https://*.example.com`) |
-| `SPRING_JPA_DDL_AUTO` | `update` | Hibernate schema mode; set `validate` once migrations exist |
+| `SPRING_JPA_DDL_AUTO` | `validate` | Hibernate schema mode; the schema itself is managed by Flyway (`db/migration`) |
 | `SPRING_JPA_SHOW_SQL` | `false` | Log every SQL statement (dev only) |
 | `LOG_LEVEL_APP` / `LOG_LEVEL_SECURITY` / `LOG_LEVEL_SQL` | `INFO` / `WARN` / `WARN` | Per-area log levels |
 | `VITE_API_URL` | `/api` | Backend API base URL (frontend). Keep it same-origin — Vite, nginx and the Vercel rewrite proxy `/api` to the backend. |

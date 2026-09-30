@@ -209,16 +209,6 @@ class AuthorizationRulesTest {
         return enrollmentRepository.save(enrollment).getId();
     }
 
-    /** Persists a bare Student row with no linked account, for invite-claiming tests. */
-    private long unclaimedStudentFor(String suffix) {
-        Student student = new Student();
-        student.setFirstName("Invite");
-        student.setLastName("Target");
-        student.setMatriculationNumber("M-INV-" + suffix);
-        student.setEmail("invite." + suffix + "@example.com");
-        return studentRepository.save(student).getId();
-    }
-
     // ── students ────────────────────────────────────────────────────
 
     @Test
@@ -475,66 +465,43 @@ class AuthorizationRulesTest {
                 .andExpect(status().isOk());
     }
 
-    // ── registration invites ────────────────────────────────────────
+    // ── account creation ────────────────────────────────────────────
 
     @Test
-    void adminIssuedStudentInviteCanBeClaimedViaRegistration() throws Exception {
-        long studentId = unclaimedStudentFor("claim1");
+    void adminCanCreateAnAccountWithARole() throws Exception {
+        String body = """
+                {"username":"created-teacher","email":"created.teacher@example.com","password":"Password123","role":"TEACHER"}
+                """;
 
-        String issueResponse = mockMvc.perform(post("/api/students/" + studentId + "/invite")
-                        .with(loggedInAs("ADMIN")))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
-
-        String code = objectMapper.readTree(issueResponse).get("code").asText();
-
-        String registerBody = """
-                {"username":"claimed-student","email":"claimed.student@example.com","password":"Password123","registrationCode":"%s"}
-                """.formatted(code);
-
-        mockMvc.perform(post("/api/auth/register").with(csrf())
+        mockMvc.perform(post("/api/auth/register").with(loggedInAs("ADMIN")).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(registerBody))
+                        .content(body))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.role").value("STUDENT"));
+                .andExpect(jsonPath("$.role").value("TEACHER"));
     }
 
     @Test
-    void teacherCannotIssueAStudentInvite() throws Exception {
-        long studentId = unclaimedStudentFor("noaccess");
+    void teacherCannotCreateAnAccount() throws Exception {
+        String body = """
+                {"username":"sneaky-admin","email":"sneaky.admin@example.com","password":"Password123","role":"ADMIN"}
+                """;
 
-        mockMvc.perform(post("/api/students/" + studentId + "/invite")
-                        .with(loggedInAs("TEACHER")))
+        mockMvc.perform(post("/api/auth/register").with(loggedInAs("TEACHER")).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    void claimingAMalformedRegistrationCodeIsRejectedAsABadRequest() throws Exception {
-        // The registrationCode @Pattern rejects this before it ever reaches the invite
-        // service — proves the new validation is actually wired into the real endpoint.
-        String registerBody = """
-                {"username":"bad-code-user","email":"bad.code.user@example.com","password":"Password123","registrationCode":"not-a-real-code"}
+    void anonymousCannotSelfRegister() throws Exception {
+        String body = """
+                {"username":"self-reg","email":"self.reg@example.com","password":"Password123","role":"STUDENT"}
                 """;
 
         mockMvc.perform(post("/api/auth/register").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(registerBody))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void claimingAWellFormedButUnknownRegistrationCodeIsRejected() throws Exception {
-        // Well-formed (passes the @Pattern) but doesn't exist — rejected by the invite
-        // service itself, not the DTO validator.
-        String unknownCode = "Z".repeat(32);
-        String registerBody = """
-                {"username":"unknown-code-user","email":"unknown.code.user@example.com","password":"Password123","registrationCode":"%s"}
-                """.formatted(unknownCode);
-
-        mockMvc.perform(post("/api/auth/register").with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(registerBody))
-                .andExpect(status().isBadRequest());
+                        .content(body))
+                .andExpect(status().isUnauthorized());
     }
 
     // ── unauthenticated ─────────────────────────────────────────────

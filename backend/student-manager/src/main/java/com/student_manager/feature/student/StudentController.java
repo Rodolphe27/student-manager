@@ -1,9 +1,6 @@
 package com.student_manager.feature.student;
 
 import com.student_manager.feature.auth.Role;
-import com.student_manager.feature.invite.ProfileType;
-import com.student_manager.feature.invite.RegistrationInviteDTO;
-import com.student_manager.feature.invite.RegistrationInviteService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,8 +18,7 @@ import java.util.List;
 // are commented out, not deleted, for reference.
 /**
  * REST endpoints for managing student profiles: CRUD operations, the
- * self-service "my profile" lookup, and issuing registration invites for a
- * student.
+ * self-service "my profile" lookup.
  */
 @Slf4j
 @RestController
@@ -32,7 +28,6 @@ import java.util.List;
 public class StudentController {
 
     private final StudentService service;
-    private final RegistrationInviteService registrationInviteService;
 
     /**
      * Returns one page of students, optionally filtered by {@code q} (name,
@@ -129,21 +124,5 @@ public class StudentController {
         // log.info("DELETE /api/students/{}", id);
         service.delete(id);
         return ResponseEntity.noContent().build();
-    }
-
-    /**
-     * Issues a registration invite that lets someone claim the login account
-     * for this student profile.
-     *
-     * @param id the student id to invite
-     * @param authentication the caller issuing the invite
-     * @return the created invite, with HTTP 201
-     */
-    @PostMapping("{id}/invite")
-    public ResponseEntity<RegistrationInviteDTO> issueInvite(@PathVariable Long id, Authentication authentication) {
-        // log.info("POST /api/students/{}/invite", id);
-        RegistrationInviteDTO invite = registrationInviteService.issueInvite(
-                Role.STUDENT, ProfileType.STUDENT, id, authentication.getName());
-        return ResponseEntity.status(201).body(invite);
     }
 }
