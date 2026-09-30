@@ -3,6 +3,9 @@ package com.student_manager.feature.teacher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
+import java.util.Optional;
+
 /**
  * Service contract for managing {@link Teacher} resources, covering lookup,
  * creation, update and deletion.
@@ -27,6 +30,24 @@ public interface TeacherService {
      * @return the requested page of teachers
      */
     Page<TeacherDTO> search(String query, Pageable pageable);
+
+    /**
+     * Lists every teacher as a lightweight {@link TeacherOption}, for selection lists.
+     *
+     * @return all teachers, ordered by name
+     */
+    List<TeacherOption> options();
+
+    /**
+     * Resolves the id of the teacher profile linked to an account: prefers the
+     * {@code account} FK, falling back to matching the account's e-mail against the
+     * teacher's e-mail (the same rule as for students). Used by authorization checks so a
+     * TEACHER can only manage the courses they run. Never throws.
+     *
+     * @param username the account's username
+     * @return the teacher's id, or empty if the account has no teacher profile
+     */
+    Optional<Long> findIdByAccountUsername(String username);
 
     /**
      * Creates a new teacher profile.

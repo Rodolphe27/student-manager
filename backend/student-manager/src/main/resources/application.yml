@@ -49,6 +49,11 @@ app:
     # with a new student/teacher). Users can change it on their profile page, but are
     # not forced to: override it in any environment that is not a throwaway demo.
     default-password: ${DEFAULT_ACCOUNT_PASSWORD:testuser12}
+  seed:
+    # Fill an empty database with sample data (admin account + 10 terms/teachers/students/
+    # courses/enrollments, see DemoDataSeeder). Off by default so production never gets
+    # well-known demo accounts; docker-compose switches it on.
+    demo-data: ${SEED_DEMO_DATA:false}
 
 server:
   # Fixed on purpose: the host is pointed at 5030 (Render: PORT=5030 in the

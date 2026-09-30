@@ -1,5 +1,6 @@
 package com.student_manager.feature.course;
 
+import com.student_manager.shared.security.OwnershipGuard;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -7,6 +8,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,6 +32,7 @@ import java.util.List;
 public class CourseController {
 
     private final CourseService service;
+    private final OwnershipGuard ownershipGuard;
 
     /**
      * Returns one page of courses, optionally filtered by {@code q} (code or
@@ -50,11 +55,12 @@ public class CourseController {
      * Every course as a lightweight id/code/title option, for selection lists
      * such as the enrollment form.
      *
-     * @return 200 OK with all courses, ordered by code
+     * @param authentication the caller; a TEACHER only gets the courses they run
+     * @return 200 OK with the courses, ordered by code
      */
     @GetMapping("options")
-    public ResponseEntity<List<CourseOption>> getOptions() {
-        return ResponseEntity.ok(service.options());
+    public ResponseEntity<List<CourseOption>> getOptions(Authentication authentication) {
+        return ResponseEntity.ok(service.options(ownershipGuard.teacherScope(authentication)));
     }
 
     /**
@@ -83,31 +89,38 @@ public class CourseController {
     }
 
     /**
-     * Creates a new course.
+     * Creates a new course. A TEACHER always becomes the course's teacher; an ADMIN picks one
+     * (or none) via {@code teacherId}.
      *
      * @param request the validated course data to create
+     * @param authentication the caller
      * @return 201 Created with the newly created course
      * @throws com.student_manager.shared.exception.ValidationException if the course code is already in use
      */
     @PostMapping
-    public ResponseEntity<CourseDTO> create(@Valid @RequestBody CreateCourseRequest request) {
-        // log.info("POST /api/courses");
+    public ResponseEntity<CourseDTO> create(@Valid @RequestBody CreateCourseRequest request,
+                                            Authentication authentication) {
+        pinTeacher(request, authentication);
         return ResponseEntity.status(201).body(service.create(request));
     }
 
     /**
-     * Updates an existing course.
+     * Updates an existing course. A TEACHER may only change courses they run (and cannot hand
+     * them to someone else); an ADMIN may change any.
      *
      * @param id the id of the course to update
      * @param request the validated replacement course data
+     * @param authentication the caller
      * @return 200 OK with the updated course
      * @throws com.student_manager.shared.exception.ResourceNotFoundException if no course exists with the given id
      * @throws com.student_manager.shared.exception.ValidationException if the new course code is already used by another course
      */
     @PutMapping("{id}")
+    @PreAuthorize("@ownershipGuard.canManageCourse(#id, authentication)")
     public ResponseEntity<CourseDTO> update(@PathVariable Long id,
-                                             @Valid @RequestBody CreateCourseRequest request) {
-        // log.info("PUT /api/courses/{}", id);
+                                             @Valid @RequestBody CreateCourseRequest request,
+                                             Authentication authentication) {
+        pinTeacher(request, authentication);
         return ResponseEntity.ok(service.update(id, request));
     }
 
@@ -119,9 +132,22 @@ public class CourseController {
      * @throws com.student_manager.shared.exception.ResourceNotFoundException if no course exists with the given id
      */
     @DeleteMapping("{id}")
+    @PreAuthorize("@ownershipGuard.canManageCourse(#id, authentication)")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         // log.info("DELETE /api/courses/{}", id);
         service.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /** A TEACHER can only create/keep courses for themselves: force {@code teacherId} to their own. */
+    private void pinTeacher(CreateCourseRequest request, Authentication authentication) {
+        Long scope = ownershipGuard.teacherScope(authentication);
+        if (scope == null) {
+            return;
+        }
+        if (scope == OwnershipGuard.NO_TEACHER) {
+            throw new AccessDeniedException("Your account is not linked to a teacher profile");
+        }
+        request.setTeacherId(scope);
     }
 }

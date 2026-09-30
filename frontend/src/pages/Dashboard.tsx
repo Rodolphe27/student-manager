@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import StatCard from '../components/StatCard';
+import StatusBadge from '../components/StatusBadge';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ErrorAlert from '../components/ErrorAlert';
 import type { Enrollment } from '../types';
 import studentService from '../services/studentService';
 import courseService from '../services/courseService';
@@ -86,26 +89,12 @@ export default function Dashboard() {
     if (!authLoading) void fetchData();
   }, [authLoading, fetchData]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  if (loading) return <LoadingSpinner />;
 
   if (loadError) {
     return (
       <div className="p-4 sm:p-6">
-        <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-lg flex items-center justify-between gap-4">
-          <span>{loadError}</span>
-          <button
-            onClick={retry}
-            className="text-red-700 font-medium hover:underline whitespace-nowrap"
-          >
-            Retry
-          </button>
-        </div>
+        <ErrorAlert message={loadError} actionLabel="Retry" onAction={retry} />
       </div>
     );
   }
@@ -147,13 +136,7 @@ export default function Dashboard() {
                 <td className="px-5 py-3 text-gray-500">{e.enrolledAt}</td>
                 <td className="px-5 py-3 text-gray-600">{e.grade}</td>
                 <td className="px-5 py-3">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    e.status === 'CONFIRMED' ? 'bg-green-100 text-green-700' :
-                    e.status === 'PENDING'   ? 'bg-yellow-100 text-yellow-700' :
-                                               'bg-red-100 text-red-700'
-                  }`}>
-                    {e.status}
-                  </span>
+                  <StatusBadge status={e.status} />
                 </td>
               </tr>
             ))}

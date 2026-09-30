@@ -1,5 +1,6 @@
 package com.student_manager.feature.profile;
 
+import com.student_manager.shared.validation.ValidationPatterns;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
@@ -15,7 +16,6 @@ public class ChangePasswordRequest {
     private String currentPassword;
 
     @NotBlank(message = "New password is required")
-    @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d).{8,}$",
-            message = "Password must be at least 8 characters and include a letter and a digit")
+    @Pattern(regexp = ValidationPatterns.PASSWORD, message = ValidationPatterns.PASSWORD_MESSAGE)
     private String newPassword;
 }

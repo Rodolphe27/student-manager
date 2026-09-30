@@ -86,15 +86,20 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         // Accounts are created by an ADMIN only — no public self-registration.
                         .requestMatchers(HttpMethod.POST, "/api/auth/register").hasRole("ADMIN")
-                        // Requires a login to view — was permitAll(), which let anyone on the
-                        // internet browse the full API surface (including staff-only endpoint
-                        // shapes). Log in to the app in the same browser first; Swagger UI then
+                        // API docs require a login so the staff-only endpoint shapes are not
+                        // public. Log in to the app in the same browser first; Swagger UI then
                         // reuses the session cookie.
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").authenticated()
                         .requestMatchers("/actuator/health/**").permitAll()
 
+                        // Terms: every user sees them (courses show their term); ADMIN adds them.
+                        .requestMatchers(HttpMethod.GET, "/api/terms/**").authenticated()
+                        .requestMatchers("/api/terms/**").hasRole("ADMIN")
+
                         // Course catalogue: any authenticated user may browse it;
                         // only staff may create / update / delete courses.
+                        // The id/code/title dropdown list feeds staff forms only.
+                        .requestMatchers(HttpMethod.GET, "/api/courses/options").hasAnyRole("TEACHER", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/courses/**").authenticated()
                         .requestMatchers("/api/courses/**").hasAnyRole("TEACHER", "ADMIN")
 
@@ -117,6 +122,10 @@ public class SecurityConfig {
                         // in the request body to their own — this rule alone would let
                         // any student enrol anyone.
                         .requestMatchers(HttpMethod.POST, "/api/enrollments").hasAnyRole("STUDENT", "TEACHER", "ADMIN")
+
+                        // A student may withdraw their own PENDING enrolment; the controller's
+                        // @PreAuthorize (canCancelEnrollment) enforces "own" and "pending".
+                        .requestMatchers(HttpMethod.PATCH, "/api/enrollments/*/cancel").hasAnyRole("STUDENT", "TEACHER", "ADMIN")
 
                         // Every other enrolment operation (list all, confirm/cancel, grade)
                         // is staff-only; deleting an enrolment is ADMIN-only.

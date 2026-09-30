@@ -22,9 +22,10 @@ final class EnrollmentSpecifications {
      * @param status    the status to keep, may be {@code null}
      * @param studentId the student to keep, may be {@code null}
      * @param courseId  the course to keep, may be {@code null}
+     * @param teacherId keep only enrollments in courses run by this teacher, may be {@code null}
      * @return the filter criteria
      */
-    static Specification<Enrollment> filter(EnrollmentStatus status, Long studentId, Long courseId) {
+    static Specification<Enrollment> filter(EnrollmentStatus status, Long studentId, Long courseId, Long teacherId) {
         return (root, criteriaQuery, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (status != null) {
@@ -35,6 +36,9 @@ final class EnrollmentSpecifications {
             }
             if (courseId != null) {
                 predicates.add(cb.equal(root.get("course").get("id"), courseId));
+            }
+            if (teacherId != null) {
+                predicates.add(cb.equal(root.get("course").get("teacher").get("id"), teacherId));
             }
             return cb.and(predicates.toArray(Predicate[]::new));
         };

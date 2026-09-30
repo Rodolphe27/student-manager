@@ -3,6 +3,7 @@ package com.student_manager.shared.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -146,6 +147,23 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new ErrorResponse(409,
                         "This record was changed by someone else. Reload it and try again.",
+                        null, LocalDateTime.now()));
+    }
+
+    /**
+     * Handles a database constraint violation that slipped past the service-level
+     * checks, typically deleting a record that other rows still reference (a student
+     * with enrollments, a teacher who runs courses, a term with courses).
+     *
+     * @param ex the thrown exception
+     * @return 409 Conflict with a generic "in use" message
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
+        log.warn("Data integrity violation: {}", ex.getMostSpecificCause().getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(409,
+                        "This record is still referenced by other data (or duplicates an existing one), so the change was not applied.",
                         null, LocalDateTime.now()));
     }
 

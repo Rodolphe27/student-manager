@@ -19,6 +19,11 @@ public class CourseDTO {
     private int creditHours;
     private CourseStatus status;
     private boolean active;
+    // Nullable: a course may have no assigned teacher / term yet.
+    private Long teacherId;
+    private String teacherName;
+    private Long termId;
+    private String termName;
     // Optimistic-lock version; send it back on update so a stale edit is rejected (409).
     private long version;
 }

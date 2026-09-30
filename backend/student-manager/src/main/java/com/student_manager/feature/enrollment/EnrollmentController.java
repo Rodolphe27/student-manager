@@ -9,6 +9,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import com.student_manager.shared.security.OwnershipGuard;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,15 +30,18 @@ import java.util.List;
 public class EnrollmentController {
 
     private final EnrollmentService service;
+    private final OwnershipGuard ownershipGuard;
 
     /**
      * Returns one page of enrollments, optionally filtered by {@code status},
-     * {@code studentId} and/or {@code courseId}. Default order: newest first.
+     * {@code studentId} and/or {@code courseId}. Default order: newest first. An ADMIN sees every
+     * enrollment; a TEACHER only those in courses they run.
      *
      * @param status    optional status filter
      * @param studentId optional student filter
      * @param courseId  optional course filter
      * @param pageable  {@code page} (0-based), {@code size} (max 100) and {@code sort} query params
+     * @param authentication the caller, used to scope a TEACHER to their own courses
      * @return the requested page of enrollments
      */
     @GetMapping
@@ -44,8 +49,10 @@ public class EnrollmentController {
             @RequestParam(required = false) EnrollmentStatus status,
             @RequestParam(required = false) Long studentId,
             @RequestParam(required = false) Long courseId,
-            @PageableDefault(sort = {"enrolledAt", "id"}, direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(service.search(status, studentId, courseId, pageable));
+            @PageableDefault(sort = {"enrolledAt", "id"}, direction = Sort.Direction.DESC) Pageable pageable,
+            Authentication authentication) {
+        return ResponseEntity.ok(service.search(
+                status, studentId, courseId, ownershipGuard.teacherScope(authentication), pageable));
     }
 
     /**
@@ -96,7 +103,7 @@ public class EnrollmentController {
     // pass through unconditionally (see OwnershipGuard).
     /**
      * Enrolls a student in a course. A STUDENT caller may only enroll
-     * themselves; staff may enroll any student.
+     * themselves, a TEACHER only into courses they run, an ADMIN anyone anywhere.
      *
      * @param request the student/course pair to enroll
      * @return the created enrollment, with HTTP 201
@@ -104,7 +111,7 @@ public class EnrollmentController {
      * @throws com.student_manager.shared.exception.ValidationException if the course is inactive or the student is already enrolled in it
      */
     @PostMapping
-    @PreAuthorize("@ownershipGuard.canAccessStudentData(#request.studentId, authentication)")
+    @PreAuthorize("@ownershipGuard.canEnroll(#request.studentId, #request.courseId, authentication)")
     public ResponseEntity<EnrollmentDTO> create(
             @Valid @RequestBody CreateEnrollmentRequest request) {
         // log.info("POST /api/enrollments");
@@ -139,7 +146,7 @@ public class EnrollmentController {
      * @throws com.student_manager.shared.exception.ValidationException if the enrollment is already cancelled
      */
     @PatchMapping("{id}/cancel")
-    @PreAuthorize("@ownershipGuard.canManageEnrollment(#id, authentication)")
+    @PreAuthorize("@ownershipGuard.canCancelEnrollment(#id, authentication)")
     public ResponseEntity<EnrollmentDTO> cancel(@PathVariable Long id) {
         // log.info("PATCH /api/enrollments/{}/cancel", id);
         return ResponseEntity.ok(service.cancel(id));

@@ -36,6 +36,11 @@ export interface Course {
   creditHours: number;
   status: CourseStatus;
   active: boolean;
+  // Null while the course has no teacher / term assigned.
+  teacherId: number | null;
+  teacherName: string | null;
+  termId: number | null;
+  termName: string | null;
   version: number;
 }
 
@@ -45,6 +50,9 @@ export interface CreateCourseRequest {
   description?: string;
   creditHours: number;
   status?: CourseStatus;
+  // Admin only: a TEACHER always becomes the teacher of the courses they save.
+  teacherId?: number | null;
+  termId?: number | null;
   version?: number;
 }
 
@@ -126,6 +134,25 @@ export interface StudentOption {
   id: number;
   fullName: string;
   matriculationNumber: string;
+}
+
+export interface TeacherOption {
+  id: number;
+  fullName: string;
+  department: string | null;
+}
+
+export interface Term {
+  id: number;
+  name: string;
+  startDate: string | null;
+  endDate: string | null;
+}
+
+export interface CreateTermRequest {
+  name: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface CourseOption {

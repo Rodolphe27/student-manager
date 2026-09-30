@@ -38,9 +38,9 @@ public class Teacher extends BaseEntity {
     private String department;
 
     /**
-     * The account linked to this profile, set when an admin links an account
-     * targeting this teacher is claimed. Nullable: a profile can exist (created
-     * by an ADMIN) before anyone has registered against it.
+     * The login account of this teacher, set when an ADMIN creates the profile together
+     * with an account, or when the teacher saves their profile page. Nullable: a profile
+     * can exist without a login.
      */
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", unique = true)

@@ -1,6 +1,7 @@
 package com.student_manager.feature.auth;
 
 import com.student_manager.shared.exception.ValidationException;
+import com.student_manager.shared.validation.ValidationPatterns;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -18,7 +19,7 @@ import java.util.regex.Pattern;
 @Component
 public class AccountProvisioner {
 
-    private static final Pattern VALID_USERNAME = Pattern.compile("^[a-zA-Z0-9_.-]{3,32}$");
+    private static final Pattern VALID_USERNAME = Pattern.compile(ValidationPatterns.USERNAME);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -26,7 +27,7 @@ public class AccountProvisioner {
 
     public AccountProvisioner(UserRepository userRepository,
                               PasswordEncoder passwordEncoder,
-                              @Value("${app.accounts.default-password:testuser12}") String defaultPassword) {
+                              @Value("${app.accounts.default-password}") String defaultPassword) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.defaultPassword = defaultPassword;

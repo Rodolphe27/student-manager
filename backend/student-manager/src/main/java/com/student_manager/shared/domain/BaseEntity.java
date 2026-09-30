@@ -37,7 +37,7 @@ public abstract class BaseEntity {
     private LocalDateTime updatedAt;
 
     // Username of the logged-in account; null for rows created before auditing
-    // existed or by an anonymous request (self-registration).
+    // existed or by a system task with no logged-in user (e.g. the demo-data seeder).
     @CreatedBy
     @Column(updatable = false)
     private String createdBy;

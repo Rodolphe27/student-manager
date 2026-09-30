@@ -1,5 +1,6 @@
 package com.student_manager.feature.course;
 
+import com.student_manager.feature.teacher.TeacherRepository;
 import com.student_manager.shared.exception.ResourceNotFoundException;
 import com.student_manager.shared.exception.ValidationException;
 import com.student_manager.shared.service.CrudServiceSupport;
@@ -35,6 +36,8 @@ import java.util.stream.Collectors;
 public class CourseServiceImpl extends CrudServiceSupport<Course, CourseDTO> implements CourseService {
 
     private final CourseRepository repository;
+    private final TeacherRepository teacherRepository;
+    private final TermRepository termRepository;
 
     /**
      * @return the repository backing the inherited CRUD operations
@@ -50,8 +53,11 @@ public class CourseServiceImpl extends CrudServiceSupport<Course, CourseDTO> imp
     }
 
     @Override
-    public List<CourseOption> options() {
-        return repository.findAllProjectedBy(Sort.by("code"));
+    public List<CourseOption> options(Long teacherId) {
+        Sort byCode = Sort.by("code");
+        return teacherId == null
+                ? repository.findAllProjectedBy(byCode)
+                : repository.findProjectedByTeacherId(teacherId, byCode);
     }
 
     /**
@@ -78,6 +84,14 @@ public class CourseServiceImpl extends CrudServiceSupport<Course, CourseDTO> imp
         dto.setCreditHours(course.getCreditHours());
         dto.setStatus(course.getStatus());
         dto.setActive(course.isActive());
+        if (course.getTeacher() != null) {
+            dto.setTeacherId(course.getTeacher().getId());
+            dto.setTeacherName(course.getTeacher().getFullName());
+        }
+        if (course.getTerm() != null) {
+            dto.setTermId(course.getTerm().getId());
+            dto.setTermName(course.getTerm().getName());
+        }
         dto.setVersion(course.getVersion());
         return dto;
     }
@@ -120,6 +134,7 @@ public class CourseServiceImpl extends CrudServiceSupport<Course, CourseDTO> imp
         course.setCreditHours(request.getCreditHours());
         course.setStatus(request.getStatus() != null ? request.getStatus() : CourseStatus.ACTIVE);
 
+        assignTeacherAndTerm(course, request);
         Course saved = repository.save(course);
         log.info("Course created with id: {}", saved.getId());
         return toDTO(saved);
@@ -153,8 +168,19 @@ public class CourseServiceImpl extends CrudServiceSupport<Course, CourseDTO> imp
             course.setStatus(request.getStatus());
         }
 
+        assignTeacherAndTerm(course, request);
         // Flush now so the returned DTO carries the incremented version.
         Course saved = repository.saveAndFlush(course);
         return toDTO(saved);
+    }
+
+    /** Resolves the optional teacher/term ids of a request; an unknown id is a 404. */
+    private void assignTeacherAndTerm(Course course, CreateCourseRequest request) {
+        course.setTeacher(request.getTeacherId() == null ? null
+                : teacherRepository.findById(request.getTeacherId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Teacher", request.getTeacherId())));
+        course.setTerm(request.getTermId() == null ? null
+                : termRepository.findById(request.getTermId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Term", request.getTermId())));
     }
 }

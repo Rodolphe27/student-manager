@@ -71,7 +71,7 @@ class EnrollmentServiceImplTest {
 
         when(studentRepository.findById(1L)).thenReturn(Optional.of(student));
         when(courseRepository.findById(10L)).thenReturn(Optional.of(activeCourse));
-        when(enrollmentRepository.existsByStudentIdAndCourseId(1L, 10L)).thenReturn(false);
+        when(enrollmentRepository.findByStudentIdAndCourseId(1L, 10L)).thenReturn(Optional.empty());
         when(enrollmentRepository.save(any(Enrollment.class))).thenAnswer(inv -> {
             Enrollment e = inv.getArgument(0);
             e.setId(100L);
@@ -111,13 +111,33 @@ class EnrollmentServiceImplTest {
 
         when(studentRepository.findById(1L)).thenReturn(Optional.of(student));
         when(courseRepository.findById(10L)).thenReturn(Optional.of(activeCourse));
-        when(enrollmentRepository.existsByStudentIdAndCourseId(1L, 10L)).thenReturn(true);
+        when(enrollmentRepository.findByStudentIdAndCourseId(1L, 10L)).thenReturn(Optional.of(enrollmentWith(EnrollmentStatus.PENDING)));
 
         assertThatThrownBy(() -> enrollmentService.create(request))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("already enrolled");
 
         verify(enrollmentRepository, never()).save(any());
+    }
+
+    @Test
+    void createReopensAPreviouslyCancelledEnrollment() {
+        CreateEnrollmentRequest request = new CreateEnrollmentRequest();
+        request.setStudentId(1L);
+        request.setCourseId(10L);
+        Enrollment cancelled = enrollmentWith(EnrollmentStatus.CANCELLED);
+        cancelled.setId(55L);
+        cancelled.setGrade(Grade.NOT_GRADED);
+
+        when(studentRepository.findById(1L)).thenReturn(Optional.of(student));
+        when(courseRepository.findById(10L)).thenReturn(Optional.of(activeCourse));
+        when(enrollmentRepository.findByStudentIdAndCourseId(1L, 10L)).thenReturn(Optional.of(cancelled));
+        when(enrollmentRepository.save(cancelled)).thenReturn(cancelled);
+
+        EnrollmentDTO result = enrollmentService.create(request);
+
+        assertThat(result.getId()).isEqualTo(55L);
+        assertThat(result.getStatus()).isEqualTo(EnrollmentStatus.PENDING);
     }
 
     @Test

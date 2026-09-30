@@ -32,11 +32,12 @@ public interface CourseService {
     Page<CourseDTO> search(String query, CourseStatus status, Pageable pageable);
 
     /**
-     * Lists every course as a lightweight {@link CourseOption}, for selection lists.
+     * Lists courses as lightweight {@link CourseOption}s, for selection lists.
      *
-     * @return all courses, ordered by code
+     * @param teacherId restrict to courses run by this teacher, or {@code null} for every course
+     * @return the courses, ordered by code
      */
-    List<CourseOption> options();
+    List<CourseOption> options(Long teacherId);
 
     /**
      * Retrieves all courses with the given status.

@@ -1,0 +1,8 @@
+# Normalise line endings: LF in the repo and in working copies (Windows/WSL checkouts
+# otherwise flip files to CRLF and show them as modified).
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.png binary
+*.pdf binary
+*.jpg binary
+*.ico binary

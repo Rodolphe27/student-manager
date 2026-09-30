@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 // findById/findAll/delete come from CrudServiceSupport — see that class for why
@@ -53,8 +54,8 @@ public class EnrollmentServiceImpl extends CrudServiceSupport<Enrollment, Enroll
     }
 
     @Override
-    public Page<EnrollmentDTO> search(EnrollmentStatus status, Long studentId, Long courseId, Pageable pageable) {
-        return search(EnrollmentSpecifications.filter(status, studentId, courseId), pageable);
+    public Page<EnrollmentDTO> search(EnrollmentStatus status, Long studentId, Long courseId, Long teacherId, Pageable pageable) {
+        return search(EnrollmentSpecifications.filter(status, studentId, courseId, teacherId), pageable);
     }
 
     /**
@@ -143,12 +144,15 @@ public class EnrollmentServiceImpl extends CrudServiceSupport<Enrollment, Enroll
             throw new ValidationException("Course is not active: " + course.getCode());
         }
 
-        if (enrollmentRepository.existsByStudentIdAndCourseId(
-                request.getStudentId(), request.getCourseId())) {
+        Optional<Enrollment> previous = enrollmentRepository.findByStudentIdAndCourseId(
+                request.getStudentId(), request.getCourseId());
+        if (previous.isPresent() && !EnrollmentStatus.CANCELLED.equals(previous.get().getStatus())) {
             throw new ValidationException("Student already enrolled in this course");
         }
 
-        Enrollment enrollment = new Enrollment();
+        // A student/course pair is unique, so enrolling again after a cancellation reopens the
+        // cancelled enrollment as a fresh PENDING request instead of being blocked for good.
+        Enrollment enrollment = previous.orElseGet(Enrollment::new);
         enrollment.setStudent(student);
         enrollment.setCourse(course);
         enrollment.setEnrolledAt(LocalDate.now());

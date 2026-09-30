@@ -91,11 +91,17 @@ src/
 │   ├── Layout.tsx         # app shell: Sidebar + mobile top bar + <Outlet/>
 │   ├── Sidebar.tsx        # dark nav, role-dependent items, user chip, sign-out
 │   ├── StatCard.tsx       # KPI tile with a constrained `color` prop
+│   ├── StatusBadge.tsx    # the one status pill (course + enrollment statuses)
+│   ├── ErrorAlert.tsx     # red alert for load errors / failed actions / form errors (+ optional action)
+│   ├── LoadingSpinner.tsx # centered spinner
+│   ├── CourseForm.tsx     # course create/edit form (teacher/term pickers, inline "new term")
+│   ├── AccountFields.tsx  # "also create a login account" fields of the student/teacher forms
+│   ├── Pagination.tsx     # table footer
 │   ├── (no modals currently)
 │   ├── ProtectedRoute.tsx # auth/role guard (no visual except spinner)
 │   └── ErrorBoundary.tsx  # class component, fallback card
 ├── pages/               # one file per route; each owns its data fetching + local state
-├── context/             # AuthContext.tsx (provider), auth-context.ts, useAuth.ts
+├── context/             # AuthContext.tsx (provider), auth-context.ts, useAuth.ts, usePermissions.ts (isAdmin/isTeacher/isStudent/isStaff)
 ├── services/            # api.ts (axios) + one `xxxService` object per resource
 ├── types/index.ts       # all shared TS types (domain models, request DTOs, unions)
 └── test/setup.ts        # jest-dom + cleanup
@@ -129,6 +135,14 @@ className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colo
 **Documentation:** there is no Storybook. Colocated `*.test.tsx` files (e.g.
 `StatCard.test.tsx`) are the de facto usage docs.
 
+### Roles in the UI
+Mirror the backend rules, never invent looser ones. Use `usePermissions()` instead of comparing
+role strings. STUDENT: read-only catalogue, `MyCoursesPage` (enroll / withdraw). TEACHER: manages
+only the courses they run (`teacherService.getMe()` gives their id; `course.teacherId` tells which),
+sees only enrollments of their courses, grades confirmed ones. ADMIN: everything. Students/Teachers
+pages are read-only for TEACHER (no Add/Edit/Delete, no Actions column). Hide what a role cannot do
+instead of letting it hit a 403.
+
 ### Recurring UI recipes (inlined in pages, not yet extracted)
 Reuse these exact strings so new screens match. Extract a component only when the user
 asks or the same recipe would appear in a third new place.
@@ -160,13 +174,10 @@ asks or the same recipe would appear in a third new place.
   <tbody className="divide-y divide-gray-50"> … <tr className="hover:bg-gray-50"> … <td className="px-5 py-3">
 // Empty row: <td colSpan={n} className="px-5 py-8 text-center text-gray-400 text-sm">
 
-// Status badge (map lives in the page as Record<Status, string>)
-<span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor[e.status]}`}>
-// CONFIRMED/ACTIVE: bg-green-100 text-green-700 · PENDING: bg-yellow-100 text-yellow-700
-// CANCELLED/ARCHIVED: bg-red-100 text-red-600 · INACTIVE: bg-gray-100 text-gray-600
+// Status badge: <StatusBadge status={e.status} /> (colours live in components/StatusBadge.tsx)
+// CONFIRMED/ACTIVE: green · PENDING: yellow · CANCELLED/ARCHIVED: red · INACTIVE: gray
 
-// Error alert (with optional Retry/Dismiss action on the right)
-"bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-lg flex items-center justify-between gap-4"
+// Error alert: <ErrorAlert message=… actionLabel="Retry|Dismiss" onAction=… /> (components/ErrorAlert.tsx)
 
 // Loading spinner
 <div className="flex items-center justify-center h-64">
@@ -190,10 +201,12 @@ modal `z-50`.
 
 ### Page structure contract
 Each page component follows the same shape. Keep it when you implement a new Figma screen:
-1. `useState` for data, `loading`, `loadError`, form state, and the form `error`.
+1. `useState` for data, `loading`, `loadError`, form state, the form `error`, and an `actionError`
+   for row actions (delete / confirm / cancel / grade) — never swallow an action failure into
+   `console.error`.
 2. `useCallback` loader + `useEffect(() => { void load(); }, [load])` with the existing
    `// eslint-disable-next-line react-hooks/set-state-in-effect` comment.
-3. Early-return the spinner, then early-return the error alert with a Retry button.
+3. Early-return `<LoadingSpinner />`, then `<ErrorAlert message actionLabel="Retry" onAction />`.
 4. Render inside `<div className="p-4 sm:p-6">`.
 5. Call the backend only through `src/services/*Service.ts` and show backend errors with
    `getErrorMessage(err, 'fallback')` from `src/services/errorMessage.ts`.
@@ -213,9 +226,7 @@ Each page component follows the same shape. Keep it when you implement a new Fig
   (sharp). Re-run the script when the logo changes; don't hand-edit the PNGs.
 - Optimization: only what Vite does by default (hashing, inlining small assets). There is no
   image pipeline and no CDN. Everything is served same-origin.
-- `src/assets/hero.png`, `public/icons.svg` (social sprites), and the purple Vite-style
-  `public/favicon.svg` are **leftovers from the Vite template** and aren't used in `src/`.
-  Don't treat them as brand assets. The in-app logo is the text mark (see §5).
+- The purple Vite-style `public/favicon.svg` is a **leftover from the Vite template**; don't treat it as a brand asset.
 
 ### ⚠️ CSP constraints (they affect Figma exports)
 `vercel.json` and `nginx.conf` set a strict CSP:
@@ -297,8 +308,7 @@ Avatars are the user's first initial in a `rounded-full bg-blue-600` circle.
 6. Verify with `npm run lint`, `npm run build` (runs `tsc -b`), and `npm test`. Add a
    colocated `*.test.tsx` for new shared components, in the style of `StatCard.test.tsx`.
 
-### Known inconsistencies (don't copy them)
-- The Dashboard's CANCELLED badge uses `text-red-700`, but the other pages use `text-red-600`.
-  Prefer `text-red-600`.
-- `statusColor` maps are duplicated across `CoursesPage`, `EnrollmentsPage`, and
-  `MyCoursesPage`. If you touch several of them, consider extracting a `StatusBadge` component.
+### Known gaps
+- Page-level fetching is hand-rolled per page (`useCallback` + `useEffect`); React Query would remove
+  the repeated loading/error/reload boilerplate if the app grows.
+- Nav icons are emoji; they render as empty boxes where the OS has no emoji font.

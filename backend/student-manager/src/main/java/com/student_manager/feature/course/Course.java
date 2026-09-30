@@ -36,10 +36,8 @@ public class Course extends BaseEntity {
     @Column(nullable = false)
     private CourseStatus status = CourseStatus.ACTIVE;
 
-    // Nullable, unlike the proposed design's NOT NULL term_id: this app has no
-    // migration tool (ddl-auto=update) and existing production courses have no
-    // term to backfill. Tighten to non-null once Flyway lands and a backfill
-    // migration can run first.
+    // Nullable: courses created before terms existed have none. Tighten to NOT NULL with a
+    // Flyway migration that backfills a term first, if a term should ever be mandatory.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "term_id")
     private Term term;

@@ -1,7 +1,11 @@
 package com.student_manager.feature.course;
 
 import com.student_manager.shared.repository.BaseRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -24,6 +28,19 @@ public interface CourseRepository extends BaseRepository<Course> {
      * @return all courses as options
      */
     List<CourseOption> findAllProjectedBy(Sort sort);
+
+    /**
+     * The courses run by one teacher as {@link CourseOption}s.
+     *
+     * @param teacherId the teacher profile id
+     * @param sort the ordering, e.g. by code
+     * @return that teacher's courses as options
+     */
+    List<CourseOption> findProjectedByTeacherId(Long teacherId, Sort sort);
+
+    @Override
+    @EntityGraph(attributePaths = {"teacher", "term"})
+    Page<Course> findAll(Specification<Course> spec, Pageable pageable);
 
     /**
      * Finds a course by its unique code.
@@ -57,14 +74,15 @@ public interface CourseRepository extends BaseRepository<Course> {
      * @param status the status to filter by
      * @return the matching courses
      */
+    @EntityGraph(attributePaths = {"teacher", "term"})
     List<Course> findByStatus(CourseStatus status);
 
     /**
-     * Used by OwnershipGuard to check whether the given account teaches this course.
+     * Used by OwnershipGuard to check whether the given teacher runs this course.
      *
      * @param id the course id
-     * @param username the account username to check ownership for
-     * @return {@code true} if the course exists and is taught by the given account
+     * @param teacherId the teacher profile id to check
+     * @return {@code true} if the course exists and is taught by that teacher
      */
-    boolean existsByIdAndTeacher_Account_Username(Long id, String username);
+    boolean existsByIdAndTeacherId(Long id, Long teacherId);
 }

@@ -1,5 +1,6 @@
 package com.student_manager.feature.profile;
 
+import com.student_manager.shared.validation.ValidationPatterns;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -17,8 +18,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class UpdateProfileRequest {
     @NotBlank(message = "Username is required")
-    @Pattern(regexp = "^[a-zA-Z0-9_.-]{3,32}$",
-            message = "Username must be 3-32 characters: letters, digits, '.', '_' or '-'")
+    @Pattern(regexp = ValidationPatterns.USERNAME, message = ValidationPatterns.USERNAME_MESSAGE)
     private String username;
 
     @NotBlank(message = "Email is required")

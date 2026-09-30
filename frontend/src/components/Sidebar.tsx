@@ -19,6 +19,7 @@ const adminNavItems: NavItem[] = [
 const studentNavItems: NavItem[] = [
   { path: '/',            label: 'Dashboard',   icon: '▣' },
   { path: '/my-courses',  label: 'My Courses',  icon: '📋' },
+  { path: '/courses',     label: 'Course Catalogue', icon: '📚' },
   { path: '/profile',     label: 'My Profile',  icon: '⚙' },
 ];
 

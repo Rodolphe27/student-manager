@@ -4,7 +4,6 @@ import com.student_manager.feature.auth.User;
 import com.student_manager.feature.auth.UserRepository;
 import com.student_manager.feature.auth.AccountProvisioner;
 import com.student_manager.feature.auth.Role;
-import com.student_manager.feature.auth.User;
 import com.student_manager.shared.exception.ResourceNotFoundException;
 import com.student_manager.shared.exception.ValidationException;
 import org.junit.jupiter.api.BeforeEach;
@@ -157,12 +156,61 @@ class StudentServiceImplTest {
 
     @Test
     void deleteThrowsWhenStudentDoesNotExist() {
-        when(repository.existsById(999L)).thenReturn(false);
+        when(repository.findById(999L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> studentService.delete(999L))
                 .isInstanceOf(ResourceNotFoundException.class);
 
-        verify(repository, never()).deleteById(any());
+        verify(repository, never()).delete(any(Student.class));
+    }
+
+    @Test
+    void deleteAlsoRemovesTheLinkedAccount() {
+        User account = new User();
+        existing.setAccount(account);
+        when(repository.findById(1L)).thenReturn(Optional.of(existing));
+
+        studentService.delete(1L);
+
+        verify(repository).delete(existing);
+        verify(userRepository).delete(account);
+    }
+
+    @Test
+    void deleteWithoutAnAccountOnlyRemovesTheProfile() {
+        when(repository.findById(1L)).thenReturn(Optional.of(existing));
+
+        studentService.delete(1L);
+
+        verify(repository).delete(existing);
+        verify(userRepository, never()).delete(any(User.class));
+    }
+
+    @Test
+    void updateKeepsTheLinkedAccountEmailInSync() {
+        User account = new User();
+        account.setEmail("ada@example.com");
+        existing.setAccount(account);
+        when(repository.findById(1L)).thenReturn(Optional.of(existing));
+        when(userRepository.existsByEmail("new@example.com")).thenReturn(false);
+        when(repository.saveAndFlush(existing)).thenReturn(existing);
+
+        studentService.update(1L, requestWith("new@example.com", "M-1"));
+
+        assertThat(account.getEmail()).isEqualTo("new@example.com");
+        verify(userRepository).save(account);
+    }
+
+    @Test
+    void updateRejectsAnEmailAlreadyUsedByAnotherAccount() {
+        User account = new User();
+        account.setEmail("ada@example.com");
+        existing.setAccount(account);
+        when(repository.findById(1L)).thenReturn(Optional.of(existing));
+        when(userRepository.existsByEmail("taken@example.com")).thenReturn(true);
+
+        assertThatThrownBy(() -> studentService.update(1L, requestWith("taken@example.com", "M-1")))
+                .isInstanceOf(ValidationException.class);
     }
 
     // ── create with a login account ─────────────────────────────────

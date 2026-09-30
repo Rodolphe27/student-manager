@@ -1,19 +1,24 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import type { Enrollment, CreateEnrollmentRequest, EnrollmentStatus, Page, StudentOption, CourseOption } from '../types';
+import type { Enrollment, CreateEnrollmentRequest, EnrollmentStatus, Grade, Page, StudentOption, CourseOption } from '../types';
 import enrollmentService from '../services/enrollmentService';
 import studentService from '../services/studentService';
 import courseService from '../services/courseService';
 import { getErrorMessage } from '../services/errorMessage';
-import { useAuth } from '../context/useAuth';
+import { usePermissions } from '../context/usePermissions';
+import ErrorAlert from '../components/ErrorAlert';
+import LoadingSpinner from '../components/LoadingSpinner';
 import Pagination from '../components/Pagination';
+import StatusBadge from '../components/StatusBadge';
 
 const PAGE_SIZE = 10;
 
+const GRADES: Grade[] = ['A', 'B', 'C', 'D', 'F', 'NOT_GRADED'];
+
 export default function EnrollmentsPage() {
-  // DELETE /api/enrollments/** is ADMIN-only (see SecurityConfig); TEACHER can
-  // confirm/cancel but would get a 403 on delete, so hide the action for them.
-  const { user } = useAuth();
-  const canDelete = user?.role === 'ADMIN';
+  // An ADMIN sees every enrollment; a TEACHER only those in courses they run (the API scopes
+  // the list). DELETE is ADMIN-only (see SecurityConfig), so the action is hidden for teachers.
+  const { isAdmin } = usePermissions();
+  const canDelete = isAdmin;
   const [data, setData]               = useState<Page<Enrollment> | null>(null);
   const [students, setStudents]       = useState<StudentOption[]>([]);
   const [courses, setCourses]         = useState<CourseOption[]>([]);
@@ -21,6 +26,7 @@ export default function EnrollmentsPage() {
   const [loading, setLoading]         = useState<boolean>(true);
   const [loadError, setLoadError]     = useState<string>('');
   const [error, setError]             = useState<string>('');
+  const [actionError, setActionError] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<EnrollmentStatus | 'ALL'>('ALL');
   const [studentFilter, setStudentFilter] = useState<number | 'ALL'>('ALL');
   const [courseFilter, setCourseFilter]   = useState<number | 'ALL'>('ALL');
@@ -85,65 +91,48 @@ export default function EnrollmentsPage() {
     }
   };
 
-  const handleConfirm = async (id: number): Promise<void> => {
+  // Runs an enrollment action, shows the backend's reason when it fails, and reloads the list.
+  const runAction = async (action: () => Promise<unknown>, fallback: string): Promise<void> => {
+    setActionError('');
     try {
-      await enrollmentService.confirm(id);
-      loadEnrollments();
+      await action();
+      void loadEnrollments();
     } catch (err) {
-      console.error(err);
+      setActionError(getErrorMessage(err, fallback));
     }
   };
 
-  const handleCancel = async (id: number): Promise<void> => {
-    try {
-      await enrollmentService.cancel(id);
-      loadEnrollments();
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  const handleConfirm = (id: number): Promise<void> =>
+    runAction(() => enrollmentService.confirm(id), 'Could not confirm the enrollment');
 
-  const handleUnenroll = async (id: number): Promise<void> => {
-    if (!confirm('Unenroll this student? This removes the enrollment record permanently.')) return;
-    try {
-      await enrollmentService.delete(id);
-      loadEnrollments();
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  const handleCancel = (e: Enrollment): Promise<void> =>
+    confirm(`Cancel ${e.studentName}'s enrollment in ${e.courseCode}? Any grade is cleared.`)
+      ? runAction(() => enrollmentService.cancel(e.id), 'Could not cancel the enrollment')
+      : Promise.resolve();
 
-  const statusColor: Record<EnrollmentStatus, string> = {
-    CONFIRMED: 'bg-green-100 text-green-700',
-    PENDING:   'bg-yellow-100 text-yellow-700',
-    CANCELLED: 'bg-red-100 text-red-600',
-  };
+  const handleGrade = (id: number, grade: Grade): Promise<void> =>
+    runAction(() => enrollmentService.updateGrade(id, { grade }), 'Could not save the grade');
+
+  const handleUnenroll = (id: number): Promise<void> =>
+    confirm('Unenroll this student? This removes the enrollment record permanently.')
+      ? runAction(() => enrollmentService.delete(id), 'Could not remove the enrollment')
+      : Promise.resolve();
 
   const enrollments = data?.content ?? [];
   const total       = data?.page.totalElements ?? 0;
   const totalPages  = data?.page.totalPages ?? 1;
   const filtered    = statusFilter !== 'ALL' || studentFilter !== 'ALL' || courseFilter !== 'ALL';
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  if (loading) return <LoadingSpinner />;
 
   if (loadError) {
     return (
       <div className="p-4 sm:p-6">
-        <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-lg flex items-center justify-between gap-4">
-          <span>{loadError}</span>
-          <button
-            onClick={() => { setLoading(true); void loadEnrollments(); loadOptions().catch(() => {}); }}
-            className="text-red-700 font-medium hover:underline whitespace-nowrap"
-          >
-            Retry
-          </button>
-        </div>
+        <ErrorAlert
+          message={loadError}
+          actionLabel="Retry"
+          onAction={() => { setLoading(true); void loadEnrollments(); loadOptions().catch(() => {}); }}
+        />
       </div>
     );
   }
@@ -155,7 +144,7 @@ export default function EnrollmentsPage() {
         <div>
           <h1 className="text-xl font-bold text-gray-800">Enrollments</h1>
           <p className="text-sm text-gray-400">
-            {total} {filtered ? 'matching' : 'total'}
+            {total} {filtered ? 'matching' : 'total'}{!isAdmin && ' · in your courses'}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -198,15 +187,15 @@ export default function EnrollmentsPage() {
         </div>
       </div>
 
+      {actionError && (
+        <ErrorAlert className="mb-6" message={actionError} actionLabel="Dismiss" onAction={() => setActionError('')} />
+      )}
+
       {/* Form */}
       {showForm && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
           <h2 className="font-semibold text-gray-700 mb-4">New Enrollment</h2>
-          {error && (
-            <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">
-              {error}
-            </div>
-          )}
+          {error && <ErrorAlert message={error} className="mb-4" />}
           <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Student</label>
@@ -240,7 +229,7 @@ export default function EnrollmentsPage() {
                   ))}
               </select>
             </div>
-            <div className="col-span-2 flex gap-2">
+            <div className="sm:col-span-2 flex gap-2">
               <button
                 type="submit"
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
@@ -281,16 +270,29 @@ export default function EnrollmentsPage() {
                   {' '}— {e.courseTitle}
                 </td>
                 <td className="px-5 py-3 text-gray-500">{e.enrolledAt}</td>
-                <td className="px-5 py-3 text-gray-600 font-medium">{e.grade}</td>
+                <td className="px-5 py-3 text-gray-600 font-medium">
+                  {e.status === 'CONFIRMED' ? (
+                    <select
+                      value={e.grade}
+                      onChange={(ev) => void handleGrade(e.id, ev.target.value as Grade)}
+                      aria-label={`Grade for ${e.studentName} in ${e.courseCode}`}
+                      className="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {GRADES.map((g) => (
+                        <option key={g} value={g}>{g === 'NOT_GRADED' ? 'Not graded' : g}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span title="Grades can be given once an enrollment is confirmed">{e.grade === 'NOT_GRADED' ? '—' : e.grade}</span>
+                  )}
+                </td>
                 <td className="px-5 py-3">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor[e.status]}`}>
-                    {e.status}
-                  </span>
+                  <StatusBadge status={e.status} />
                 </td>
                 <td className="px-5 py-3 flex gap-2">
                   {e.status === 'PENDING' && (
                     <button
-                      onClick={() => handleConfirm(e.id)}
+                      onClick={() => void handleConfirm(e.id)}
                       className="text-green-600 hover:text-green-800 text-xs font-medium"
                     >
                       Confirm
@@ -298,7 +300,7 @@ export default function EnrollmentsPage() {
                   )}
                   {e.status !== 'CANCELLED' && (
                     <button
-                      onClick={() => handleCancel(e.id)}
+                      onClick={() => void handleCancel(e)}
                       className="text-amber-600 hover:text-amber-800 text-xs font-medium"
                     >
                       Cancel
@@ -306,7 +308,7 @@ export default function EnrollmentsPage() {
                   )}
                   {canDelete && (
                     <button
-                      onClick={() => handleUnenroll(e.id)}
+                      onClick={() => void handleUnenroll(e.id)}
                       className="text-red-500 hover:text-red-700 text-xs font-medium"
                     >
                       Unenroll

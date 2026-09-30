@@ -27,10 +27,11 @@ public interface EnrollmentService {
      * @param status    the status to keep, or {@code null}
      * @param studentId the student to keep, or {@code null}
      * @param courseId  the course to keep, or {@code null}
+     * @param teacherId keep only enrollments in courses run by this teacher, or {@code null} for all
      * @param pageable  the requested page, size and sort
      * @return the requested page of enrollments
      */
-    Page<EnrollmentDTO> search(EnrollmentStatus status, Long studentId, Long courseId, Pageable pageable);
+    Page<EnrollmentDTO> search(EnrollmentStatus status, Long studentId, Long courseId, Long teacherId, Pageable pageable);
 
     /**
      * Lists all enrollments belonging to a given student.

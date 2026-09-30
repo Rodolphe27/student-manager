@@ -1,7 +1,9 @@
 package com.student_manager.feature.teacher;
 
 import com.student_manager.shared.repository.BaseRepository;
+import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -9,6 +11,19 @@ import java.util.Optional;
  * and lookup operations for {@link Teacher} entities.
  */
 public interface TeacherRepository extends BaseRepository<Teacher> {
+
+    /**
+     * Every teacher as a {@link TeacherOption}, ordered by name, for dropdowns.
+     *
+     * @return all teachers as id + full name + department
+     */
+    @Query("""
+            select new com.student_manager.feature.teacher.TeacherOption(
+                t.id, concat(t.firstName, ' ', t.lastName), t.department)
+            from Teacher t
+            order by t.lastName, t.firstName
+            """)
+    List<TeacherOption> findAllOptions();
 
     /**
      * Finds a teacher by their unique email address.

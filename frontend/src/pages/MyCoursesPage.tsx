@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { Course, Enrollment, EnrollmentStatus, Student } from '../types';
+import type { Course, Enrollment, Student } from '../types';
 import studentService from '../services/studentService';
 import enrollmentService from '../services/enrollmentService';
 import courseService from '../services/courseService';
+import { getErrorMessage } from '../services/errorMessage';
 import { useAuth } from '../context/useAuth';
+import ErrorAlert from '../components/ErrorAlert';
+import LoadingSpinner from '../components/LoadingSpinner';
+import StatusBadge from '../components/StatusBadge';
 
 export default function MyCoursesPage() {
   const { user } = useAuth();
@@ -15,6 +19,7 @@ export default function MyCoursesPage() {
   const [linked, setLinked]           = useState<boolean>(true);
   const [enrollingId, setEnrollingId] = useState<number | null>(null);
   const [enrollError, setEnrollError] = useState<string>('');
+  const [withdrawingId, setWithdrawingId] = useState<number | null>(null);
 
   const fetchMine = useCallback(async (): Promise<void> => {
     try {
@@ -60,47 +65,45 @@ export default function MyCoursesPage() {
       const r = await enrollmentService.getByStudent(student.id);
       setEnrollments(r.data);
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } };
-      setEnrollError(error.response?.data?.message || 'Could not enroll in this course');
+      setEnrollError(getErrorMessage(err, 'Could not enroll in this course'));
     } finally {
       setEnrollingId(null);
     }
   };
 
-  const statusColor: Record<EnrollmentStatus, string> = {
-    CONFIRMED: 'bg-green-100 text-green-700',
-    PENDING:   'bg-yellow-100 text-yellow-700',
-    CANCELLED: 'bg-red-100 text-red-600',
+  // A student may withdraw while the enrollment is still PENDING; once a teacher has
+  // confirmed it, only staff can cancel. (They can enroll again later.)
+  const handleWithdraw = async (e: Enrollment): Promise<void> => {
+    if (!confirm(`Withdraw from ${e.courseCode} — ${e.courseTitle}?`)) return;
+    setEnrollError('');
+    setWithdrawingId(e.id);
+    try {
+      await enrollmentService.cancel(e.id);
+      if (student) setEnrollments((await enrollmentService.getByStudent(student.id)).data);
+    } catch (err: unknown) {
+      setEnrollError(getErrorMessage(err, 'Could not withdraw from this course'));
+    } finally {
+      setWithdrawingId(null);
+    }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  if (loading) return <LoadingSpinner />;
 
   if (loadError) {
     return (
       <div className="p-4 sm:p-6">
-        <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-lg flex items-center justify-between gap-4">
-          <span>{loadError}</span>
-          <button
-            onClick={() => { setLoading(true); fetchMine(); }}
-            className="text-red-700 font-medium hover:underline whitespace-nowrap"
-          >
-            Retry
-          </button>
-        </div>
+        <ErrorAlert
+          message={loadError}
+          actionLabel="Retry"
+          onAction={() => { setLoading(true); void fetchMine(); }}
+        />
       </div>
     );
   }
 
-  // A course is offered if it's ACTIVE and there's no enrollment for it yet —
-  // CANCELLED enrollments still count as "already enrolled" here (issue #33's
-  // uniqueness constraint has no re-enroll path yet), so those stay hidden too.
-  const enrolledCourseIds = new Set(enrollments.map((e) => e.courseId));
+  // A course is offered if it's ACTIVE and the student has no live enrollment for it. A
+  // CANCELLED one doesn't count: enrolling again reopens it as a new PENDING request.
+  const enrolledCourseIds = new Set(enrollments.filter((e) => e.status !== 'CANCELLED').map((e) => e.courseId));
   const availableCourses = courses.filter((c) => c.active && !enrolledCourseIds.has(c.id));
 
   return (
@@ -118,12 +121,7 @@ export default function MyCoursesPage() {
       ) : (
         <>
           {enrollError && (
-            <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-lg mb-6 flex items-center justify-between gap-4">
-              <span>{enrollError}</span>
-              <button onClick={() => setEnrollError('')} className="text-red-700 font-medium hover:underline">
-                Dismiss
-              </button>
-            </div>
+            <ErrorAlert className="mb-6" message={enrollError} actionLabel="Dismiss" onAction={() => setEnrollError('')} />
           )}
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto mb-6">
@@ -134,6 +132,7 @@ export default function MyCoursesPage() {
                   <th className="px-5 py-3 text-left">Enrolled At</th>
                   <th className="px-5 py-3 text-left">Grade</th>
                   <th className="px-5 py-3 text-left">Status</th>
+                  <th className="px-5 py-3 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -144,17 +143,26 @@ export default function MyCoursesPage() {
                       {' '}— {e.courseTitle}
                     </td>
                     <td className="px-5 py-3 text-gray-500">{e.enrolledAt}</td>
-                    <td className="px-5 py-3 text-gray-600 font-medium">{e.grade}</td>
+                    <td className="px-5 py-3 text-gray-600 font-medium">{e.grade === 'NOT_GRADED' ? '—' : e.grade}</td>
                     <td className="px-5 py-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor[e.status]}`}>
-                        {e.status}
-                      </span>
+                      <StatusBadge status={e.status} />
+                    </td>
+                    <td className="px-5 py-3">
+                      {e.status === 'PENDING' && (
+                        <button
+                          onClick={() => void handleWithdraw(e)}
+                          disabled={withdrawingId === e.id}
+                          className="text-amber-600 hover:text-amber-800 text-xs font-medium disabled:opacity-50"
+                        >
+                          {withdrawingId === e.id ? 'Withdrawing…' : 'Withdraw'}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
                 {enrollments.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-5 py-8 text-center text-gray-400 text-sm">
+                    <td colSpan={5} className="px-5 py-8 text-center text-gray-400 text-sm">
                       You're not enrolled in any courses yet.
                     </td>
                   </tr>
@@ -168,11 +176,13 @@ export default function MyCoursesPage() {
             <p className="text-sm text-gray-400">Enroll yourself — new enrollments start as PENDING until a teacher confirms them.</p>
           </div>
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
-            <table className="w-full text-sm min-w-[560px]">
+            <table className="w-full text-sm min-w-[720px]">
               <thead className="bg-gray-50 text-gray-400 text-xs uppercase">
                 <tr>
                   <th className="px-5 py-3 text-left">Code</th>
                   <th className="px-5 py-3 text-left">Title</th>
+                  <th className="px-5 py-3 text-left">Teacher</th>
+                  <th className="px-5 py-3 text-left">Term</th>
                   <th className="px-5 py-3 text-left">ECTS</th>
                   <th className="px-5 py-3 text-left">Actions</th>
                 </tr>
@@ -180,8 +190,10 @@ export default function MyCoursesPage() {
               <tbody className="divide-y divide-gray-50">
                 {availableCourses.map((c: Course) => (
                   <tr key={c.id} className="hover:bg-gray-50">
-                    <td className="px-5 py-3 font-mono text-blue-600 font-medium">{c.code}</td>
+                    <td className="px-5 py-3 font-mono text-blue-600 font-medium whitespace-nowrap">{c.code}</td>
                     <td className="px-5 py-3 text-gray-800">{c.title}</td>
+                    <td className="px-5 py-3 text-gray-600">{c.teacherName ?? '—'}</td>
+                    <td className="px-5 py-3 text-gray-600">{c.termName ?? '—'}</td>
                     <td className="px-5 py-3 text-gray-600">{c.creditHours}</td>
                     <td className="px-5 py-3">
                       <button
@@ -196,7 +208,7 @@ export default function MyCoursesPage() {
                 ))}
                 {availableCourses.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-5 py-8 text-center text-gray-400 text-sm">
+                    <td colSpan={6} className="px-5 py-8 text-center text-gray-400 text-sm">
                       No new courses available to enroll in right now.
                     </td>
                   </tr>

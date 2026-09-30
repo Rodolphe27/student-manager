@@ -9,9 +9,9 @@ export default defineConfig({
   reporter: 'list',
   use: {
     baseURL: `http://localhost:${PORT}`,
-    // This sandbox ships a pre-installed Chromium outside npm's browser cache;
-    // CI installs its own via `npx playwright install --with-deps chromium`.
-    launchOptions: process.env.CI ? undefined : { executablePath: '/opt/pw-browsers/chromium' },
+    // Use Playwright's own Chromium (`npx playwright install chromium`). Set PW_CHROMIUM_PATH to
+    // run against an already installed browser instead.
+    launchOptions: process.env.PW_CHROMIUM_PATH ? { executablePath: process.env.PW_CHROMIUM_PATH } : undefined,
   },
   webServer: {
     command: `npm run preview -- --port ${PORT} --strictPort`,

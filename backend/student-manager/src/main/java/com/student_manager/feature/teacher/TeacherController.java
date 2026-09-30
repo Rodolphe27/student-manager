@@ -1,6 +1,7 @@
 package com.student_manager.feature.teacher;
 
 import com.student_manager.feature.auth.Role;
+import com.student_manager.shared.exception.ResourceNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,7 +9,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 // Per-method entry logging removed — RequestLoggingFilter (shared/config) now
 // logs method + path + status + duration for every request. The lines below
@@ -41,6 +45,33 @@ public class TeacherController {
             @RequestParam(required = false) String q,
             @PageableDefault(sort = {"lastName", "firstName"}) Pageable pageable) {
         return ResponseEntity.ok(service.search(q, pageable));
+    }
+
+    /**
+     * The teacher profile linked to the calling account (the UI uses it to tell which courses
+     * are the caller's own).
+     *
+     * @param authentication the caller
+     * @return 200 OK with the profile
+     * @throws com.student_manager.shared.exception.ResourceNotFoundException if the account has no teacher profile
+     */
+    @GetMapping("me")
+    public ResponseEntity<TeacherDTO> getMe(Authentication authentication) {
+        Long id = service.findIdByAccountUsername(authentication.getName())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No teacher record is linked to account: " + authentication.getName()));
+        return ResponseEntity.ok(service.findById(id));
+    }
+
+    /**
+     * Every teacher as a lightweight id/name/department option, for selection lists
+     * such as the course form.
+     *
+     * @return 200 OK with all teachers, ordered by name
+     */
+    @GetMapping("options")
+    public ResponseEntity<List<TeacherOption>> getOptions() {
+        return ResponseEntity.ok(service.options());
     }
 
     /**

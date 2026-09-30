@@ -1,5 +1,6 @@
 package com.student_manager.feature.student;
 
+import com.student_manager.shared.validation.ValidationPatterns;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -40,13 +41,11 @@ public class CreateStudentRequest {
     private boolean createAccount;
 
     // Optional login name for the new account; blank = the email's local part.
-    @Pattern(regexp = "^[a-zA-Z0-9_.-]{3,32}$",
-            message = "Username must be 3-32 characters: letters, digits, '.', '_' or '-'")
+    @Pattern(regexp = ValidationPatterns.USERNAME, message = ValidationPatterns.USERNAME_MESSAGE)
     private String accountUsername;
 
     // Optional initial password; blank = the configured default password.
-    @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d).{8,}$",
-            message = "Password must be at least 8 characters and include a letter and a digit")
+    @Pattern(regexp = ValidationPatterns.PASSWORD, message = ValidationPatterns.PASSWORD_MESSAGE)
     private String accountPassword;
 
     // Version of the record the client edited (from its DTO). Optional: when present and
