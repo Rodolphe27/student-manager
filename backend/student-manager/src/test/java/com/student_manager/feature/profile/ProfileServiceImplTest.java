@@ -109,11 +109,13 @@ class ProfileServiceImplTest {
         UpdateProfileRequest r = new UpdateProfileRequest();
         r.setUsername("root2");
         r.setEmail("root2@example.com");
+        r.setFirstName(" Root ");
 
         ProfileDTO result = service.update("root", r);
 
         assertThat(result.getUsername()).isEqualTo("root2");
-        assertThat(result.getFirstName()).isNull();
+        assertThat(result.getFirstName()).isEqualTo("Root");
+        assertThat(result.getLastName()).isNull();
         verifyNoInteractions(studentRepository, teacherRepository);
     }
 

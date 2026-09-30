@@ -9,8 +9,8 @@ import java.time.LocalDate;
 
 /**
  * The caller's own account plus, when one is linked, their Student or Teacher
- * profile details. Profile fields are {@code null} for accounts without a
- * profile (e.g. ADMIN) and for fields the profile type does not have.
+ * profile details. Accounts without a profile (e.g. ADMIN) carry their own optional first and
+ * last name; fields the profile type does not have are {@code null}.
  */
 @Data
 @NoArgsConstructor

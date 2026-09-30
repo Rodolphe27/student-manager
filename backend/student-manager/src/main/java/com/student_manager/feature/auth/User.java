@@ -36,6 +36,12 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private boolean active = true;
 
+    // Personal details for accounts without a Student/Teacher profile (e.g. ADMIN);
+    // for STUDENT/TEACHER accounts the linked profile is the source of truth.
+    private String firstName;
+
+    private String lastName;
+
     /**
      * Whether this account is enabled and may authenticate. Declared
      * explicitly (rather than relying on Lombok's boolean-getter naming) so

@@ -21,7 +21,6 @@ export default function ProfilePage() {
   const [pwMsg, setPwMsg]     = useState<{ ok: boolean; text: string } | null>(null);
   const [pwSaving, setPwSaving] = useState<boolean>(false);
 
-  const hasProfile = profile !== null && profile.firstName !== null;
   const isStudent  = profile?.role === 'STUDENT';
   const isTeacher  = profile?.role === 'TEACHER';
 
@@ -133,8 +132,8 @@ export default function ProfilePage() {
           />
         </div>
 
-        {hasProfile && (
-          <>
+        {/* Names apply to every role: stored on the profile for students/teachers, on the account for admins. */}
+        <>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={labelClass}>First name</label>
@@ -143,7 +142,6 @@ export default function ProfilePage() {
                   className={inputClass}
                   value={form.firstName ?? ''}
                   onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-                  required
                 />
               </div>
               <div>
@@ -153,7 +151,6 @@ export default function ProfilePage() {
                   className={inputClass}
                   value={form.lastName ?? ''}
                   onChange={(e) => setForm({ ...form, lastName: e.target.value })}
-                  required
                 />
               </div>
             </div>
@@ -188,8 +185,7 @@ export default function ProfilePage() {
                 />
               </div>
             )}
-          </>
-        )}
+        </>
 
         <button
           type="submit"

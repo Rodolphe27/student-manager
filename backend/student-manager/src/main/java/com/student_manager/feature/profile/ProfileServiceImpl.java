@@ -86,6 +86,10 @@ public class ProfileServiceImpl implements ProfileService {
 
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
+        if (student.isEmpty() && teacher.isEmpty()) {
+            user.setFirstName(blankToNull(request.getFirstName()));
+            user.setLastName(blankToNull(request.getLastName()));
+        }
         userRepository.save(user);
         return toDTO(user, student, teacher);
     }
@@ -129,6 +133,10 @@ public class ProfileServiceImpl implements ProfileService {
         dto.setUsername(user.getUsername());
         dto.setEmail(user.getEmail());
         dto.setRole(user.getRole());
+        if (student.isEmpty() && teacher.isEmpty()) {
+            dto.setFirstName(user.getFirstName());
+            dto.setLastName(user.getLastName());
+        }
         student.ifPresent(s -> {
             dto.setFirstName(s.getFirstName());
             dto.setLastName(s.getLastName());
@@ -141,6 +149,10 @@ public class ProfileServiceImpl implements ProfileService {
             dto.setDepartment(t.getDepartment());
         });
         return dto;
+    }
+
+    private static String blankToNull(String value) {
+        return isBlank(value) ? null : value.trim();
     }
 
     private static boolean isBlank(String value) {
