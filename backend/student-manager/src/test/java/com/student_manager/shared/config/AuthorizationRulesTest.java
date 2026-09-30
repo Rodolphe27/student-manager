@@ -481,6 +481,26 @@ class AuthorizationRulesTest {
     }
 
     @Test
+    void studentCreatedWithAnAccountCanLogInWithTheDefaultPassword() throws Exception {
+        String body = """
+                {"firstName":"Anna","lastName":"Mueller","matriculationNumber":"M-ACC-1",
+                 "email":"anna.acc@example.com","createAccount":true}
+                """;
+        mockMvc.perform(post("/api/students").with(loggedInAs("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated());
+
+        // Username is derived from the email's local part; the password is the default.
+        mockMvc.perform(post("/api/auth/login").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"anna.acc\",\"password\":\"testuser12\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.role").value("STUDENT"))
+                .andExpect(jsonPath("$.email").value("anna.acc@example.com"));
+    }
+
+    @Test
     void teacherCannotCreateAnAccount() throws Exception {
         String body = """
                 {"username":"sneaky-admin","email":"sneaky.admin@example.com","password":"Password123","role":"ADMIN"}
