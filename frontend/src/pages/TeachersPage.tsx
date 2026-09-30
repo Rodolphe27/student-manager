@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import type { Teacher, CreateTeacherRequest, Page } from '../types';
 import teacherService from '../services/teacherService';
 import Pagination from '../components/Pagination';
-import AccountFields, { accountPayload } from '../components/AccountFields';
+import AccountFields from '../components/AccountFields';
+import { accountPayload } from '../services/accountPayload';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 
 const PAGE_SIZE = 10;

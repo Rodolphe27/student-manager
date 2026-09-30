@@ -3,7 +3,8 @@ import type { Student, CreateStudentRequest, Page } from '../types';
 import studentService from '../services/studentService';
 import { getErrorMessage } from '../services/errorMessage';
 import Pagination from '../components/Pagination';
-import AccountFields, { accountPayload } from '../components/AccountFields';
+import AccountFields from '../components/AccountFields';
+import { accountPayload } from '../services/accountPayload';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 
 const PAGE_SIZE = 10;

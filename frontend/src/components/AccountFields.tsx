@@ -1,11 +1,7 @@
 // "Also create a login account" block for the New Student / New Teacher forms.
 // Both fields are optional: an empty username is derived from the email (the part
 // before the @), an empty password uses the backend's default password.
-export interface AccountFieldValues {
-  createAccount?: boolean;
-  accountUsername?: string;
-  accountPassword?: string;
-}
+import type { AccountFieldValues } from '../services/accountPayload';
 
 interface AccountFieldsProps {
   values: AccountFieldValues;
@@ -14,19 +10,6 @@ interface AccountFieldsProps {
 
 const inputClass =
   'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
-
-// Turns the form's account fields into what the API expects: nothing at all when no
-// account is requested, and no empty strings (the backend's @Pattern rejects "").
-export function accountPayload(values: AccountFieldValues): AccountFieldValues {
-  if (!values.createAccount) {
-    return { createAccount: false, accountUsername: undefined, accountPassword: undefined };
-  }
-  return {
-    createAccount: true,
-    accountUsername: values.accountUsername?.trim() || undefined,
-    accountPassword: values.accountPassword || undefined,
-  };
-}
 
 export default function AccountFields({ values, onChange }: AccountFieldsProps) {
   return (
