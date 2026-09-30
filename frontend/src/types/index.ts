@@ -126,3 +126,30 @@ export interface CourseOption {
   title: string;
   status: CourseStatus;
 }
+
+// ── Profile (self-service) ─────────────────────────────────────────
+// Profile fields are null for accounts without a Student/Teacher profile (e.g. ADMIN).
+export interface Profile {
+  username: string;
+  email: string;
+  role: Role;
+  firstName: string | null;
+  lastName: string | null;
+  matriculationNumber: string | null;
+  birthDate: string | null;
+  department: string | null;
+}
+
+export interface UpdateProfileRequest {
+  username: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  birthDate?: string;
+  department?: string;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}

@@ -9,6 +9,7 @@ import TeachersPage from './pages/TeachersPage';
 import CoursesPage from './pages/CoursesPage';
 import EnrollmentsPage from './pages/EnrollmentsPage';
 import MyCoursesPage from './pages/MyCoursesPage';
+import ProfilePage from './pages/ProfilePage';
 
 export default function App() {
   const { isAuthenticated } = useAuth();
@@ -41,6 +42,8 @@ export default function App() {
           <Route path="courses"     element={<CoursesPage />} />
           <Route path="enrollments" element={<ProtectedRoute roles={['TEACHER', 'ADMIN']}><EnrollmentsPage /></ProtectedRoute>} />
           <Route path="my-courses" element={<MyCoursesPage />} />
+          {/* Self-service: every role (including ADMIN) edits their own account here. */}
+          <Route path="profile"    element={<ProfilePage />} />
         </Route>
 
         {/* Fallback */}

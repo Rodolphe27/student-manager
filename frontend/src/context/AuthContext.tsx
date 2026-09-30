@@ -48,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       login,
       logout,
+      updateUser: setUser,
       isAuthenticated: user !== null,
     }}>
       {children}

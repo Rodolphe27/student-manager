@@ -6,6 +6,8 @@ export interface AuthContextType {
   loading: boolean;
   login: (data: LoginRequest) => Promise<void>;
   logout: () => Promise<void>;
+  // Replaces the cached account after the user edits their own profile.
+  updateUser: (user: AuthResponse) => void;
   isAuthenticated: boolean;
 }
 

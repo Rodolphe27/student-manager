@@ -13,11 +13,13 @@ const adminNavItems: NavItem[] = [
   { path: '/teachers',    label: 'Teachers',    icon: '🎓' },
   { path: '/courses',     label: 'Courses',     icon: '📚' },
   { path: '/enrollments', label: 'Enrollments', icon: '📋' },
+  { path: '/profile',     label: 'My Profile',  icon: '⚙' },
 ];
 
 const studentNavItems: NavItem[] = [
   { path: '/',            label: 'Dashboard',   icon: '▣' },
   { path: '/my-courses',  label: 'My Courses',  icon: '📋' },
+  { path: '/profile',     label: 'My Profile',  icon: '⚙' },
 ];
 
 interface SidebarProps {
