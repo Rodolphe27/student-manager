@@ -11,9 +11,6 @@ const studentService = {
   options: (): Promise<AxiosResponse<StudentOption[]>> =>
     api.get<StudentOption[]>('/students/options'),
 
-  getById: (id: number): Promise<AxiosResponse<Student>> =>
-    api.get<Student>(`/students/${id}`),
-
   getMe: (): Promise<AxiosResponse<Student>> =>
     api.get<Student>('/students/me'),
 

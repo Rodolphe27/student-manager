@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Spring Data repository providing CRUD, paged search ({@link BaseRepository})
@@ -41,14 +40,6 @@ public interface CourseRepository extends BaseRepository<Course> {
     @Override
     @EntityGraph(attributePaths = {"teacher", "term"})
     Page<Course> findAll(Specification<Course> spec, Pageable pageable);
-
-    /**
-     * Finds a course by its unique code.
-     *
-     * @param code the course code to look up
-     * @return the matching course, or empty if none exists
-     */
-    Optional<Course> findByCode(String code);
 
     /**
      * Checks whether a course with the given code already exists.

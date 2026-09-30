@@ -20,14 +20,8 @@ const enrollmentService = {
   search: (params: PageRequest & EnrollmentFilter = {}): Promise<AxiosResponse<Page<Enrollment>>> =>
     api.get<Page<Enrollment>>('/enrollments', { params }),
 
-  getById: (id: number): Promise<AxiosResponse<Enrollment>> =>
-    api.get<Enrollment>(`/enrollments/${id}`),
-
   getByStudent: (studentId: number): Promise<AxiosResponse<Enrollment[]>> =>
     api.get<Enrollment[]>(`/enrollments/student/${studentId}`),
-
-  getByCourse: (courseId: number): Promise<AxiosResponse<Enrollment[]>> =>
-    api.get<Enrollment[]>(`/enrollments/course/${courseId}`),
 
   create: (data: CreateEnrollmentRequest): Promise<AxiosResponse<Enrollment>> =>
     api.post<Enrollment>('/enrollments', data),

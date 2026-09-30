@@ -15,9 +15,6 @@ const teacherService = {
   getMe: (): Promise<AxiosResponse<Teacher>> =>
     api.get<Teacher>('/teachers/me'),
 
-  getById: (id: number): Promise<AxiosResponse<Teacher>> =>
-    api.get<Teacher>(`/teachers/${id}`),
-
   create: (data: CreateTeacherRequest): Promise<AxiosResponse<Teacher>> =>
     api.post<Teacher>('/teachers', data),
 

@@ -52,14 +52,6 @@ public interface EnrollmentRepository extends BaseRepository<Enrollment> {
     List<Enrollment> findByCourseId(Long courseId);
 
     /**
-     * Finds all enrollments with a given status.
-     *
-     * @param status the enrollment status to filter by
-     * @return enrollments currently in that status
-     */
-    List<Enrollment> findByStatus(EnrollmentStatus status);
-
-    /**
      * Checks whether a student already has an enrollment row for a course.
      * Used to enforce the one-enrollment-per-student-per-course rule
      * (see {@link Enrollment}'s unique constraint) before inserting a new row.
