@@ -91,6 +91,16 @@ public interface EnrollmentService {
     EnrollmentDTO updateGrade(Long id, UpdateGradeRequest request);
 
     /**
+     * Records that the student has seen the grade of this enrollment, clearing its
+     * "new grade" notification.
+     *
+     * @param id the enrollment id
+     * @return the updated enrollment
+     * @throws com.student_manager.shared.exception.ResourceNotFoundException if no enrollment has that id
+     */
+    EnrollmentDTO markGradeSeen(Long id);
+
+    /**
      * Deletes an enrollment outright.
      *
      * @param id the enrollment id

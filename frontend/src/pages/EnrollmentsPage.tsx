@@ -27,6 +27,8 @@ export default function EnrollmentsPage() {
   const [loadError, setLoadError]     = useState<string>('');
   const [error, setError]             = useState<string>('');
   const [actionError, setActionError] = useState<string>('');
+  // Grades picked but not saved yet, by enrollment id. A grade only counts once it is saved.
+  const [gradeDrafts, setGradeDrafts] = useState<Record<number, Grade>>({});
   const [statusFilter, setStatusFilter] = useState<EnrollmentStatus | 'ALL'>('ALL');
   const [studentFilter, setStudentFilter] = useState<number | 'ALL'>('ALL');
   const [courseFilter, setCourseFilter]   = useState<number | 'ALL'>('ALL');
@@ -92,31 +94,42 @@ export default function EnrollmentsPage() {
   };
 
   // Runs an enrollment action, shows the backend's reason when it fails, and reloads the list.
-  const runAction = async (action: () => Promise<unknown>, fallback: string): Promise<void> => {
+  const runAction = async (action: () => Promise<unknown>, fallback: string): Promise<boolean> => {
     setActionError('');
     try {
       await action();
       void loadEnrollments();
+      return true;
     } catch (err) {
       setActionError(getErrorMessage(err, fallback));
+      return false;
     }
   };
 
-  const handleConfirm = (id: number): Promise<void> =>
+  const handleConfirm = (id: number): Promise<boolean> =>
     runAction(() => enrollmentService.confirm(id), 'Could not confirm the enrollment');
 
-  const handleCancel = (e: Enrollment): Promise<void> =>
+  const handleCancel = (e: Enrollment): Promise<boolean> =>
     confirm(`Cancel ${e.studentName}'s enrollment in ${e.courseCode}? Any grade is cleared.`)
       ? runAction(() => enrollmentService.cancel(e.id), 'Could not cancel the enrollment')
-      : Promise.resolve();
+      : Promise.resolve(false);
 
-  const handleGrade = (id: number, grade: Grade): Promise<void> =>
-    runAction(() => enrollmentService.updateGrade(id, { grade }), 'Could not save the grade');
+  // Saving is a separate, explicit step: picking a grade only edits the draft.
+  const handleSaveGrade = async (e: Enrollment, grade: Grade): Promise<void> => {
+    const saved = await runAction(() => enrollmentService.updateGrade(e.id, { grade }), 'Could not save the grade');
+    if (saved) {
+      setGradeDrafts((drafts) => {
+        const rest = { ...drafts };
+        delete rest[e.id];
+        return rest;
+      });
+    }
+  };
 
-  const handleUnenroll = (id: number): Promise<void> =>
+  const handleUnenroll = (id: number): Promise<boolean> =>
     confirm('Unenroll this student? This removes the enrollment record permanently.')
       ? runAction(() => enrollmentService.delete(id), 'Could not remove the enrollment')
-      : Promise.resolve();
+      : Promise.resolve(false);
 
   const enrollments = data?.content ?? [];
   const total       = data?.page.totalElements ?? 0;
@@ -272,16 +285,26 @@ export default function EnrollmentsPage() {
                 <td className="px-5 py-3 text-gray-500">{e.enrolledAt}</td>
                 <td className="px-5 py-3 text-gray-600 font-medium">
                   {e.status === 'CONFIRMED' ? (
-                    <select
-                      value={e.grade}
-                      onChange={(ev) => void handleGrade(e.id, ev.target.value as Grade)}
-                      aria-label={`Grade for ${e.studentName} in ${e.courseCode}`}
-                      className="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      {GRADES.map((g) => (
-                        <option key={g} value={g}>{g === 'NOT_GRADED' ? 'Not graded' : g}</option>
-                      ))}
-                    </select>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={gradeDrafts[e.id] ?? e.grade}
+                        onChange={(ev) => setGradeDrafts({ ...gradeDrafts, [e.id]: ev.target.value as Grade })}
+                        aria-label={`Grade for ${e.studentName} in ${e.courseCode}`}
+                        className="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        {GRADES.map((g) => (
+                          <option key={g} value={g}>{g === 'NOT_GRADED' ? 'Not graded' : g}</option>
+                        ))}
+                      </select>
+                      {gradeDrafts[e.id] !== undefined && gradeDrafts[e.id] !== e.grade && (
+                        <button
+                          onClick={() => void handleSaveGrade(e, gradeDrafts[e.id])}
+                          className="bg-blue-600 text-white px-2 py-1 rounded-lg text-xs font-medium hover:bg-blue-700"
+                        >
+                          Save grade
+                        </button>
+                      )}
+                    </div>
                   ) : (
                     <span title="Grades can be given once an enrollment is confirmed">{e.grade === 'NOT_GRADED' ? '—' : e.grade}</span>
                   )}

@@ -45,7 +45,8 @@ erDiagram
               int credit_hours
               string status "ACTIVE | INACTIVE | ARCHIVED" }
     ENROLLMENTS { string status "PENDING | CONFIRMED | CANCELLED"
-                  string grade "A-F | NOT_GRADED" }
+                  string grade "A-F | NOT_GRADED"
+                  boolean grade_seen "false = new grade the student has not acknowledged" }
 ```
 
 Every table also carries `id`, audit columns (`created_at/by`, `updated_at/by`) and an
@@ -76,7 +77,7 @@ stateDiagram-v2
     PENDING --> CANCELLED: student withdraws / staff cancels
     CONFIRMED --> CANCELLED: staff cancels (grade cleared)
     CANCELLED --> PENDING: enrolling again reopens it
-    CONFIRMED --> CONFIRMED: teacher sets the grade
+    CONFIRMED --> CONFIRMED: teacher saves a grade (student is notified until they mark it read)
 ```
 
 ## Superseded documents

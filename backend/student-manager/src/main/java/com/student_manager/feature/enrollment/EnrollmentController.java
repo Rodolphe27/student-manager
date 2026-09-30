@@ -173,6 +173,20 @@ public class EnrollmentController {
     }
 
     /**
+     * Acknowledges the grade of the caller's own enrollment, clearing its "new grade"
+     * notification. Only the owning STUDENT may do this.
+     *
+     * @param id the enrollment id
+     * @return the updated enrollment
+     * @throws com.student_manager.shared.exception.ResourceNotFoundException if no enrollment has that id
+     */
+    @PatchMapping("{id}/grade-seen")
+    @PreAuthorize("@ownershipGuard.canAcknowledgeGrade(#id, authentication)")
+    public ResponseEntity<EnrollmentDTO> markGradeSeen(@PathVariable Long id) {
+        return ResponseEntity.ok(service.markGradeSeen(id));
+    }
+
+    /**
      * Deletes an enrollment outright.
      *
      * @param id the enrollment id

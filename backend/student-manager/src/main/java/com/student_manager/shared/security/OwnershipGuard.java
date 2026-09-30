@@ -206,6 +206,19 @@ public class OwnershipGuard {
         return canManageEnrollment(enrollmentId, authentication);
     }
 
+    /**
+     * May this caller acknowledge the grade of {@code enrollmentId}? Only the student it belongs
+     * to. (A nonexistent id passes so the service answers 404.)
+     */
+    public boolean canAcknowledgeGrade(Long enrollmentId, Authentication authentication) {
+        if (authentication == null || enrollmentId == null) {
+            return false;
+        }
+        return enrollmentRepository.findById(enrollmentId)
+                .map(e -> studentService.accountOwnsStudent(authentication.getName(), e.getStudent().getId()))
+                .orElse(true);
+    }
+
     private boolean teachesCourse(Long courseId, Authentication authentication) {
         return teacherService.findIdByAccountUsername(authentication.getName())
                 .map(teacherId -> courseRepository.existsByIdAndTeacherId(courseId, teacherId))

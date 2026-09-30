@@ -524,6 +524,44 @@ class AuthorizationRulesTest {
     }
 
     @Test
+    void gradingNotifiesTheStudentUntilTheyAcknowledgeIt() throws Exception {
+        Teacher teacher = linkedTeacherFor("notify-teacher", "notify.teacher@example.com");
+        long studentId = linkedStudentFor("notify-student", "notify.student@example.com");
+        long enrollmentId = enrollmentFor(studentId, courseTaughtBy(teacher, "ntf1"));
+        Enrollment enrollment = enrollmentRepository.findById(enrollmentId).orElseThrow();
+        enrollment.setStatus(EnrollmentStatus.CONFIRMED);
+        enrollmentRepository.save(enrollment);
+        UpdateGradeRequest grade = new UpdateGradeRequest();
+        grade.setGrade(Grade.A);
+
+        mockMvc.perform(patch("/api/enrollments/" + enrollmentId + "/grade")
+                        .with(loggedInAs("notify-teacher", "TEACHER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(grade)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.gradeSeen").value(false));
+
+        mockMvc.perform(patch("/api/enrollments/" + enrollmentId + "/grade-seen")
+                        .with(loggedInAs("notify-student", "STUDENT")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.gradeSeen").value(true));
+    }
+
+    @Test
+    void onlyTheOwningStudentMayAcknowledgeAGrade() throws Exception {
+        long ownerId = linkedStudentFor("ack-owner", "ack.owner@example.com");
+        linkedStudentFor("ack-intruder", "ack.intruder@example.com");
+        long enrollmentId = enrollmentFor(ownerId, activeCourseFor("ack1"));
+
+        mockMvc.perform(patch("/api/enrollments/" + enrollmentId + "/grade-seen")
+                        .with(loggedInAs("ack-intruder", "STUDENT")))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(patch("/api/enrollments/" + enrollmentId + "/grade-seen")
+                        .with(loggedInAs("TEACHER")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void studentCannotConfirmOrGradeEnrollments() throws Exception {
         long studentId = linkedStudentFor("no-grade-student", "no.grade.student@example.com");
         long enrollmentId = enrollmentFor(studentId, activeCourseFor("ng1"));

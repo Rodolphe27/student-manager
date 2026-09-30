@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
+import { useNewGradeCount } from '../hooks/useNewGradeCount';
 
 interface NavItem {
   path: string;
@@ -30,7 +31,9 @@ interface SidebarProps {
 
 export default function Sidebar({ open, onNavigate }: SidebarProps) {
   const { user, logout } = useAuth();
-  const navItems = user?.role === 'STUDENT' ? studentNavItems : adminNavItems;
+  const isStudent = user?.role === 'STUDENT';
+  const navItems = isStudent ? studentNavItems : adminNavItems;
+  const newGrades = useNewGradeCount(isStudent);
 
   return (
     <div
@@ -63,7 +66,15 @@ export default function Sidebar({ open, onNavigate }: SidebarProps) {
             }
           >
             <span>{item.icon}</span>
-            <span>{item.label}</span>
+            <span className="flex-1">{item.label}</span>
+            {item.path === '/my-courses' && newGrades > 0 && (
+              <span
+                className="bg-amber-400 text-slate-900 text-xs font-bold rounded-full px-2 py-0.5"
+                aria-label={`${newGrades} new grade${newGrades === 1 ? '' : 's'}`}
+              >
+                {newGrades}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>

@@ -127,6 +127,9 @@ public class SecurityConfig {
                         // @PreAuthorize (canCancelEnrollment) enforces "own" and "pending".
                         .requestMatchers(HttpMethod.PATCH, "/api/enrollments/*/cancel").hasAnyRole("STUDENT", "TEACHER", "ADMIN")
 
+                        // Only a student acknowledges their own grade ("new grade" notification).
+                        .requestMatchers(HttpMethod.PATCH, "/api/enrollments/*/grade-seen").hasRole("STUDENT")
+
                         // Every other enrolment operation (list all, confirm/cancel, grade)
                         // is staff-only; deleting an enrolment is ADMIN-only.
                         .requestMatchers(HttpMethod.DELETE, "/api/enrollments/**").hasRole("ADMIN")

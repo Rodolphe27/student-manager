@@ -49,7 +49,8 @@ public class DemoDataSeeder implements ApplicationRunner {
     private record StudentSeed(String firstName, String lastName, String matriculation, LocalDate birthDate) { }
     private record CourseSeed(String code, String title, String description, int creditHours,
                               CourseStatus status, int teacherIndex, int termIndex) { }
-    private record EnrollmentSeed(int studentIndex, int courseIndex, EnrollmentStatus status, Grade grade) { }
+    private record EnrollmentSeed(int studentIndex, int courseIndex, EnrollmentStatus status, Grade grade,
+                                  boolean newGrade) { }
 
     private static final List<TermSeed> TERMS = List.of(
             new TermSeed("Winter 2022/23", LocalDate.of(2022, 10, 1), LocalDate.of(2023, 3, 31)),
@@ -100,16 +101,17 @@ public class DemoDataSeeder implements ApplicationRunner {
             new CourseSeed("ST-220", "Applied Statistics", "Inference, regression and data analysis.", 5, CourseStatus.ACTIVE, 9, 7));
 
     private static final List<EnrollmentSeed> ENROLLMENTS = List.of(
-            new EnrollmentSeed(0, 0, EnrollmentStatus.CONFIRMED, Grade.A),
-            new EnrollmentSeed(0, 2, EnrollmentStatus.PENDING, Grade.NOT_GRADED),
-            new EnrollmentSeed(1, 0, EnrollmentStatus.CONFIRMED, Grade.B),
-            new EnrollmentSeed(2, 1, EnrollmentStatus.CONFIRMED, Grade.NOT_GRADED),
-            new EnrollmentSeed(3, 3, EnrollmentStatus.CANCELLED, Grade.NOT_GRADED),
-            new EnrollmentSeed(4, 4, EnrollmentStatus.PENDING, Grade.NOT_GRADED),
-            new EnrollmentSeed(5, 5, EnrollmentStatus.CONFIRMED, Grade.C),
-            new EnrollmentSeed(6, 6, EnrollmentStatus.CONFIRMED, Grade.A),
-            new EnrollmentSeed(7, 9, EnrollmentStatus.PENDING, Grade.NOT_GRADED),
-            new EnrollmentSeed(8, 2, EnrollmentStatus.CONFIRMED, Grade.D));
+            // Anna's grade is still unacknowledged, so the demo shows a "new grade" notification.
+            new EnrollmentSeed(0, 0, EnrollmentStatus.CONFIRMED, Grade.A, true),
+            new EnrollmentSeed(0, 2, EnrollmentStatus.PENDING, Grade.NOT_GRADED, false),
+            new EnrollmentSeed(1, 0, EnrollmentStatus.CONFIRMED, Grade.B, false),
+            new EnrollmentSeed(2, 1, EnrollmentStatus.CONFIRMED, Grade.NOT_GRADED, false),
+            new EnrollmentSeed(3, 3, EnrollmentStatus.CANCELLED, Grade.NOT_GRADED, false),
+            new EnrollmentSeed(4, 4, EnrollmentStatus.PENDING, Grade.NOT_GRADED, false),
+            new EnrollmentSeed(5, 5, EnrollmentStatus.CONFIRMED, Grade.C, false),
+            new EnrollmentSeed(6, 6, EnrollmentStatus.CONFIRMED, Grade.A, false),
+            new EnrollmentSeed(7, 9, EnrollmentStatus.PENDING, Grade.NOT_GRADED, false),
+            new EnrollmentSeed(8, 2, EnrollmentStatus.CONFIRMED, Grade.D, false));
 
     private final AccountProvisioner accountProvisioner;
     private final UserRepository userRepository;
@@ -196,6 +198,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         enrollment.setEnrolledAt(LocalDate.now().minusDays(10L * (seed.studentIndex() + 1)));
         enrollment.setStatus(seed.status());
         enrollment.setGrade(seed.grade());
+        enrollment.setGradeSeen(!seed.newGrade());
         enrollmentRepository.save(enrollment);
     }
 

@@ -86,6 +86,7 @@ public class EnrollmentServiceImpl extends CrudServiceSupport<Enrollment, Enroll
         dto.setStatus(enrollment.getStatus());
         dto.setGrade(enrollment.getGrade());
         dto.setConfirmed(enrollment.isConfirmed());
+        dto.setGradeSeen(enrollment.isGradeSeen());
         return dto;
     }
 
@@ -210,6 +211,7 @@ public class EnrollmentServiceImpl extends CrudServiceSupport<Enrollment, Enroll
         // A cancelled (withdrawn) enrollment does not carry an academic grade:
         // clear any letter grade so CANCELLED + A-F can never coexist (issue #33).
         enrollment.setGrade(Grade.NOT_GRADED);
+        enrollment.setGradeSeen(true);
         enrollment.setStatus(EnrollmentStatus.CANCELLED);
         return toDTO(enrollmentRepository.save(enrollment));
     }
@@ -232,7 +234,20 @@ public class EnrollmentServiceImpl extends CrudServiceSupport<Enrollment, Enroll
             throw new ValidationException("Can only assign grade to confirmed enrollments");
         }
 
+        // Only a real change is news for the student: saving the same grade again stays quiet,
+        // and taking a grade back (NOT_GRADED) leaves nothing to acknowledge.
+        if (request.getGrade() != enrollment.getGrade()) {
+            enrollment.setGradeSeen(request.getGrade() == Grade.NOT_GRADED);
+        }
         enrollment.setGrade(request.getGrade());
+        return toDTO(enrollmentRepository.save(enrollment));
+    }
+
+    @Override
+    @Transactional
+    public EnrollmentDTO markGradeSeen(Long id) {
+        Enrollment enrollment = loadOrThrow(id);
+        enrollment.setGradeSeen(true);
         return toDTO(enrollmentRepository.save(enrollment));
     }
 }

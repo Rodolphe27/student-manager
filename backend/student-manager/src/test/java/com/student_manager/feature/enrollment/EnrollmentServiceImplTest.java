@@ -249,6 +249,60 @@ class EnrollmentServiceImplTest {
     }
 
     @Test
+    void aNewGradeIsFlaggedForTheStudentToAcknowledge() {
+        Enrollment confirmed = enrollmentWith(EnrollmentStatus.CONFIRMED);
+        when(enrollmentRepository.findById(100L)).thenReturn(Optional.of(confirmed));
+        when(enrollmentRepository.save(any(Enrollment.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        EnrollmentDTO result = enrollmentService.updateGrade(100L, gradeRequest(Grade.B));
+
+        assertThat(result.isGradeSeen()).isFalse();
+    }
+
+    @Test
+    void savingTheSameGradeAgainDoesNotNotifyTheStudentAgain() {
+        Enrollment confirmed = enrollmentWith(EnrollmentStatus.CONFIRMED);
+        confirmed.setGrade(Grade.B);
+        confirmed.setGradeSeen(true);
+        when(enrollmentRepository.findById(100L)).thenReturn(Optional.of(confirmed));
+        when(enrollmentRepository.save(any(Enrollment.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        EnrollmentDTO result = enrollmentService.updateGrade(100L, gradeRequest(Grade.B));
+
+        assertThat(result.isGradeSeen()).isTrue();
+    }
+
+    @Test
+    void takingAGradeBackLeavesNothingToAcknowledge() {
+        Enrollment confirmed = enrollmentWith(EnrollmentStatus.CONFIRMED);
+        confirmed.setGrade(Grade.B);
+        confirmed.setGradeSeen(false);
+        when(enrollmentRepository.findById(100L)).thenReturn(Optional.of(confirmed));
+        when(enrollmentRepository.save(any(Enrollment.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        EnrollmentDTO result = enrollmentService.updateGrade(100L, gradeRequest(Grade.NOT_GRADED));
+
+        assertThat(result.isGradeSeen()).isTrue();
+    }
+
+    @Test
+    void markGradeSeenClearsTheNotification() {
+        Enrollment graded = enrollmentWith(EnrollmentStatus.CONFIRMED);
+        graded.setGrade(Grade.A);
+        graded.setGradeSeen(false);
+        when(enrollmentRepository.findById(100L)).thenReturn(Optional.of(graded));
+        when(enrollmentRepository.save(any(Enrollment.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        assertThat(enrollmentService.markGradeSeen(100L).isGradeSeen()).isTrue();
+    }
+
+    private UpdateGradeRequest gradeRequest(Grade grade) {
+        UpdateGradeRequest request = new UpdateGradeRequest();
+        request.setGrade(grade);
+        return request;
+    }
+
+    @Test
     void updateGradeRejectsAPendingEnrollment() {
         Enrollment pending = enrollmentWith(EnrollmentStatus.PENDING);
         UpdateGradeRequest request = new UpdateGradeRequest();

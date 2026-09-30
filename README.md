@@ -27,7 +27,7 @@ A student manager app to learn TypeScript and Spring Boot. Manage students, teac
 | Terms | see the term of a course | see terms | add terms (from the course form) |
 | My Profile | edit own name / e-mail / username, change password | same | same |
 
-A new enrollment starts as `PENDING`; a teacher (or admin) confirms it, and only confirmed enrollments can be graded. A student may withdraw while it is still pending.
+A new enrollment starts as `PENDING`; a teacher (or admin) confirms it, and only confirmed enrollments can be graded. A teacher picks a grade and then clicks **Save grade** — nothing changes until it is saved. The student then sees a **New** badge, a banner on My Courses and a count in the sidebar until they click **Mark as read**. A student may withdraw while an enrollment is still pending.
 
 Accounts are **only created by an ADMIN** (there is no self-registration): together with a new student/teacher ("Also create a login account") or via `POST /api/auth/register`.
 
@@ -66,7 +66,7 @@ student-manager-app/
 │   │   └── shared/            # config, security (OwnershipGuard), exception, validation, demo (seeder)
 │   ├── src/main/resources/
 │   │   ├── application.yml
-│   │   └── db/migration/      # Flyway migrations (V1 baseline, V2 drop invites, V3 user names)
+│   │   └── db/migration/      # Flyway migrations (V1 baseline, V2 drop invites, V3 user names, V4 grade notification)
 │   ├── docs/                  # design documents and diagrams
 │   └── Dockerfile
 ├── docker-compose.yml
@@ -145,7 +145,8 @@ List endpoints are paged and sortable: `?page=0&size=10&sort=lastName,asc` (size
 | POST | `/api/enrollments` | STUDENT (self), TEACHER (own courses), ADMIN | Enroll a student; starts `PENDING`. |
 | PATCH | `/api/enrollments/{id}/confirm` | ADMIN, or the course's TEACHER | Confirm an enrollment. |
 | PATCH | `/api/enrollments/{id}/cancel` | ADMIN, the course's TEACHER, or the owning STUDENT while `PENDING` | Cancel / withdraw (clears any grade). |
-| PATCH | `/api/enrollments/{id}/grade` | ADMIN, or the course's TEACHER | Set the grade (confirmed enrollments only). |
+| PATCH | `/api/enrollments/{id}/grade` | ADMIN, or the course's TEACHER | Set the grade (confirmed enrollments only); flags it as unseen for the student. |
+| PATCH | `/api/enrollments/{id}/grade-seen` | the owning STUDENT | Acknowledge the grade (clears the "new grade" notice). |
 | DELETE | `/api/enrollments/{id}` | ADMIN | Delete an enrollment record. |
 
 ### Operations

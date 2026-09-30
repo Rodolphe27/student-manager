@@ -20,6 +20,7 @@ export default function MyCoursesPage() {
   const [enrollingId, setEnrollingId] = useState<number | null>(null);
   const [enrollError, setEnrollError] = useState<string>('');
   const [withdrawingId, setWithdrawingId] = useState<number | null>(null);
+  const [markingRead, setMarkingRead] = useState<boolean>(false);
 
   const fetchMine = useCallback(async (): Promise<void> => {
     try {
@@ -71,6 +72,19 @@ export default function MyCoursesPage() {
     }
   };
 
+  // Acknowledging clears the "new grade" notice (and the sidebar badge on the next navigation).
+  const handleMarkGradesRead = async (): Promise<void> => {
+    setMarkingRead(true);
+    try {
+      await Promise.all(enrollments.filter((e) => !e.gradeSeen).map((e) => enrollmentService.markGradeSeen(e.id)));
+      if (student) setEnrollments((await enrollmentService.getByStudent(student.id)).data);
+    } catch (err: unknown) {
+      setEnrollError(getErrorMessage(err, 'Could not mark the grades as read'));
+    } finally {
+      setMarkingRead(false);
+    }
+  };
+
   // A student may withdraw while the enrollment is still PENDING; once a teacher has
   // confirmed it, only staff can cancel. (They can enroll again later.)
   const handleWithdraw = async (e: Enrollment): Promise<void> => {
@@ -103,6 +117,7 @@ export default function MyCoursesPage() {
 
   // A course is offered if it's ACTIVE and the student has no live enrollment for it. A
   // CANCELLED one doesn't count: enrolling again reopens it as a new PENDING request.
+  const newGrades = enrollments.filter((e) => !e.gradeSeen);
   const enrolledCourseIds = new Set(enrollments.filter((e) => e.status !== 'CANCELLED').map((e) => e.courseId));
   const availableCourses = courses.filter((c) => c.active && !enrolledCourseIds.has(c.id));
 
@@ -120,6 +135,25 @@ export default function MyCoursesPage() {
         </div>
       ) : (
         <>
+          {newGrades.length > 0 && (
+            <div
+              role="status"
+              className="bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 rounded-lg mb-6 flex items-center justify-between gap-4"
+            >
+              <span>
+                🎓 {newGrades.length === 1
+                  ? `A new grade is available for ${newGrades[0].courseCode}.`
+                  : `${newGrades.length} new grades are available.`}
+              </span>
+              <button
+                onClick={() => void handleMarkGradesRead()}
+                disabled={markingRead}
+                className="text-amber-900 font-medium hover:underline whitespace-nowrap disabled:opacity-50"
+              >
+                Mark as read
+              </button>
+            </div>
+          )}
           {enrollError && (
             <ErrorAlert className="mb-6" message={enrollError} actionLabel="Dismiss" onAction={() => setEnrollError('')} />
           )}
@@ -143,7 +177,12 @@ export default function MyCoursesPage() {
                       {' '}— {e.courseTitle}
                     </td>
                     <td className="px-5 py-3 text-gray-500">{e.enrolledAt}</td>
-                    <td className="px-5 py-3 text-gray-600 font-medium">{e.grade === 'NOT_GRADED' ? '—' : e.grade}</td>
+                    <td className="px-5 py-3 text-gray-600 font-medium">
+                      {e.grade === 'NOT_GRADED' ? '—' : e.grade}
+                      {!e.gradeSeen && (
+                        <span className="ml-2 bg-amber-100 text-amber-800 text-xs font-medium rounded-full px-2 py-0.5">New</span>
+                      )}
+                    </td>
                     <td className="px-5 py-3">
                       <StatusBadge status={e.status} />
                     </td>

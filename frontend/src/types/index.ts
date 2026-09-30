@@ -67,6 +67,8 @@ export interface Enrollment {
   status: EnrollmentStatus;
   grade: Grade;
   confirmed: boolean;
+  // false = the student has a grade they have not acknowledged yet ("new grade").
+  gradeSeen: boolean;
 }
 
 export interface CreateEnrollmentRequest {

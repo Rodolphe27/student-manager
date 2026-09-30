@@ -35,6 +35,10 @@ const enrollmentService = {
   updateGrade: (id: number, data: UpdateGradeRequest): Promise<AxiosResponse<Enrollment>> =>
     api.patch<Enrollment>(`/enrollments/${id}/grade`, data),
 
+  // Student only: acknowledge the grade of their own enrollment (clears the "new grade" notice).
+  markGradeSeen: (id: number): Promise<AxiosResponse<Enrollment>> =>
+    api.patch<Enrollment>(`/enrollments/${id}/grade-seen`),
+
   delete: (id: number): Promise<AxiosResponse<void>> =>
     api.delete(`/enrollments/${id}`),
 };
