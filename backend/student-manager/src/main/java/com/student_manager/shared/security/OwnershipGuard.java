@@ -3,7 +3,9 @@ package com.student_manager.shared.security;
 import com.student_manager.feature.auth.Role;
 import com.student_manager.feature.course.CourseRepository;
 import com.student_manager.feature.enrollment.EnrollmentRepository;
+import com.student_manager.feature.enrollment.EnrollmentStatus;
 import com.student_manager.feature.student.StudentService;
+import com.student_manager.feature.teacher.TeacherService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -29,6 +31,7 @@ public class OwnershipGuard {
             "ROLE_" + Role.TEACHER.name(), "ROLE_" + Role.ADMIN.name());
 
     private final StudentService studentService;
+    private final TeacherService teacherService;
     private final CourseRepository courseRepository;
     private final EnrollmentRepository enrollmentRepository;
 
@@ -85,7 +88,7 @@ public class OwnershipGuard {
             return true;
         }
 
-        boolean teaches = courseRepository.existsByIdAndTeacher_Account_Username(courseId, authentication.getName());
+        boolean teaches = teachesCourse(courseId, authentication);
         if (!teaches) {
             log.warn("Blocked cross-course access: {} tried to read course {} roster",
                     authentication.getName(), courseId);
@@ -120,8 +123,7 @@ public class OwnershipGuard {
             return true;
         }
 
-        boolean teaches = enrollmentRepository.existsByIdAndCourse_Teacher_Account_Username(
-                enrollmentId, authentication.getName());
+        boolean teaches = teachesEnrollment(enrollmentId, authentication);
         if (!teaches) {
             log.warn("Blocked cross-course enrollment management: {} tried to act on enrollment {}",
                     authentication.getName(), enrollmentId);
@@ -129,9 +131,113 @@ public class OwnershipGuard {
         return teaches;
     }
 
-    private boolean isAdmin(Authentication authentication) {
+    /** Returned by {@link #teacherScope} for a TEACHER without a teacher profile: matches nothing. */
+    public static final long NO_TEACHER = -1L;
+
+    /**
+     * The teacher id a caller's view of courses/enrollments must be limited to.
+     *
+     * @param authentication the caller
+     * @return {@code null} for an ADMIN (no limit); the caller's teacher id for a TEACHER;
+     *         {@link #NO_TEACHER} for a TEACHER whose account has no teacher profile
+     */
+    public Long teacherScope(Authentication authentication) {
+        if (authentication == null || isAdmin(authentication)) {
+            return null;
+        }
+        return teacherService.findIdByAccountUsername(authentication.getName()).orElse(NO_TEACHER);
+    }
+
+    /**
+     * May this caller enroll {@code studentId} in {@code courseId}? ADMIN: always. STUDENT: only
+     * themselves. TEACHER: only into a course they run (a nonexistent course id passes so the
+     * service can answer 404 instead of a misleading 403).
+     */
+    public boolean canEnroll(Long studentId, Long courseId, Authentication authentication) {
+        if (authentication == null || studentId == null || courseId == null) {
+            return false;
+        }
+        if (isAdmin(authentication)) {
+            return true;
+        }
+        if (hasAuthority(authentication, "ROLE_" + Role.TEACHER.name())) {
+            return canManageCourse(courseId, authentication);
+        }
+        return canAccessStudentData(studentId, authentication);
+    }
+
+    /**
+     * May this caller edit or delete course {@code courseId}? ADMIN: any. TEACHER: only courses
+     * they run. Anyone else: no.
+     */
+    public boolean canManageCourse(Long courseId, Authentication authentication) {
+        if (authentication == null || courseId == null) {
+            return false;
+        }
+        if (isAdmin(authentication)) {
+            return true;
+        }
+        if (!courseRepository.existsById(courseId)) {
+            return true;
+        }
+        boolean teaches = teachesCourse(courseId, authentication);
+        if (!teaches) {
+            log.warn("Blocked cross-course edit: {} tried to change course {}",
+                    authentication.getName(), courseId);
+        }
+        return teaches;
+    }
+
+    /**
+     * May this caller cancel enrollment {@code enrollmentId}? Staff follow
+     * {@link #canManageEnrollment}; a STUDENT may withdraw their own enrollment while it is
+     * still PENDING (once confirmed, only staff can cancel it).
+     */
+    public boolean canCancelEnrollment(Long enrollmentId, Authentication authentication) {
+        if (authentication == null || enrollmentId == null) {
+            return false;
+        }
+        if (hasAuthority(authentication, "ROLE_" + Role.STUDENT.name())) {
+            return enrollmentRepository.findById(enrollmentId)
+                    .map(e -> e.getStatus() == EnrollmentStatus.PENDING
+                            && studentService.accountOwnsStudent(authentication.getName(), e.getStudent().getId()))
+                    .orElse(true);
+        }
+        return canManageEnrollment(enrollmentId, authentication);
+    }
+
+    /**
+     * May this caller acknowledge the grade of {@code enrollmentId}? Only the student it belongs
+     * to. (A nonexistent id passes so the service answers 404.)
+     */
+    public boolean canAcknowledgeGrade(Long enrollmentId, Authentication authentication) {
+        if (authentication == null || enrollmentId == null) {
+            return false;
+        }
+        return enrollmentRepository.findById(enrollmentId)
+                .map(e -> studentService.accountOwnsStudent(authentication.getName(), e.getStudent().getId()))
+                .orElse(true);
+    }
+
+    private boolean teachesCourse(Long courseId, Authentication authentication) {
+        return teacherService.findIdByAccountUsername(authentication.getName())
+                .map(teacherId -> courseRepository.existsByIdAndTeacherId(courseId, teacherId))
+                .orElse(false);
+    }
+
+    private boolean teachesEnrollment(Long enrollmentId, Authentication authentication) {
+        return teacherService.findIdByAccountUsername(authentication.getName())
+                .map(teacherId -> enrollmentRepository.existsByIdAndCourseTeacherId(enrollmentId, teacherId))
+                .orElse(false);
+    }
+
+    public boolean isAdmin(Authentication authentication) {
+        return hasAuthority(authentication, "ROLE_" + Role.ADMIN.name());
+    }
+
+    private static boolean hasAuthority(Authentication authentication, String authority) {
         return authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .anyMatch(("ROLE_" + Role.ADMIN.name())::equals);
+                .anyMatch(authority::equals);
     }
 }

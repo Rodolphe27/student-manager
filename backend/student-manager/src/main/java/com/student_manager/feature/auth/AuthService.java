@@ -7,7 +7,7 @@ package com.student_manager.feature.auth;
 public interface AuthService {
 
     /**
-     * Registers a new account, optionally claiming a registration invite.
+     * Creates a new account with the requested role (ADMIN-only).
      *
      * @param request the registration payload
      * @return an account summary for the newly created user

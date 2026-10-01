@@ -1,6 +1,5 @@
 package com.student_manager.feature.auth;
 
-import com.student_manager.feature.invite.RegistrationInviteService;
 import com.student_manager.shared.exception.InvalidCredentialsException;
 import com.student_manager.shared.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
@@ -14,10 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 // cleanup. They're a security-audit trail for authentication — who
 // registered/logged in and when — not a restatement of the request path, and
 // each one carries data (username, generated id) that RequestLoggingFilter
-// (shared/config) can't see. Same category as InviteAuditAspect.
+// (shared/config) can't see..
 /**
  * Default {@link AuthService} implementation. Handles password hashing,
- * username/email uniqueness checks, and optional registration-invite claiming.
+ * username/email uniqueness checks, and admin-created accounts.
  * Starting the session after a successful register/login is the controller's
  * job (see {@link SessionLogin}).
  */
@@ -28,15 +27,14 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final RegistrationInviteService registrationInviteService;
+    private final AccountProvisioner accountProvisioner;
 
     /**
-     * Registers a new account. The account is always created with the
-     * STUDENT role and {@code active = true}; if a registration code is
-     * supplied, the invite is claimed and overrides the final role and
-     * profile link.
+     * Creates a new account with the requested role and {@code active = true}.
+     * Only reachable by an ADMIN (see {@code SecurityConfig}); there is no
+     * public self-registration.
      *
-     * @param request the registration payload
+     * @param request the account payload
      * @return an account summary for the newly created user
      * @throws ValidationException if the username or email is already taken
      */
@@ -45,31 +43,8 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse register(RegisterRequest request) {
         log.info("Registering user: {}", request.getUsername());
 
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new ValidationException("Username already exists: " + request.getUsername());
-        }
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new ValidationException("Email already exists: " + request.getEmail());
-        }
-
-        User user = new User();
-        user.setUsername(request.getUsername());
-        user.setEmail(request.getEmail());
-        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        // Self-registration is always STUDENT. Any client-supplied role is ignored to
-        // prevent privilege escalation (issue #43). Elevated roles must be granted via
-        // a separate, ADMIN-authenticated endpoint.
-        user.setRole(Role.STUDENT);
-        user.setActive(true);
-
-        User saved;
-        if (request.getRegistrationCode() != null && !request.getRegistrationCode().isBlank()) {
-            // The invite — not this request — decides the final role and links the
-            // account to its target profile. claim() overwrites user.role below.
-            saved = registrationInviteService.claim(request.getRegistrationCode(), user);
-        } else {
-            saved = userRepository.save(user);
-        }
+        User saved = accountProvisioner.create(
+                request.getUsername(), request.getEmail(), request.getPassword(), request.getRole());
         log.info("User registered with id: {}", saved.getId());
 
         return toResponse(saved);

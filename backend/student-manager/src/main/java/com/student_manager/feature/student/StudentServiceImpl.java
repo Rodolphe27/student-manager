@@ -1,7 +1,10 @@
 package com.student_manager.feature.student;
 
+import com.student_manager.feature.auth.User;
 import com.student_manager.feature.auth.UserRepository;
 import com.student_manager.shared.exception.ResourceNotFoundException;
+import com.student_manager.feature.auth.AccountProvisioner;
+import com.student_manager.feature.auth.Role;
 import com.student_manager.shared.exception.ValidationException;
 import com.student_manager.shared.service.CrudServiceSupport;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +39,7 @@ public class StudentServiceImpl extends CrudServiceSupport<Student, StudentDTO> 
 
     private final StudentRepository repository;
     private final UserRepository userRepository;
+    private final AccountProvisioner accountProvisioner;
 
     /**
      * @return the repository backing the inherited CRUD operations
@@ -114,9 +118,9 @@ public class StudentServiceImpl extends CrudServiceSupport<Student, StudentDTO> 
 
     /**
      * Resolves the student linked to an account, preferring the {@code account}
-     * FK set by a claimed {@code RegistrationInvite}. Falls back to matching the
+     * FK set when an admin links an account. Falls back to matching the
      * account's e-mail against {@link Student#getEmail()} for students who
-     * predate the invite flow and were never explicitly linked.
+     * predate account linking and were never explicitly linked.
      */
     private Optional<Student> resolveByAccount(String username) {
         return repository.findByAccountUsername(username)
@@ -151,6 +155,11 @@ public class StudentServiceImpl extends CrudServiceSupport<Student, StudentDTO> 
         student.setEmail(request.getEmail());
 
         Student saved = repository.save(student);
+        if (request.isCreateAccount()) {
+            // Same transaction: a taken username/email rolls the new student back too.
+            saved.setAccount(accountProvisioner.create(
+                    request.getAccountUsername(), request.getEmail(), request.getAccountPassword(), Role.STUDENT));
+        }
         log.info("Student created with id: {}", saved.getId());
         return toDTO(saved);
     }
@@ -178,6 +187,7 @@ public class StudentServiceImpl extends CrudServiceSupport<Student, StudentDTO> 
             throw new ValidationException("Matriculation number already exists: " + request.getMatriculationNumber());
         }
 
+        syncAccountEmail(student, request.getEmail());
         student.setFirstName(request.getFirstName());
         student.setLastName(request.getLastName());
         student.setMatriculationNumber(request.getMatriculationNumber());
@@ -187,5 +197,35 @@ public class StudentServiceImpl extends CrudServiceSupport<Student, StudentDTO> 
         // Flush now so the returned DTO carries the incremented version.
         Student saved = repository.saveAndFlush(student);
         return toDTO(saved);
+    }
+
+    /**
+     * Deletes the student profile and the login account that belongs to it, so no
+     * orphaned account is left behind. A student who still has enrollments cannot be
+     * deleted (the database rejects it; surfaced as 409).
+     */
+    @Override
+    @Transactional
+    public void delete(Long id) {
+        Student student = loadOrThrow(id);
+        User account = student.getAccount();
+        repository.delete(student);
+        repository.flush();
+        if (account != null) {
+            userRepository.delete(account);
+        }
+    }
+
+    /** Keeps the linked account's e-mail in step with the profile's when an admin changes it. */
+    private void syncAccountEmail(Student student, String newEmail) {
+        User account = student.getAccount();
+        if (account == null || account.getEmail().equalsIgnoreCase(newEmail)) {
+            return;
+        }
+        if (userRepository.existsByEmail(newEmail)) {
+            throw new ValidationException("Email already exists: " + newEmail);
+        }
+        account.setEmail(newEmail);
+        userRepository.save(account);
     }
 }

@@ -1,5 +1,9 @@
 package com.student_manager.feature.teacher;
 
+import com.student_manager.feature.auth.AccountProvisioner;
+import com.student_manager.feature.auth.Role;
+import com.student_manager.feature.auth.User;
+import com.student_manager.feature.auth.UserRepository;
 import com.student_manager.shared.exception.ResourceNotFoundException;
 import com.student_manager.shared.exception.ValidationException;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +24,8 @@ import static org.mockito.Mockito.*;
 class TeacherServiceImplTest {
 
     @Mock private TeacherRepository repository;
+    @Mock private AccountProvisioner accountProvisioner;
+    @Mock private UserRepository userRepository;
 
     @InjectMocks
     private TeacherServiceImpl teacherService;
@@ -120,11 +126,81 @@ class TeacherServiceImplTest {
 
     @Test
     void deleteThrowsWhenTeacherDoesNotExist() {
-        when(repository.existsById(999L)).thenReturn(false);
+        when(repository.findById(999L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> teacherService.delete(999L))
                 .isInstanceOf(ResourceNotFoundException.class);
 
-        verify(repository, never()).deleteById(any());
+        verify(repository, never()).delete(any(Teacher.class));
+    }
+
+    @Test
+    void deleteAlsoRemovesTheLinkedAccount() {
+        Teacher teacher = new Teacher();
+        User account = new User();
+        teacher.setAccount(account);
+        when(repository.findById(1L)).thenReturn(Optional.of(teacher));
+
+        teacherService.delete(1L);
+
+        verify(repository).delete(teacher);
+        verify(userRepository).delete(account);
+    }
+
+    @Test
+    void findIdByAccountUsernamePrefersTheAccountLink() {
+        Teacher teacher = new Teacher();
+        teacher.setId(7L);
+        when(repository.findByAccountUsername("grace")).thenReturn(Optional.of(teacher));
+
+        assertThat(teacherService.findIdByAccountUsername("grace")).contains(7L);
+    }
+
+    @Test
+    void findIdByAccountUsernameFallsBackToMatchingTheEmail() {
+        Teacher teacher = new Teacher();
+        teacher.setId(8L);
+        User account = new User();
+        account.setEmail("grace@example.com");
+        when(repository.findByAccountUsername("grace")).thenReturn(Optional.empty());
+        when(userRepository.findByUsername("grace")).thenReturn(Optional.of(account));
+        when(repository.findByEmail("grace@example.com")).thenReturn(Optional.of(teacher));
+
+        assertThat(teacherService.findIdByAccountUsername("grace")).contains(8L);
+    }
+
+    @Test
+    void findIdByAccountUsernameIsEmptyWithoutAProfile() {
+        when(repository.findByAccountUsername("nobody")).thenReturn(Optional.empty());
+        when(userRepository.findByUsername("nobody")).thenReturn(Optional.empty());
+
+        assertThat(teacherService.findIdByAccountUsername("nobody")).isEmpty();
+    }
+
+    // ── create with a login account ─────────────────────────────────
+
+    @Test
+    void createWithAccountProvisionsAndLinksAnAccountForTheNewProfile() {
+        CreateTeacherRequest request = requestWith("grace@example.com");
+        request.setCreateAccount(true);
+        request.setAccountUsername("grace");
+        User account = new User();
+        when(accountProvisioner.create("grace", "grace@example.com", null, Role.TEACHER)).thenReturn(account);
+        when(repository.save(any(Teacher.class))).thenAnswer(i -> i.getArgument(0));
+
+        var dto = teacherService.create(request);
+
+        verify(accountProvisioner).create("grace", "grace@example.com", null, Role.TEACHER);
+        assertThat(dto.getEmail()).isEqualTo("grace@example.com");
+    }
+
+    @Test
+    void createWithoutTheAccountFlagNeverTouchesAccounts() {
+        CreateTeacherRequest request = requestWith("grace@example.com");
+        when(repository.save(any(Teacher.class))).thenAnswer(i -> i.getArgument(0));
+
+        teacherService.create(request);
+
+        verifyNoInteractions(accountProvisioner);
     }
 }

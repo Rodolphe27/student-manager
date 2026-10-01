@@ -7,6 +7,8 @@ import com.student_manager.feature.auth.UserRepository;
 import com.student_manager.feature.course.Course;
 import com.student_manager.feature.course.CourseRepository;
 import com.student_manager.feature.course.CourseStatus;
+import com.student_manager.feature.course.Term;
+import com.student_manager.feature.course.TermRepository;
 import com.student_manager.feature.course.CreateCourseRequest;
 import com.student_manager.feature.enrollment.CreateEnrollmentRequest;
 import com.student_manager.feature.enrollment.Enrollment;
@@ -30,6 +32,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.Cookie;
 import java.time.LocalDate;
 
@@ -40,6 +43,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -63,6 +67,8 @@ class AuthorizationRulesTest {
     @Autowired private CourseRepository courseRepository;
     @Autowired private TeacherRepository teacherRepository;
     @Autowired private EnrollmentRepository enrollmentRepository;
+    @Autowired private TermRepository termRepository;
+    @Autowired private EntityManager entityManager;
 
     /** An authenticated request (as "{role}-user") carrying a valid CSRF token. */
     private RequestPostProcessor loggedInAs(String role) {
@@ -209,16 +215,6 @@ class AuthorizationRulesTest {
         return enrollmentRepository.save(enrollment).getId();
     }
 
-    /** Persists a bare Student row with no linked account, for invite-claiming tests. */
-    private long unclaimedStudentFor(String suffix) {
-        Student student = new Student();
-        student.setFirstName("Invite");
-        student.setLastName("Target");
-        student.setMatriculationNumber("M-INV-" + suffix);
-        student.setEmail("invite." + suffix + "@example.com");
-        return studentRepository.save(student).getId();
-    }
-
     // ── students ────────────────────────────────────────────────────
 
     @Test
@@ -286,12 +282,86 @@ class AuthorizationRulesTest {
     }
 
     @Test
-    void teacherCanCreateCourses() throws Exception {
+    void teacherCanCreateCoursesAndBecomesTheirTeacher() throws Exception {
+        Teacher teacher = linkedTeacherFor("teacher-user", "teacher-user.authz@example.com");
+        CreateCourseRequest request = sampleCourse();
+        request.setTeacherId(teacher.getId() + 999); // ignored: a teacher can only create for themselves
+
+        mockMvc.perform(post("/api/courses")
+                        .with(loggedInAs("TEACHER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.teacherId").value(teacher.getId().intValue()));
+    }
+
+    @Test
+    void teacherWithoutATeacherProfileCannotCreateCourses() throws Exception {
         mockMvc.perform(post("/api/courses")
                         .with(loggedInAs("TEACHER"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(sampleCourse())))
-                .andExpect(status().isCreated());
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void adminCanAssignATeacherAndTermToACourse() throws Exception {
+        Teacher teacher = linkedTeacherFor("assigned-teacher", "assigned.teacher@example.com");
+        Term term = new Term();
+        term.setName("AUTHZ Term");
+        term = termRepository.save(term);
+        CreateCourseRequest request = sampleCourse();
+        request.setTeacherId(teacher.getId());
+        request.setTermId(term.getId());
+
+        mockMvc.perform(post("/api/courses")
+                        .with(loggedInAs("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.teacherId").value(teacher.getId().intValue()))
+                .andExpect(jsonPath("$.termName").value("AUTHZ Term"));
+    }
+
+    @Test
+    void teacherCanEditTheirOwnCourseButNotAnotherTeachers() throws Exception {
+        Teacher me = linkedTeacherFor("edit-teacher", "edit.teacher@example.com");
+        Teacher other = linkedTeacherFor("edit-other", "edit.other@example.com");
+        long mine = courseTaughtBy(me, "edit1");
+        long theirs = courseTaughtBy(other, "edit2");
+
+        mockMvc.perform(put("/api/courses/" + mine)
+                        .with(loggedInAs("edit-teacher", "TEACHER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(sampleCourseWithCode("AUTHZ-OWN-edit1"))))
+                .andExpect(status().isOk());
+        mockMvc.perform(put("/api/courses/" + theirs)
+                        .with(loggedInAs("edit-teacher", "TEACHER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(sampleCourseWithCode("AUTHZ-OWN-edit2"))))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/courses/" + theirs)
+                        .with(loggedInAs("edit-teacher", "TEACHER")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void studentCannotListTheStaffCourseOptions() throws Exception {
+        mockMvc.perform(get("/api/courses/options").with(loggedInAs("STUDENT")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void teacherCourseOptionsOnlyContainTheirOwnCourses() throws Exception {
+        Teacher me = linkedTeacherFor("options-teacher", "options.teacher@example.com");
+        Teacher other = linkedTeacherFor("options-other", "options.other@example.com");
+        courseTaughtBy(me, "opt1");
+        courseTaughtBy(other, "opt2");
+
+        mockMvc.perform(get("/api/courses/options").with(loggedInAs("options-teacher", "TEACHER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].code").value("AUTHZ-OWN-opt1"));
     }
 
     // ── enrollments ─────────────────────────────────────────────────
@@ -377,6 +447,141 @@ class AuthorizationRulesTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void teacherCanOnlyEnrollStudentsIntoTheirOwnCourses() throws Exception {
+        Teacher me = linkedTeacherFor("enrol-teacher", "enrol.teacher@example.com");
+        Teacher other = linkedTeacherFor("enrol-other", "enrol.other@example.com");
+        long studentId = linkedStudentFor("enrol-student", "enrol.student@example.com");
+
+        CreateEnrollmentRequest own = new CreateEnrollmentRequest();
+        own.setStudentId(studentId);
+        own.setCourseId(courseTaughtBy(me, "enr1"));
+        CreateEnrollmentRequest foreign = new CreateEnrollmentRequest();
+        foreign.setStudentId(studentId);
+        foreign.setCourseId(courseTaughtBy(other, "enr2"));
+
+        mockMvc.perform(post("/api/enrollments")
+                        .with(loggedInAs("enrol-teacher", "TEACHER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(own)))
+                .andExpect(status().isCreated());
+        mockMvc.perform(post("/api/enrollments")
+                        .with(loggedInAs("enrol-teacher", "TEACHER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(foreign)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void teacherOnlySeesEnrollmentsOfTheirOwnCourses() throws Exception {
+        Teacher me = linkedTeacherFor("list-teacher", "list.teacher@example.com");
+        Teacher other = linkedTeacherFor("list-other", "list.other@example.com");
+        long studentId = linkedStudentFor("list-student", "list.student@example.com");
+        enrollmentFor(studentId, courseTaughtBy(me, "list1"));
+        enrollmentFor(studentId, courseTaughtBy(other, "list2"));
+
+        mockMvc.perform(get("/api/enrollments").with(loggedInAs("list-teacher", "TEACHER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].courseCode").value("AUTHZ-OWN-list1"));
+    }
+
+    @Test
+    void studentCanWithdrawTheirOwnPendingEnrollment() throws Exception {
+        long studentId = linkedStudentFor("withdraw-student", "withdraw.student@example.com");
+        long enrollmentId = enrollmentFor(studentId, activeCourseFor("wd1"));
+
+        mockMvc.perform(patch("/api/enrollments/" + enrollmentId + "/cancel")
+                        .with(loggedInAs("withdraw-student", "STUDENT")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CANCELLED"));
+    }
+
+    @Test
+    void studentCannotWithdrawSomeoneElsesEnrollment() throws Exception {
+        long ownerId = linkedStudentFor("wd-owner", "wd.owner@example.com");
+        linkedStudentFor("wd-intruder", "wd.intruder@example.com");
+        long enrollmentId = enrollmentFor(ownerId, activeCourseFor("wd2"));
+
+        mockMvc.perform(patch("/api/enrollments/" + enrollmentId + "/cancel")
+                        .with(loggedInAs("wd-intruder", "STUDENT")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void studentCannotWithdrawAConfirmedEnrollment() throws Exception {
+        long studentId = linkedStudentFor("wd-confirmed", "wd.confirmed@example.com");
+        long enrollmentId = enrollmentFor(studentId, activeCourseFor("wd3"));
+        Enrollment enrollment = enrollmentRepository.findById(enrollmentId).orElseThrow();
+        enrollment.setStatus(EnrollmentStatus.CONFIRMED);
+        enrollmentRepository.save(enrollment);
+
+        mockMvc.perform(patch("/api/enrollments/" + enrollmentId + "/cancel")
+                        .with(loggedInAs("wd-confirmed", "STUDENT")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void gradingNotifiesTheStudentUntilTheyAcknowledgeIt() throws Exception {
+        Teacher teacher = linkedTeacherFor("notify-teacher", "notify.teacher@example.com");
+        long studentId = linkedStudentFor("notify-student", "notify.student@example.com");
+        long enrollmentId = enrollmentFor(studentId, courseTaughtBy(teacher, "ntf1"));
+        Enrollment enrollment = enrollmentRepository.findById(enrollmentId).orElseThrow();
+        enrollment.setStatus(EnrollmentStatus.CONFIRMED);
+        enrollmentRepository.save(enrollment);
+        UpdateGradeRequest grade = new UpdateGradeRequest();
+        grade.setGrade(Grade.A);
+
+        mockMvc.perform(patch("/api/enrollments/" + enrollmentId + "/grade")
+                        .with(loggedInAs("notify-teacher", "TEACHER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(grade)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.gradeSeen").value(false));
+
+        mockMvc.perform(patch("/api/enrollments/" + enrollmentId + "/grade-seen")
+                        .with(loggedInAs("notify-student", "STUDENT")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.gradeSeen").value(true));
+    }
+
+    @Test
+    void onlyTheOwningStudentMayAcknowledgeAGrade() throws Exception {
+        long ownerId = linkedStudentFor("ack-owner", "ack.owner@example.com");
+        linkedStudentFor("ack-intruder", "ack.intruder@example.com");
+        long enrollmentId = enrollmentFor(ownerId, activeCourseFor("ack1"));
+
+        mockMvc.perform(patch("/api/enrollments/" + enrollmentId + "/grade-seen")
+                        .with(loggedInAs("ack-intruder", "STUDENT")))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(patch("/api/enrollments/" + enrollmentId + "/grade-seen")
+                        .with(loggedInAs("TEACHER")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void studentCannotConfirmOrGradeEnrollments() throws Exception {
+        long studentId = linkedStudentFor("no-grade-student", "no.grade.student@example.com");
+        long enrollmentId = enrollmentFor(studentId, activeCourseFor("ng1"));
+
+        mockMvc.perform(patch("/api/enrollments/" + enrollmentId + "/confirm")
+                        .with(loggedInAs("no-grade-student", "STUDENT")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void deletingAStudentWhoStillHasEnrollmentsIsAConflict() throws Exception {
+        long studentId = linkedStudentFor("busy-student", "busy.student@example.com");
+        enrollmentFor(studentId, activeCourseFor("busy1"));
+        // Persist the fixtures and start from an empty session, so the delete hits the real
+        // foreign key (as in production) instead of Hibernate's in-session reference check.
+        entityManager.flush();
+        entityManager.clear();
+
+        mockMvc.perform(delete("/api/students/" + studentId).with(loggedInAs("ADMIN")))
+                .andExpect(status().isConflict());
     }
 
     // ── ownership: course rosters (OwnershipGuard.canAccessCourseData) ─
@@ -475,66 +680,63 @@ class AuthorizationRulesTest {
                 .andExpect(status().isOk());
     }
 
-    // ── registration invites ────────────────────────────────────────
+    // ── account creation ────────────────────────────────────────────
 
     @Test
-    void adminIssuedStudentInviteCanBeClaimedViaRegistration() throws Exception {
-        long studentId = unclaimedStudentFor("claim1");
+    void adminCanCreateAnAccountWithARole() throws Exception {
+        String body = """
+                {"username":"created-teacher","email":"created.teacher@example.com","password":"Password123","role":"TEACHER"}
+                """;
 
-        String issueResponse = mockMvc.perform(post("/api/students/" + studentId + "/invite")
-                        .with(loggedInAs("ADMIN")))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
-
-        String code = objectMapper.readTree(issueResponse).get("code").asText();
-
-        String registerBody = """
-                {"username":"claimed-student","email":"claimed.student@example.com","password":"Password123","registrationCode":"%s"}
-                """.formatted(code);
-
-        mockMvc.perform(post("/api/auth/register").with(csrf())
+        mockMvc.perform(post("/api/auth/register").with(loggedInAs("ADMIN")).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(registerBody))
+                        .content(body))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.role").value("STUDENT"));
+                .andExpect(jsonPath("$.role").value("TEACHER"));
     }
 
     @Test
-    void teacherCannotIssueAStudentInvite() throws Exception {
-        long studentId = unclaimedStudentFor("noaccess");
+    void studentCreatedWithAnAccountCanLogInWithTheDefaultPassword() throws Exception {
+        String body = """
+                {"firstName":"Anna","lastName":"Mueller","matriculationNumber":"M-ACC-1",
+                 "email":"anna.acc@example.com","createAccount":true}
+                """;
+        mockMvc.perform(post("/api/students").with(loggedInAs("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated());
 
-        mockMvc.perform(post("/api/students/" + studentId + "/invite")
-                        .with(loggedInAs("TEACHER")))
+        // Username is derived from the email's local part; the password is the default.
+        mockMvc.perform(post("/api/auth/login").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"anna.acc\",\"password\":\"testuser12\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.role").value("STUDENT"))
+                .andExpect(jsonPath("$.email").value("anna.acc@example.com"));
+    }
+
+    @Test
+    void teacherCannotCreateAnAccount() throws Exception {
+        String body = """
+                {"username":"sneaky-admin","email":"sneaky.admin@example.com","password":"Password123","role":"ADMIN"}
+                """;
+
+        mockMvc.perform(post("/api/auth/register").with(loggedInAs("TEACHER")).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    void claimingAMalformedRegistrationCodeIsRejectedAsABadRequest() throws Exception {
-        // The registrationCode @Pattern rejects this before it ever reaches the invite
-        // service — proves the new validation is actually wired into the real endpoint.
-        String registerBody = """
-                {"username":"bad-code-user","email":"bad.code.user@example.com","password":"Password123","registrationCode":"not-a-real-code"}
+    void anonymousCannotSelfRegister() throws Exception {
+        String body = """
+                {"username":"self-reg","email":"self.reg@example.com","password":"Password123","role":"STUDENT"}
                 """;
 
         mockMvc.perform(post("/api/auth/register").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(registerBody))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void claimingAWellFormedButUnknownRegistrationCodeIsRejected() throws Exception {
-        // Well-formed (passes the @Pattern) but doesn't exist — rejected by the invite
-        // service itself, not the DTO validator.
-        String unknownCode = "Z".repeat(32);
-        String registerBody = """
-                {"username":"unknown-code-user","email":"unknown.code.user@example.com","password":"Password123","registrationCode":"%s"}
-                """.formatted(unknownCode);
-
-        mockMvc.perform(post("/api/auth/register").with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(registerBody))
-                .andExpect(status().isBadRequest());
+                        .content(body))
+                .andExpect(status().isUnauthorized());
     }
 
     // ── unauthenticated ─────────────────────────────────────────────
@@ -553,6 +755,12 @@ class AuthorizationRulesTest {
         r.setLastName("Hopper");
         r.setMatriculationNumber("M-AUTHZ-1");
         r.setEmail("grace.authz@example.com");
+        return r;
+    }
+
+    private CreateCourseRequest sampleCourseWithCode(String code) {
+        CreateCourseRequest r = sampleCourse();
+        r.setCode(code);
         return r;
     }
 

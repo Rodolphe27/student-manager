@@ -30,6 +30,13 @@ public class CreateCourseRequest {
 
     private CourseStatus status = CourseStatus.ACTIVE;
 
+    // Optional: the teacher who runs the course (null = unassigned). Only the assigned
+    // teacher (and ADMINs) may manage the course's enrollments.
+    private Long teacherId;
+
+    // Optional: the term the course belongs to (null = none).
+    private Long termId;
+
     // Version of the record the client edited (from its DTO). Optional: when present and
     // outdated, the update is rejected with 409 instead of overwriting a newer change.
     private Long version;

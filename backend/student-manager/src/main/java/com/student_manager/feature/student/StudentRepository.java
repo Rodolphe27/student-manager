@@ -37,14 +37,6 @@ public interface StudentRepository extends BaseRepository<Student> {
     Optional<Student> findByEmail(String email);
 
     /**
-     * Finds the student with the given matriculation number.
-     *
-     * @param matriculationNumber the matriculation number to search for
-     * @return the matching student, if any
-     */
-    Optional<Student> findByMatriculationNumber(String matriculationNumber);
-
-    /**
      * Checks whether a student with the given email already exists.
      *
      * @param email the email to check

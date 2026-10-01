@@ -1,5 +1,6 @@
 package com.student_manager.feature.student;
 
+import com.student_manager.shared.validation.ValidationPatterns;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -32,6 +33,20 @@ public class CreateStudentRequest {
     @NotBlank(message = "Email is required")
     @Email(message = "Email is invalid")
     private String email;
+
+    /**
+     * Optional, on create only: also create a login account for this student (role
+     * STUDENT) using the profile's email. Ignored by update.
+     */
+    private boolean createAccount;
+
+    // Optional login name for the new account; blank = the email's local part.
+    @Pattern(regexp = ValidationPatterns.USERNAME, message = ValidationPatterns.USERNAME_MESSAGE)
+    private String accountUsername;
+
+    // Optional initial password; blank = the configured default password.
+    @Pattern(regexp = ValidationPatterns.PASSWORD, message = ValidationPatterns.PASSWORD_MESSAGE)
+    private String accountPassword;
 
     // Version of the record the client edited (from its DTO). Optional: when present and
     // outdated, the update is rejected with 409 instead of overwriting a newer change.

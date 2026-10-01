@@ -27,10 +27,11 @@ public interface EnrollmentService {
      * @param status    the status to keep, or {@code null}
      * @param studentId the student to keep, or {@code null}
      * @param courseId  the course to keep, or {@code null}
+     * @param teacherId keep only enrollments in courses run by this teacher, or {@code null} for all
      * @param pageable  the requested page, size and sort
      * @return the requested page of enrollments
      */
-    Page<EnrollmentDTO> search(EnrollmentStatus status, Long studentId, Long courseId, Pageable pageable);
+    Page<EnrollmentDTO> search(EnrollmentStatus status, Long studentId, Long courseId, Long teacherId, Pageable pageable);
 
     /**
      * Lists all enrollments belonging to a given student.
@@ -88,6 +89,16 @@ public interface EnrollmentService {
      * @throws com.student_manager.shared.exception.ValidationException if the enrollment is not confirmed
      */
     EnrollmentDTO updateGrade(Long id, UpdateGradeRequest request);
+
+    /**
+     * Records that the student has seen the grade of this enrollment, clearing its
+     * "new grade" notification.
+     *
+     * @param id the enrollment id
+     * @return the updated enrollment
+     * @throws com.student_manager.shared.exception.ResourceNotFoundException if no enrollment has that id
+     */
+    EnrollmentDTO markGradeSeen(Long id);
 
     /**
      * Deletes an enrollment outright.

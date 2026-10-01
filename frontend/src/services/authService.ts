@@ -1,5 +1,5 @@
 import api from './api';
-import type  { AuthResponse, LoginRequest, RegisterRequest } from '../types';
+import type  { AuthResponse, LoginRequest } from '../types';
 import type { AxiosResponse } from 'axios';
 
 // The login itself lives in the HttpOnly SESSION cookie set by the backend — nothing
@@ -7,9 +7,6 @@ import type { AxiosResponse } from 'axios';
 const authService = {
   login: (data: LoginRequest): Promise<AxiosResponse<AuthResponse>> =>
     api.post<AuthResponse>('/auth/login', data),
-
-  register: (data: RegisterRequest): Promise<AxiosResponse<AuthResponse>> =>
-    api.post<AuthResponse>('/auth/register', data),
 
   // The account behind the current session; 401 when not logged in.
   me: (): Promise<AxiosResponse<AuthResponse>> =>

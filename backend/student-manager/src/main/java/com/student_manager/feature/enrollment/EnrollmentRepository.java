@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Spring Data JPA repository for {@link Enrollment}.
@@ -51,14 +52,6 @@ public interface EnrollmentRepository extends BaseRepository<Enrollment> {
     List<Enrollment> findByCourseId(Long courseId);
 
     /**
-     * Finds all enrollments with a given status.
-     *
-     * @param status the enrollment status to filter by
-     * @return enrollments currently in that status
-     */
-    List<Enrollment> findByStatus(EnrollmentStatus status);
-
-    /**
      * Checks whether a student already has an enrollment row for a course.
      * Used to enforce the one-enrollment-per-student-per-course rule
      * (see {@link Enrollment}'s unique constraint) before inserting a new row.
@@ -69,13 +62,15 @@ public interface EnrollmentRepository extends BaseRepository<Enrollment> {
      */
     boolean existsByStudentIdAndCourseId(Long studentId, Long courseId);
 
+    Optional<Enrollment> findByStudentIdAndCourseId(Long studentId, Long courseId);
+
     /**
      * Checks whether the given account teaches the course this enrollment belongs to.
      * Used by {@code OwnershipGuard} to restrict a TEACHER to grading only their own courses.
      *
      * @param id the enrollment id
-     * @param username the account username to check
-     * @return {@code true} if that account is the teacher of this enrollment's course
+     * @param teacherId the teacher profile id to check
+     * @return {@code true} if that teacher runs this enrollment's course
      */
-    boolean existsByIdAndCourse_Teacher_Account_Username(Long id, String username);
+    boolean existsByIdAndCourseTeacherId(Long id, Long teacherId);
 }

@@ -10,8 +10,7 @@ import lombok.Setter;
 /**
  * A login account: credentials, role, and active/inactive status. Distinct
  * from {@code Student}/{@code Teacher}, which hold the person's profile data
- * and are linked to a {@code User} via a registration invite or direct
- * association.
+ * and are matched to a {@code User} by email or a direct association.
  */
 @Entity
 @Table(name = "users")
@@ -36,6 +35,12 @@ public class User extends BaseEntity {
 
     @Column(nullable = false)
     private boolean active = true;
+
+    // Personal details for accounts without a Student/Teacher profile (e.g. ADMIN);
+    // for STUDENT/TEACHER accounts the linked profile is the source of truth.
+    private String firstName;
+
+    private String lastName;
 
     /**
      * Whether this account is enabled and may authenticate. Declared

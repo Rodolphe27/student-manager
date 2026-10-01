@@ -20,6 +20,10 @@ export interface CreateStudentRequest {
   matriculationNumber: string;
   birthDate?: string;
   email: string;
+  // Create only: also create a login account for the new profile (see AccountFields).
+  createAccount?: boolean;
+  accountUsername?: string;
+  accountPassword?: string;
   // Version of the record being edited; a stale one makes the update fail with 409.
   version?: number;
 }
@@ -32,6 +36,11 @@ export interface Course {
   creditHours: number;
   status: CourseStatus;
   active: boolean;
+  // Null while the course has no teacher / term assigned.
+  teacherId: number | null;
+  teacherName: string | null;
+  termId: number | null;
+  termName: string | null;
   version: number;
 }
 
@@ -41,6 +50,9 @@ export interface CreateCourseRequest {
   description?: string;
   creditHours: number;
   status?: CourseStatus;
+  // Admin only: a TEACHER always becomes the teacher of the courses they save.
+  teacherId?: number | null;
+  termId?: number | null;
   version?: number;
 }
 
@@ -55,6 +67,8 @@ export interface Enrollment {
   status: EnrollmentStatus;
   grade: Grade;
   confirmed: boolean;
+  // false = the student has a grade they have not acknowledged yet ("new grade").
+  gradeSeen: boolean;
 }
 
 export interface CreateEnrollmentRequest {
@@ -81,18 +95,11 @@ export interface CreateTeacherRequest {
   lastName: string;
   email: string;
   department?: string;
+  // Create only: also create a login account for the new profile (see AccountFields).
+  createAccount?: boolean;
+  accountUsername?: string;
+  accountPassword?: string;
   version?: number;
-}
-
-export type ProfileType = 'STUDENT' | 'TEACHER';
-
-export interface RegistrationInvite {
-  id: number;
-  code: string;
-  role: Role;
-  targetType: ProfileType;
-  targetId: number;
-  expiresAt: string;
 }
 
 export interface AuthResponse {
@@ -104,13 +111,6 @@ export interface AuthResponse {
 export interface LoginRequest {
   username: string;
   password: string;
-}
-
-export interface RegisterRequest {
-  username: string;
-  email: string;
-  password: string;
-  registrationCode?: string;
 }
 
 // ── Paging ─────────────────────────────────────────────────────────
@@ -138,9 +138,55 @@ export interface StudentOption {
   matriculationNumber: string;
 }
 
+export interface TeacherOption {
+  id: number;
+  fullName: string;
+  department: string | null;
+}
+
+export interface Term {
+  id: number;
+  name: string;
+  startDate: string | null;
+  endDate: string | null;
+}
+
+export interface CreateTermRequest {
+  name: string;
+  startDate?: string;
+  endDate?: string;
+}
+
 export interface CourseOption {
   id: number;
   code: string;
   title: string;
   status: CourseStatus;
+}
+
+// ── Profile (self-service) ─────────────────────────────────────────
+// Profile fields are null for accounts without a Student/Teacher profile (e.g. ADMIN).
+export interface Profile {
+  username: string;
+  email: string;
+  role: Role;
+  firstName: string | null;
+  lastName: string | null;
+  matriculationNumber: string | null;
+  birthDate: string | null;
+  department: string | null;
+}
+
+export interface UpdateProfileRequest {
+  username: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  birthDate?: string;
+  department?: string;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
 }

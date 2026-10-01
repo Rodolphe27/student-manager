@@ -1,5 +1,5 @@
 import api from './api';
-import type { Teacher, CreateTeacherRequest, RegistrationInvite, Page, PageRequest } from '../types';
+import type { Teacher, CreateTeacherRequest, Page, PageRequest, TeacherOption } from '../types';
 import type { AxiosResponse } from 'axios';
 
 const teacherService = {
@@ -7,8 +7,13 @@ const teacherService = {
   search: (params: PageRequest & { q?: string } = {}): Promise<AxiosResponse<Page<Teacher>>> =>
     api.get<Page<Teacher>>('/teachers', { params }),
 
-  getById: (id: number): Promise<AxiosResponse<Teacher>> =>
-    api.get<Teacher>(`/teachers/${id}`),
+  // Every teacher as id + name, for dropdowns.
+  options: (): Promise<AxiosResponse<TeacherOption[]>> =>
+    api.get<TeacherOption[]>('/teachers/options'),
+
+  // The teacher profile behind the logged-in account (404 when there is none).
+  getMe: (): Promise<AxiosResponse<Teacher>> =>
+    api.get<Teacher>('/teachers/me'),
 
   create: (data: CreateTeacherRequest): Promise<AxiosResponse<Teacher>> =>
     api.post<Teacher>('/teachers', data),
@@ -19,8 +24,6 @@ const teacherService = {
   delete: (id: number): Promise<AxiosResponse<void>> =>
     api.delete(`/teachers/${id}`),
 
-  issueInvite: (id: number): Promise<AxiosResponse<RegistrationInvite>> =>
-    api.post<RegistrationInvite>(`/teachers/${id}/invite`),
 };
 
 export default teacherService;

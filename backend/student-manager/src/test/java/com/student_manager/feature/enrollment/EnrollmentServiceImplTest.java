@@ -71,7 +71,7 @@ class EnrollmentServiceImplTest {
 
         when(studentRepository.findById(1L)).thenReturn(Optional.of(student));
         when(courseRepository.findById(10L)).thenReturn(Optional.of(activeCourse));
-        when(enrollmentRepository.existsByStudentIdAndCourseId(1L, 10L)).thenReturn(false);
+        when(enrollmentRepository.findByStudentIdAndCourseId(1L, 10L)).thenReturn(Optional.empty());
         when(enrollmentRepository.save(any(Enrollment.class))).thenAnswer(inv -> {
             Enrollment e = inv.getArgument(0);
             e.setId(100L);
@@ -111,13 +111,33 @@ class EnrollmentServiceImplTest {
 
         when(studentRepository.findById(1L)).thenReturn(Optional.of(student));
         when(courseRepository.findById(10L)).thenReturn(Optional.of(activeCourse));
-        when(enrollmentRepository.existsByStudentIdAndCourseId(1L, 10L)).thenReturn(true);
+        when(enrollmentRepository.findByStudentIdAndCourseId(1L, 10L)).thenReturn(Optional.of(enrollmentWith(EnrollmentStatus.PENDING)));
 
         assertThatThrownBy(() -> enrollmentService.create(request))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("already enrolled");
 
         verify(enrollmentRepository, never()).save(any());
+    }
+
+    @Test
+    void createReopensAPreviouslyCancelledEnrollment() {
+        CreateEnrollmentRequest request = new CreateEnrollmentRequest();
+        request.setStudentId(1L);
+        request.setCourseId(10L);
+        Enrollment cancelled = enrollmentWith(EnrollmentStatus.CANCELLED);
+        cancelled.setId(55L);
+        cancelled.setGrade(Grade.NOT_GRADED);
+
+        when(studentRepository.findById(1L)).thenReturn(Optional.of(student));
+        when(courseRepository.findById(10L)).thenReturn(Optional.of(activeCourse));
+        when(enrollmentRepository.findByStudentIdAndCourseId(1L, 10L)).thenReturn(Optional.of(cancelled));
+        when(enrollmentRepository.save(cancelled)).thenReturn(cancelled);
+
+        EnrollmentDTO result = enrollmentService.create(request);
+
+        assertThat(result.getId()).isEqualTo(55L);
+        assertThat(result.getStatus()).isEqualTo(EnrollmentStatus.PENDING);
     }
 
     @Test
@@ -226,6 +246,60 @@ class EnrollmentServiceImplTest {
         EnrollmentDTO result = enrollmentService.updateGrade(100L, request);
 
         assertThat(result.getGrade()).isEqualTo(Grade.A);
+    }
+
+    @Test
+    void aNewGradeIsFlaggedForTheStudentToAcknowledge() {
+        Enrollment confirmed = enrollmentWith(EnrollmentStatus.CONFIRMED);
+        when(enrollmentRepository.findById(100L)).thenReturn(Optional.of(confirmed));
+        when(enrollmentRepository.save(any(Enrollment.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        EnrollmentDTO result = enrollmentService.updateGrade(100L, gradeRequest(Grade.B));
+
+        assertThat(result.isGradeSeen()).isFalse();
+    }
+
+    @Test
+    void savingTheSameGradeAgainDoesNotNotifyTheStudentAgain() {
+        Enrollment confirmed = enrollmentWith(EnrollmentStatus.CONFIRMED);
+        confirmed.setGrade(Grade.B);
+        confirmed.setGradeSeen(true);
+        when(enrollmentRepository.findById(100L)).thenReturn(Optional.of(confirmed));
+        when(enrollmentRepository.save(any(Enrollment.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        EnrollmentDTO result = enrollmentService.updateGrade(100L, gradeRequest(Grade.B));
+
+        assertThat(result.isGradeSeen()).isTrue();
+    }
+
+    @Test
+    void takingAGradeBackLeavesNothingToAcknowledge() {
+        Enrollment confirmed = enrollmentWith(EnrollmentStatus.CONFIRMED);
+        confirmed.setGrade(Grade.B);
+        confirmed.setGradeSeen(false);
+        when(enrollmentRepository.findById(100L)).thenReturn(Optional.of(confirmed));
+        when(enrollmentRepository.save(any(Enrollment.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        EnrollmentDTO result = enrollmentService.updateGrade(100L, gradeRequest(Grade.NOT_GRADED));
+
+        assertThat(result.isGradeSeen()).isTrue();
+    }
+
+    @Test
+    void markGradeSeenClearsTheNotification() {
+        Enrollment graded = enrollmentWith(EnrollmentStatus.CONFIRMED);
+        graded.setGrade(Grade.A);
+        graded.setGradeSeen(false);
+        when(enrollmentRepository.findById(100L)).thenReturn(Optional.of(graded));
+        when(enrollmentRepository.save(any(Enrollment.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        assertThat(enrollmentService.markGradeSeen(100L).isGradeSeen()).isTrue();
+    }
+
+    private UpdateGradeRequest gradeRequest(Grade grade) {
+        UpdateGradeRequest request = new UpdateGradeRequest();
+        request.setGrade(grade);
+        return request;
     }
 
     @Test

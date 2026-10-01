@@ -11,9 +11,6 @@ const courseService = {
   options: (): Promise<AxiosResponse<CourseOption[]>> =>
     api.get<CourseOption[]>('/courses/options'),
 
-  getById: (id: number): Promise<AxiosResponse<Course>> =>
-    api.get<Course>(`/courses/${id}`),
-
   getByStatus: (status: CourseStatus): Promise<AxiosResponse<Course[]>> =>
     api.get<Course[]>(`/courses/status/${status}`),
 

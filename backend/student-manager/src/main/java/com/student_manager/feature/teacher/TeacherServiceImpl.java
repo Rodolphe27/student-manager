@@ -1,5 +1,9 @@
 package com.student_manager.feature.teacher;
 
+import com.student_manager.feature.auth.AccountProvisioner;
+import com.student_manager.feature.auth.Role;
+import com.student_manager.feature.auth.User;
+import com.student_manager.feature.auth.UserRepository;
 import com.student_manager.shared.exception.ValidationException;
 import com.student_manager.shared.service.CrudServiceSupport;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +13,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
 
 // findById/findAll/delete come from CrudServiceSupport — see that class for
 // why create()/update() stay here. Generic "Fetching .../Updating .../
@@ -28,6 +35,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class TeacherServiceImpl extends CrudServiceSupport<Teacher, TeacherDTO> implements TeacherService {
 
     private final TeacherRepository repository;
+    private final AccountProvisioner accountProvisioner;
+    private final UserRepository userRepository;
 
     /**
      * Supplies the underlying repository for the shared CRUD template methods.
@@ -49,6 +58,22 @@ public class TeacherServiceImpl extends CrudServiceSupport<Teacher, TeacherDTO> 
      *
      * @return the literal "Teacher"
      */
+    @Override
+    public List<TeacherOption> options() {
+        return repository.findAllOptions();
+    }
+
+    @Override
+    public Optional<Long> findIdByAccountUsername(String username) {
+        if (username == null) {
+            return Optional.empty();
+        }
+        return repository.findByAccountUsername(username)
+                .or(() -> userRepository.findByUsername(username)
+                        .flatMap(account -> repository.findByEmail(account.getEmail())))
+                .map(Teacher::getId);
+    }
+
     @Override
     protected String resourceName() {
         return "Teacher";
@@ -96,6 +121,11 @@ public class TeacherServiceImpl extends CrudServiceSupport<Teacher, TeacherDTO> 
         teacher.setDepartment(request.getDepartment());
 
         Teacher saved = repository.save(teacher);
+        if (request.isCreateAccount()) {
+            // Same transaction: a taken username/email rolls the new teacher back too.
+            saved.setAccount(accountProvisioner.create(
+                    request.getAccountUsername(), request.getEmail(), request.getAccountPassword(), Role.TEACHER));
+        }
         log.info("Teacher created with id: {}", saved.getId());
         return toDTO(saved);
     }
@@ -120,6 +150,7 @@ public class TeacherServiceImpl extends CrudServiceSupport<Teacher, TeacherDTO> 
             throw new ValidationException("Email already exists: " + request.getEmail());
         }
 
+        syncAccountEmail(teacher, request.getEmail());
         teacher.setFirstName(request.getFirstName());
         teacher.setLastName(request.getLastName());
         teacher.setEmail(request.getEmail());
@@ -128,5 +159,35 @@ public class TeacherServiceImpl extends CrudServiceSupport<Teacher, TeacherDTO> 
         // Flush now so the returned DTO carries the incremented version.
         Teacher saved = repository.saveAndFlush(teacher);
         return toDTO(saved);
+    }
+
+    /**
+     * Deletes the teacher profile and the login account that belongs to it, so no
+     * orphaned account is left behind. A teacher who still runs courses cannot be
+     * deleted (the database rejects it; surfaced as 409).
+     */
+    @Override
+    @Transactional
+    public void delete(Long id) {
+        Teacher teacher = loadOrThrow(id);
+        User account = teacher.getAccount();
+        repository.delete(teacher);
+        repository.flush();
+        if (account != null) {
+            userRepository.delete(account);
+        }
+    }
+
+    /** Keeps the linked account's e-mail in step with the profile's when an admin changes it. */
+    private void syncAccountEmail(Teacher teacher, String newEmail) {
+        User account = teacher.getAccount();
+        if (account == null || account.getEmail().equalsIgnoreCase(newEmail)) {
+            return;
+        }
+        if (userRepository.existsByEmail(newEmail)) {
+            throw new ValidationException("Email already exists: " + newEmail);
+        }
+        account.setEmail(newEmail);
+        userRepository.save(account);
     }
 }

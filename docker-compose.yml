@@ -19,7 +19,11 @@ services:
       - postgres
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/studentmanager
-
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      # Local demo only: fills the empty database with an admin account and 10 terms, teachers,
+      # students, courses and enrollments (password: DEFAULT_ACCOUNT_PASSWORD, see README).
+      SEED_DEMO_DATA: "true"
   frontend:
     build: ./frontend
     ports:

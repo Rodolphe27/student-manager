@@ -17,7 +17,7 @@ import java.time.LocalDate;
 
 /**
  * A student's academic profile: personal details, matriculation number, and
- * (once registration is claimed) the linked login {@link #account}.
+ * the linked login {@link #account}, if the student has one.
  */
 @Entity
 @Table(name = "students")
@@ -42,9 +42,9 @@ public class Student extends BaseEntity {
     private String email;
 
     /**
-     * The account linked to this profile, set when a {@code RegistrationInvite}
-     * targeting this student is claimed. Nullable: a profile can exist (created
-     * by an ADMIN) before anyone has registered against it.
+     * The login account of this student, set when an ADMIN creates the profile together
+     * with an account, or when the student saves their profile page. Nullable: a profile
+     * can exist without a login.
      */
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", unique = true)

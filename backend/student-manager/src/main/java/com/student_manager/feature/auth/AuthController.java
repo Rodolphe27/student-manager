@@ -10,8 +10,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * REST endpoints for account registration, login, and "who am I". Register
- * and login are public (see {@code SecurityConfig}) and start a server-side
+ * REST endpoints for account creation, login, and "who am I". Login is
+ * public (see {@code SecurityConfig}) and starts a server-side
  * session on success, identified by the HttpOnly {@code SESSION} cookie.
  * Logout ({@code POST /api/auth/logout}) is handled by Spring Security itself.
  */
@@ -27,24 +27,17 @@ public class AuthController {
     private final SessionLogin sessionLogin;
 
     /**
-     * Registers a new account and logs it in. Self-registration is always
-     * assigned the STUDENT role unless the request carries a valid invite
-     * code, in which case the invite determines the final role and profile link.
+     * Creates a new account with the requested role. ADMIN-only (see
+     * {@code SecurityConfig}); the caller's own session is left untouched.
      *
-     * @param request     the registration payload (username, email, password and
-     *                    optional registration code), validated before this method runs
-     * @param httpRequest the current HTTP request (the session is attached to it)
-     * @param httpResponse the current HTTP response (receives the session cookie)
+     * @param request the account payload (username, email, password and role),
+     *                validated before this method runs
      * @return 201 Created with the new account's {@link AuthResponse}
      */
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(
-            @Valid @RequestBody RegisterRequest request,
-            HttpServletRequest httpRequest,
-            HttpServletResponse httpResponse) {
-        AuthResponse account = authService.register(request);
-        sessionLogin.start(account, httpRequest, httpResponse);
-        return ResponseEntity.status(201).body(account);
+            @Valid @RequestBody RegisterRequest request) {
+        return ResponseEntity.status(201).body(authService.register(request));
     }
 
     /**

@@ -7,9 +7,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -22,11 +24,18 @@ class AuthControllerTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
 
+    // Accounts are created by an ADMIN only (POST /api/auth/register), so every
+    // registration call below is made as one.
+    private static RequestPostProcessor asAdmin() {
+        RequestPostProcessor principal = user("admin-user").roles("ADMIN");
+        return request -> csrf().postProcessRequest(principal.postProcessRequest(request));
+    }
+
     @Test
     void registerWithABlankUsernameIsRejectedAsABadRequest() throws Exception {
-        RegisterRequest request = new RegisterRequest("", "user@example.com", "Password123!", null);
+        RegisterRequest request = new RegisterRequest("", "user@example.com", "Password123!", Role.STUDENT);
 
-        mockMvc.perform(post("/api/auth/register").with(csrf())
+        mockMvc.perform(post("/api/auth/register").with(asAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -34,9 +43,9 @@ class AuthControllerTest {
 
     @Test
     void registerWithABlankPasswordIsRejectedAsABadRequest() throws Exception {
-        RegisterRequest request = new RegisterRequest("passwordtestuser", "user@example.com", "", null);
+        RegisterRequest request = new RegisterRequest("passwordtestuser", "user@example.com", "", Role.STUDENT);
 
-        mockMvc.perform(post("/api/auth/register").with(csrf())
+        mockMvc.perform(post("/api/auth/register").with(asAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -44,29 +53,29 @@ class AuthControllerTest {
 
     @Test
     void registerWithAnInvalidEmailIsRejectedAsABadRequest() throws Exception {
-        RegisterRequest request = new RegisterRequest("emailtestuser", "not-an-email", "Password123!", null);
+        RegisterRequest request = new RegisterRequest("emailtestuser", "not-an-email", "Password123!", Role.STUDENT);
 
-        mockMvc.perform(post("/api/auth/register").with(csrf())
+        mockMvc.perform(post("/api/auth/register").with(asAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void selfRegistrationAlwaysCreatesAStudentAccount() throws Exception {
-        RegisterRequest request = new RegisterRequest("plainuser", "plainuser@example.com", "Password123!", null);
+    void adminCreatedAccountGetsTheRequestedRole() throws Exception {
+        RegisterRequest request = new RegisterRequest("newteacher", "newteacher@example.com", "Password123!", Role.TEACHER);
 
-        mockMvc.perform(post("/api/auth/register").with(csrf())
+        mockMvc.perform(post("/api/auth/register").with(asAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.role").value("STUDENT"));
+                .andExpect(jsonPath("$.role").value("TEACHER"));
     }
 
     @Test
-    void clientSuppliedRoleInRegistrationBodyIsIgnored() throws Exception {
+    void anAnonymousCallerCannotRegisterAnAccountAtAll() throws Exception {
         // Regression test for issue #43: an anonymous caller must not be able to
-        // mint an elevated account by putting "role" in the registration payload.
+        // mint any account, least of all an elevated one, via the register endpoint.
         String bodyWithAdminRole = """
                 {"username":"escalator","email":"escalator@example.com","password":"Password123!","role":"ADMIN"}
                 """;
@@ -74,8 +83,7 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/register").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bodyWithAdminRole))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.role").value("STUDENT"));
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -102,8 +110,8 @@ class AuthControllerTest {
     @Test
     void loginWithTheWrongPasswordReturnsTheSameGenericUnauthorized() throws Exception {
         RegisterRequest signup =
-                new RegisterRequest("pwdcheckuser", "pwdcheckuser@example.com", "Password123!", null);
-        mockMvc.perform(post("/api/auth/register").with(csrf())
+                new RegisterRequest("pwdcheckuser", "pwdcheckuser@example.com", "Password123!", Role.STUDENT);
+        mockMvc.perform(post("/api/auth/register").with(asAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(signup)))
                 .andExpect(status().isCreated());

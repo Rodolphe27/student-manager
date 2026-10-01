@@ -59,6 +59,13 @@ public class Enrollment extends BaseEntity {
      *
      * @return {@code true} if {@link #getStatus()} is {@link EnrollmentStatus#CONFIRMED}
      */
+    /**
+     * {@code false} while the student has not yet acknowledged the latest grade, which is what
+     * drives the "new grade" notification. Set by grading, cleared by the student.
+     */
+    @Column(nullable = false)
+    private boolean gradeSeen = true;
+
     public boolean isConfirmed() {
         return EnrollmentStatus.CONFIRMED.equals(this.status);
     }

@@ -1,9 +1,7 @@
 package com.student_manager.feature.teacher;
 
 import com.student_manager.feature.auth.Role;
-import com.student_manager.feature.invite.ProfileType;
-import com.student_manager.feature.invite.RegistrationInviteDTO;
-import com.student_manager.feature.invite.RegistrationInviteService;
+import com.student_manager.shared.exception.ResourceNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,12 +12,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 // Per-method entry logging removed — RequestLoggingFilter (shared/config) now
 // logs method + path + status + duration for every request. The lines below
 // are commented out, not deleted, for reference.
 /**
- * REST controller exposing CRUD endpoints for {@link Teacher} resources, plus
- * an endpoint to issue registration invites, under {@code /api/teachers}. Per
+ * REST controller exposing CRUD endpoints for {@link Teacher} resources under
+ * {@code /api/teachers}. Per
  * the security configuration, {@code GET} requests require the {@code TEACHER}
  * or {@code ADMIN} role, while all other methods require the {@code ADMIN} role.
  */
@@ -31,7 +31,6 @@ import org.springframework.web.bind.annotation.*;
 public class TeacherController {
 
     private final TeacherService service;
-    private final RegistrationInviteService registrationInviteService;
 
     /**
      * Returns one page of teachers, optionally filtered by {@code q} (name,
@@ -46,6 +45,33 @@ public class TeacherController {
             @RequestParam(required = false) String q,
             @PageableDefault(sort = {"lastName", "firstName"}) Pageable pageable) {
         return ResponseEntity.ok(service.search(q, pageable));
+    }
+
+    /**
+     * The teacher profile linked to the calling account (the UI uses it to tell which courses
+     * are the caller's own).
+     *
+     * @param authentication the caller
+     * @return 200 OK with the profile
+     * @throws com.student_manager.shared.exception.ResourceNotFoundException if the account has no teacher profile
+     */
+    @GetMapping("me")
+    public ResponseEntity<TeacherDTO> getMe(Authentication authentication) {
+        Long id = service.findIdByAccountUsername(authentication.getName())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No teacher record is linked to account: " + authentication.getName()));
+        return ResponseEntity.ok(service.findById(id));
+    }
+
+    /**
+     * Every teacher as a lightweight id/name/department option, for selection lists
+     * such as the course form.
+     *
+     * @return 200 OK with all teachers, ordered by name
+     */
+    @GetMapping("options")
+    public ResponseEntity<List<TeacherOption>> getOptions() {
+        return ResponseEntity.ok(service.options());
     }
 
     /**
@@ -102,21 +128,5 @@ public class TeacherController {
         // log.info("DELETE /api/teachers/{}", id);
         service.delete(id);
         return ResponseEntity.noContent().build();
-    }
-
-    /**
-     * Issues a registration invite that lets a new user account claim the given
-     * teacher profile, tying the invite to the authenticated caller as issuer.
-     *
-     * @param id the id of the teacher profile to invite a registrant for
-     * @param authentication the authenticated caller, used as the invite's issuer
-     * @return 201 Created with the newly issued invite
-     */
-    @PostMapping("{id}/invite")
-    public ResponseEntity<RegistrationInviteDTO> issueInvite(@PathVariable Long id, Authentication authentication) {
-        // log.info("POST /api/teachers/{}/invite", id);
-        RegistrationInviteDTO invite = registrationInviteService.issueInvite(
-                Role.TEACHER, ProfileType.TEACHER, id, authentication.getName());
-        return ResponseEntity.status(201).body(invite);
     }
 }

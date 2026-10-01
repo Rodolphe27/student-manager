@@ -1,5 +1,6 @@
 package com.student_manager.feature.teacher;
 
+import com.student_manager.shared.validation.ValidationPatterns;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -27,7 +28,22 @@ public class CreateTeacherRequest {
     // department entirely is still valid.
     @Pattern(regexp = "^[A-Za-z .'-]{2,100}$",
             message = "Department must be 2-100 characters: letters, spaces, '.', ''' or '-'")
-    private String department;
+    private String department;
+
+    /**
+     * Optional, on create only: also create a login account for this teacher (role
+     * TEACHER) using the profile's email. Ignored by update.
+     */
+    private boolean createAccount;
+
+    // Optional login name for the new account; blank = the email's local part.
+    @Pattern(regexp = ValidationPatterns.USERNAME, message = ValidationPatterns.USERNAME_MESSAGE)
+    private String accountUsername;
+
+    // Optional initial password; blank = the configured default password.
+    @Pattern(regexp = ValidationPatterns.PASSWORD, message = ValidationPatterns.PASSWORD_MESSAGE)
+    private String accountPassword;
+
     // Version of the record the client edited (from its DTO). Optional: when present and
     // outdated, the update is rejected with 409 instead of overwriting a newer change.
     private Long version;
