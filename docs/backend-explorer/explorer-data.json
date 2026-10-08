@@ -1,0 +1,3882 @@
+{
+ "classes": [
+  {
+   "id": "AuthController",
+   "layer": "web",
+   "kind": "class",
+   "path": "com/student_manager/feature/auth/AuthController.java",
+   "ann": [
+    [
+     "Slf4j",
+     ""
+    ],
+    [
+     "RestController",
+     ""
+    ],
+    [
+     "RequestMapping",
+     "\"/api/auth\""
+    ],
+    [
+     "RequiredArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "REST endpoints for account creation, login, and \"who am I\".",
+   "extends": "",
+   "implements": "",
+   "deps": [
+    "AuthService",
+    "SessionLogin"
+   ],
+   "endpoints": [
+    {
+     "verb": "POST",
+     "path": "/api/auth/register",
+     "name": "register",
+     "ret": "ResponseEntity<AuthResponse>",
+     "params": " RegisterRequest request",
+     "pre": "",
+     "doc": "Creates a new account with the requested role."
+    },
+    {
+     "verb": "POST",
+     "path": "/api/auth/login",
+     "name": "login",
+     "ret": "ResponseEntity<AuthResponse>",
+     "params": " LoginRequest request, HttpServletRequest httpRequest, HttpServletResponse httpResponse",
+     "pre": "",
+     "doc": "Authenticates an existing account and starts a new session."
+    },
+    {
+     "verb": "GET",
+     "path": "/api/auth/me",
+     "name": "me",
+     "ret": "ResponseEntity<AuthResponse>",
+     "params": "Authentication authentication",
+     "pre": "",
+     "doc": "Returns the account behind the current session."
+    }
+   ],
+   "methods": [],
+   "fields": []
+  },
+  {
+   "id": "CourseController",
+   "layer": "web",
+   "kind": "class",
+   "path": "com/student_manager/feature/course/CourseController.java",
+   "ann": [
+    [
+     "Slf4j",
+     ""
+    ],
+    [
+     "RestController",
+     ""
+    ],
+    [
+     "RequestMapping",
+     "\"/api/courses\""
+    ],
+    [
+     "RequiredArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "REST controller exposing CRUD endpoints for Course resources under /api/courses.",
+   "extends": "",
+   "implements": "",
+   "deps": [
+    "CourseService",
+    "OwnershipGuard"
+   ],
+   "endpoints": [
+    {
+     "verb": "GET",
+     "path": "/api/courses",
+     "name": "getAll",
+     "ret": "ResponseEntity<Page<CourseDTO>>",
+     "params": " String q, CourseStatus status, Pageable pageable",
+     "pre": "",
+     "doc": "Returns one page of courses, optionally filtered by q (code or title) and/or status."
+    },
+    {
+     "verb": "GET",
+     "path": "/api/courses/options",
+     "name": "getOptions",
+     "ret": "ResponseEntity<List<CourseOption>>",
+     "params": "Authentication authentication",
+     "pre": "",
+     "doc": "Every course as a lightweight id/code/title option, for selection lists such as the enrollment form."
+    },
+    {
+     "verb": "GET",
+     "path": "/api/courses/{id}",
+     "name": "getById",
+     "ret": "ResponseEntity<CourseDTO>",
+     "params": " Long id",
+     "pre": "",
+     "doc": "Retrieves a single course by its id."
+    },
+    {
+     "verb": "GET",
+     "path": "/api/courses/status/{status}",
+     "name": "getByStatus",
+     "ret": "ResponseEntity<List<CourseDTO>>",
+     "params": " CourseStatus status",
+     "pre": "",
+     "doc": "Lists all courses that currently have the given status."
+    },
+    {
+     "verb": "POST",
+     "path": "/api/courses",
+     "name": "create",
+     "ret": "ResponseEntity<CourseDTO>",
+     "params": " CreateCourseRequest request, Authentication authentication",
+     "pre": "",
+     "doc": "Creates a new course."
+    },
+    {
+     "verb": "PUT",
+     "path": "/api/courses/{id}",
+     "name": "update",
+     "ret": "ResponseEntity<CourseDTO>",
+     "params": " Long id, CreateCourseRequest request, Authentication authentication",
+     "pre": "@ownershipGuard.canManageCourse(#id, authentication)",
+     "doc": "Updates an existing course."
+    },
+    {
+     "verb": "DELETE",
+     "path": "/api/courses/{id}",
+     "name": "delete",
+     "ret": "ResponseEntity<Void>",
+     "params": " Long id",
+     "pre": "@ownershipGuard.canManageCourse(#id, authentication)",
+     "doc": "Deletes a course."
+    }
+   ],
+   "methods": [],
+   "fields": []
+  },
+  {
+   "id": "EnrollmentController",
+   "layer": "web",
+   "kind": "class",
+   "path": "com/student_manager/feature/enrollment/EnrollmentController.java",
+   "ann": [
+    [
+     "Slf4j",
+     ""
+    ],
+    [
+     "RestController",
+     ""
+    ],
+    [
+     "RequestMapping",
+     "\"/api/enrollments\""
+    ],
+    [
+     "RequiredArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "REST endpoints for managing enrollments: creating them, listing them by student/course, and transitioning an enrollment through confirm/cancel/grade.",
+   "extends": "",
+   "implements": "",
+   "deps": [
+    "EnrollmentService",
+    "OwnershipGuard"
+   ],
+   "endpoints": [
+    {
+     "verb": "GET",
+     "path": "/api/enrollments",
+     "name": "getAll",
+     "ret": "ResponseEntity<Page<EnrollmentDTO>>",
+     "params": " EnrollmentStatus status, Long studentId, Long courseId, Pageable pageable, Authentication authentication",
+     "pre": "",
+     "doc": "Returns one page of enrollments, optionally filtered by status, studentId and/or courseId."
+    },
+    {
+     "verb": "GET",
+     "path": "/api/enrollments/{id}",
+     "name": "getById",
+     "ret": "ResponseEntity<EnrollmentDTO>",
+     "params": " Long id",
+     "pre": "",
+     "doc": "Looks up a single enrollment by id."
+    },
+    {
+     "verb": "GET",
+     "path": "/api/enrollments/student/{studentId}",
+     "name": "getByStudent",
+     "ret": "ResponseEntity<List<EnrollmentDTO>>",
+     "params": " Long studentId",
+     "pre": "@ownershipGuard.canAccessStudentData(#studentId, authentication)",
+     "doc": "Lists all enrollments for a given student."
+    },
+    {
+     "verb": "GET",
+     "path": "/api/enrollments/course/{courseId}",
+     "name": "getByCourse",
+     "ret": "ResponseEntity<List<EnrollmentDTO>>",
+     "params": " Long courseId",
+     "pre": "@ownershipGuard.canAccessCourseData(#courseId, authentication)",
+     "doc": "Lists all enrollments (the roster) for a given course."
+    },
+    {
+     "verb": "POST",
+     "path": "/api/enrollments",
+     "name": "create",
+     "ret": "ResponseEntity<EnrollmentDTO>",
+     "params": " CreateEnrollmentRequest request",
+     "pre": "@ownershipGuard.canEnroll(#request.studentId, #request.courseId, authentication)",
+     "doc": "Enrolls a student in a course."
+    },
+    {
+     "verb": "PATCH",
+     "path": "/api/enrollments/{id}/confirm",
+     "name": "confirm",
+     "ret": "ResponseEntity<EnrollmentDTO>",
+     "params": " Long id",
+     "pre": "@ownershipGuard.canManageEnrollment(#id, authentication)",
+     "doc": "Confirms a pending enrollment."
+    },
+    {
+     "verb": "PATCH",
+     "path": "/api/enrollments/{id}/cancel",
+     "name": "cancel",
+     "ret": "ResponseEntity<EnrollmentDTO>",
+     "params": " Long id",
+     "pre": "@ownershipGuard.canCancelEnrollment(#id, authentication)",
+     "doc": "Cancels (withdraws) an enrollment, clearing any grade it carried."
+    },
+    {
+     "verb": "PATCH",
+     "path": "/api/enrollments/{id}/grade",
+     "name": "updateGrade",
+     "ret": "ResponseEntity<EnrollmentDTO>",
+     "params": " Long id, UpdateGradeRequest request",
+     "pre": "@ownershipGuard.canManageEnrollment(#id, authentication)",
+     "doc": "Assigns a grade to a confirmed enrollment."
+    },
+    {
+     "verb": "PATCH",
+     "path": "/api/enrollments/{id}/grade-seen",
+     "name": "markGradeSeen",
+     "ret": "ResponseEntity<EnrollmentDTO>",
+     "params": " Long id",
+     "pre": "@ownershipGuard.canAcknowledgeGrade(#id, authentication)",
+     "doc": "Acknowledges the grade of the caller's own enrollment, clearing its \"new grade\" notification."
+    },
+    {
+     "verb": "DELETE",
+     "path": "/api/enrollments/{id}",
+     "name": "delete",
+     "ret": "ResponseEntity<Void>",
+     "params": " Long id",
+     "pre": "",
+     "doc": "Deletes an enrollment outright."
+    }
+   ],
+   "methods": [],
+   "fields": []
+  },
+  {
+   "id": "ProfileController",
+   "layer": "web",
+   "kind": "class",
+   "path": "com/student_manager/feature/profile/ProfileController.java",
+   "ann": [
+    [
+     "RestController",
+     ""
+    ],
+    [
+     "RequestMapping",
+     "\"/api/profile\""
+    ],
+    [
+     "RequiredArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "Self-service endpoints under /api/profile, open to every authenticated role (ADMIN, TEACHER, STUDENT).",
+   "extends": "",
+   "implements": "",
+   "deps": [
+    "ProfileService",
+    "SessionLogin"
+   ],
+   "endpoints": [
+    {
+     "verb": "GET",
+     "path": "/api/profile",
+     "name": "get",
+     "ret": "ResponseEntity<ProfileDTO>",
+     "params": "Authentication authentication",
+     "pre": "",
+     "doc": ""
+    },
+    {
+     "verb": "PUT",
+     "path": "/api/profile",
+     "name": "update",
+     "ret": "ResponseEntity<ProfileDTO>",
+     "params": " UpdateProfileRequest request, Authentication authentication, HttpServletRequest httpRequest, HttpServletResponse httpResponse",
+     "pre": "",
+     "doc": "Updates the caller's account and profile details."
+    },
+    {
+     "verb": "PUT",
+     "path": "/api/profile/password",
+     "name": "changePassword",
+     "ret": "ResponseEntity<Void>",
+     "params": " ChangePasswordRequest request, Authentication authentication",
+     "pre": "",
+     "doc": ""
+    }
+   ],
+   "methods": [],
+   "fields": []
+  },
+  {
+   "id": "StudentController",
+   "layer": "web",
+   "kind": "class",
+   "path": "com/student_manager/feature/student/StudentController.java",
+   "ann": [
+    [
+     "Slf4j",
+     ""
+    ],
+    [
+     "RestController",
+     ""
+    ],
+    [
+     "RequestMapping",
+     "\"/api/students\""
+    ],
+    [
+     "RequiredArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "REST endpoints for managing student profiles: CRUD operations, the self-service \"my profile\" lookup.",
+   "extends": "",
+   "implements": "",
+   "deps": [
+    "StudentService"
+   ],
+   "endpoints": [
+    {
+     "verb": "GET",
+     "path": "/api/students",
+     "name": "getAll",
+     "ret": "ResponseEntity<Page<StudentDTO>>",
+     "params": " String q, Pageable pageable",
+     "pre": "",
+     "doc": "Returns one page of students, optionally filtered by q (name, matriculation number, or email)."
+    },
+    {
+     "verb": "GET",
+     "path": "/api/students/options",
+     "name": "getOptions",
+     "ret": "ResponseEntity<List<StudentOption>>",
+     "params": "",
+     "pre": "",
+     "doc": "Every student as a lightweight id/name/matriculation option, for selection lists such as the enrollment form."
+    },
+    {
+     "verb": "GET",
+     "path": "/api/students/me",
+     "name": "getMe",
+     "ret": "ResponseEntity<StudentDTO>",
+     "params": "Authentication authentication",
+     "pre": "",
+     "doc": "Returns the student profile linked to the currently authenticated account, so a STUDENT can see their own record without needing permission to read the whole roster."
+    },
+    {
+     "verb": "GET",
+     "path": "/api/students/{id}",
+     "name": "getById",
+     "ret": "ResponseEntity<StudentDTO>",
+     "params": " Long id",
+     "pre": "",
+     "doc": "Looks up a single student by id."
+    },
+    {
+     "verb": "POST",
+     "path": "/api/students",
+     "name": "create",
+     "ret": "ResponseEntity<StudentDTO>",
+     "params": " CreateStudentRequest request",
+     "pre": "",
+     "doc": "Creates a new student profile."
+    },
+    {
+     "verb": "PUT",
+     "path": "/api/students/{id}",
+     "name": "update",
+     "ret": "ResponseEntity<StudentDTO>",
+     "params": " Long id, CreateStudentRequest request",
+     "pre": "",
+     "doc": "Updates an existing student's details."
+    },
+    {
+     "verb": "DELETE",
+     "path": "/api/students/{id}",
+     "name": "delete",
+     "ret": "ResponseEntity<Void>",
+     "params": " Long id",
+     "pre": "",
+     "doc": "Deletes a student profile."
+    }
+   ],
+   "methods": [],
+   "fields": []
+  },
+  {
+   "id": "TeacherController",
+   "layer": "web",
+   "kind": "class",
+   "path": "com/student_manager/feature/teacher/TeacherController.java",
+   "ann": [
+    [
+     "Slf4j",
+     ""
+    ],
+    [
+     "RestController",
+     ""
+    ],
+    [
+     "RequestMapping",
+     "\"/api/teachers\""
+    ],
+    [
+     "RequiredArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "REST controller exposing CRUD endpoints for Teacher resources under /api/teachers.",
+   "extends": "",
+   "implements": "",
+   "deps": [
+    "TeacherService"
+   ],
+   "endpoints": [
+    {
+     "verb": "GET",
+     "path": "/api/teachers",
+     "name": "getAll",
+     "ret": "ResponseEntity<Page<TeacherDTO>>",
+     "params": " String q, Pageable pageable",
+     "pre": "",
+     "doc": "Returns one page of teachers, optionally filtered by q (name, email, or department)."
+    },
+    {
+     "verb": "GET",
+     "path": "/api/teachers/me",
+     "name": "getMe",
+     "ret": "ResponseEntity<TeacherDTO>",
+     "params": "Authentication authentication",
+     "pre": "",
+     "doc": "The teacher profile linked to the calling account (the UI uses it to tell which courses are the caller's own)."
+    },
+    {
+     "verb": "GET",
+     "path": "/api/teachers/options",
+     "name": "getOptions",
+     "ret": "ResponseEntity<List<TeacherOption>>",
+     "params": "",
+     "pre": "",
+     "doc": "Every teacher as a lightweight id/name/department option, for selection lists such as the course form."
+    },
+    {
+     "verb": "GET",
+     "path": "/api/teachers/{id}",
+     "name": "getById",
+     "ret": "ResponseEntity<TeacherDTO>",
+     "params": " Long id",
+     "pre": "",
+     "doc": "Retrieves a single teacher by id."
+    },
+    {
+     "verb": "POST",
+     "path": "/api/teachers",
+     "name": "create",
+     "ret": "ResponseEntity<TeacherDTO>",
+     "params": " CreateTeacherRequest request",
+     "pre": "",
+     "doc": "Creates a new teacher profile."
+    },
+    {
+     "verb": "PUT",
+     "path": "/api/teachers/{id}",
+     "name": "update",
+     "ret": "ResponseEntity<TeacherDTO>",
+     "params": " Long id, CreateTeacherRequest request",
+     "pre": "",
+     "doc": "Updates an existing teacher profile."
+    },
+    {
+     "verb": "DELETE",
+     "path": "/api/teachers/{id}",
+     "name": "delete",
+     "ret": "ResponseEntity<Void>",
+     "params": " Long id",
+     "pre": "",
+     "doc": "Deletes a teacher profile."
+    }
+   ],
+   "methods": [],
+   "fields": []
+  },
+  {
+   "id": "TermController",
+   "layer": "web",
+   "kind": "class",
+   "path": "com/student_manager/feature/course/TermController.java",
+   "ann": [
+    [
+     "RestController",
+     ""
+    ],
+    [
+     "RequestMapping",
+     "\"/api/terms\""
+    ],
+    [
+     "RequiredArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "Academic terms (\"Winter 2025/26\").",
+   "extends": "",
+   "implements": "",
+   "deps": [
+    "TermRepository"
+   ],
+   "endpoints": [
+    {
+     "verb": "GET",
+     "path": "/api/terms",
+     "name": "getAll",
+     "ret": "ResponseEntity<List<TermDTO>>",
+     "params": "",
+     "pre": "",
+     "doc": "Lists every term, newest start date first."
+    },
+    {
+     "verb": "POST",
+     "path": "/api/terms",
+     "name": "create",
+     "ret": "ResponseEntity<TermDTO>",
+     "params": " CreateTermRequest request",
+     "pre": "",
+     "doc": "Creates a term."
+    }
+   ],
+   "methods": [],
+   "fields": []
+  },
+  {
+   "id": "AuthServiceImpl",
+   "layer": "service",
+   "kind": "class",
+   "path": "com/student_manager/feature/auth/AuthServiceImpl.java",
+   "ann": [
+    [
+     "Slf4j",
+     ""
+    ],
+    [
+     "Service",
+     ""
+    ],
+    [
+     "RequiredArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "Default AuthService implementation.",
+   "extends": "",
+   "implements": "AuthService",
+   "deps": [
+    "UserRepository",
+    "PasswordEncoder",
+    "AccountProvisioner"
+   ],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "register",
+     "ret": "AuthResponse",
+     "params": "RegisterRequest request",
+     "ann": [
+      [
+       "Override",
+       ""
+      ],
+      [
+       "Transactional",
+       ""
+      ]
+     ],
+     "doc": "Creates a new account with the requested role and active = true."
+    },
+    {
+     "name": "login",
+     "ret": "AuthResponse",
+     "params": "LoginRequest request",
+     "ann": [
+      [
+       "Override",
+       ""
+      ]
+     ],
+     "doc": "Authenticates an account by username and password."
+    },
+    {
+     "name": "currentAccount",
+     "ret": "AuthResponse",
+     "params": "String username",
+     "ann": [
+      [
+       "Override",
+       ""
+      ]
+     ],
+     "doc": "Looks up the account behind the current session."
+    }
+   ],
+   "fields": []
+  },
+  {
+   "id": "CourseServiceImpl",
+   "layer": "service",
+   "kind": "class",
+   "path": "com/student_manager/feature/course/CourseServiceImpl.java",
+   "ann": [
+    [
+     "Slf4j",
+     ""
+    ],
+    [
+     "Service",
+     ""
+    ],
+    [
+     "RequiredArgsConstructor",
+     ""
+    ],
+    [
+     "Transactional",
+     "readOnly = true"
+    ]
+   ],
+   "doc": "Default CourseService implementation backed by CourseRepository.",
+   "extends": "CrudServiceSupport<Course, CourseDTO>",
+   "implements": "CourseService",
+   "deps": [
+    "CourseRepository",
+    "TeacherRepository",
+    "TermRepository"
+   ],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "search",
+     "ret": "Page<CourseDTO>",
+     "params": "String query, CourseStatus status, Pageable pageable",
+     "ann": [
+      [
+       "Override",
+       ""
+      ]
+     ],
+     "doc": ""
+    },
+    {
+     "name": "options",
+     "ret": "List<CourseOption>",
+     "params": "Long teacherId",
+     "ann": [
+      [
+       "Override",
+       ""
+      ]
+     ],
+     "doc": ""
+    },
+    {
+     "name": "findByStatus",
+     "ret": "List<CourseDTO>",
+     "params": "CourseStatus status",
+     "ann": [
+      [
+       "Override",
+       ""
+      ]
+     ],
+     "doc": "{@inheritDoc}"
+    },
+    {
+     "name": "create",
+     "ret": "CourseDTO",
+     "params": "CreateCourseRequest request",
+     "ann": [
+      [
+       "Override",
+       ""
+      ],
+      [
+       "Transactional",
+       ""
+      ]
+     ],
+     "doc": "{@inheritDoc}"
+    },
+    {
+     "name": "update",
+     "ret": "CourseDTO",
+     "params": "Long id, CreateCourseRequest request",
+     "ann": [
+      [
+       "Override",
+       ""
+      ],
+      [
+       "Transactional",
+       ""
+      ]
+     ],
+     "doc": "{@inheritDoc}"
+    }
+   ],
+   "fields": []
+  },
+  {
+   "id": "CrudServiceSupport",
+   "layer": "service",
+   "kind": "class",
+   "path": "com/student_manager/shared/service/CrudServiceSupport.java",
+   "ann": [],
+   "doc": "The load-or-404 / paged-search / delete-or-404 shape shared by every feature's *ServiceImpl (see StudentServiceImpl, TeacherServiceImpl) \u2014 extracted because those classes were ~80% identical otherwise, differing only in entity/DTO type and the resource name used in error messages.",
+   "extends": "BaseEntity, D>",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "findById",
+     "ret": "D",
+     "params": "Long id",
+     "ann": [
+      [
+       "Transactional",
+       "readOnly = true"
+      ]
+     ],
+     "doc": "Loads a single entity by id and converts it to its DTO."
+    },
+    {
+     "name": "search",
+     "ret": "Page<D>",
+     "params": "Specification<E> spec, Pageable pageable",
+     "ann": [
+      [
+       "Transactional",
+       "readOnly = true"
+      ]
+     ],
+     "doc": "Returns one page of the entities matching spec, as DTOs."
+    },
+    {
+     "name": "delete",
+     "ret": "void",
+     "params": "Long id",
+     "ann": [
+      [
+       "Transactional",
+       ""
+      ]
+     ],
+     "doc": "Deletes the entity with the given id."
+    }
+   ],
+   "fields": []
+  },
+  {
+   "id": "EnrollmentServiceImpl",
+   "layer": "service",
+   "kind": "class",
+   "path": "com/student_manager/feature/enrollment/EnrollmentServiceImpl.java",
+   "ann": [
+    [
+     "Slf4j",
+     ""
+    ],
+    [
+     "Service",
+     ""
+    ],
+    [
+     "RequiredArgsConstructor",
+     ""
+    ],
+    [
+     "Transactional",
+     "readOnly = true"
+    ]
+   ],
+   "doc": "Default EnrollmentService implementation backed by JPA repositories for enrollments, students, and courses.",
+   "extends": "CrudServiceSupport<Enrollment, EnrollmentDTO>",
+   "implements": "EnrollmentService",
+   "deps": [
+    "EnrollmentRepository",
+    "StudentRepository",
+    "CourseRepository"
+   ],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "search",
+     "ret": "Page<EnrollmentDTO>",
+     "params": "EnrollmentStatus status, Long studentId, Long courseId, Long teacherId, Pageable pageable",
+     "ann": [
+      [
+       "Override",
+       ""
+      ]
+     ],
+     "doc": ""
+    },
+    {
+     "name": "findByStudentId",
+     "ret": "List<EnrollmentDTO>",
+     "params": "Long studentId",
+     "ann": [
+      [
+       "Override",
+       ""
+      ]
+     ],
+     "doc": "{@inheritDoc}"
+    },
+    {
+     "name": "findByCourseId",
+     "ret": "List<EnrollmentDTO>",
+     "params": "Long courseId",
+     "ann": [
+      [
+       "Override",
+       ""
+      ]
+     ],
+     "doc": "{@inheritDoc}"
+    },
+    {
+     "name": "create",
+     "ret": "EnrollmentDTO",
+     "params": "CreateEnrollmentRequest request",
+     "ann": [
+      [
+       "Override",
+       ""
+      ],
+      [
+       "Transactional",
+       ""
+      ]
+     ],
+     "doc": "Enrolls a student in a course."
+    },
+    {
+     "name": "confirm",
+     "ret": "EnrollmentDTO",
+     "params": "Long id",
+     "ann": [
+      [
+       "Override",
+       ""
+      ],
+      [
+       "Transactional",
+       ""
+      ]
+     ],
+     "doc": "{@inheritDoc}"
+    },
+    {
+     "name": "cancel",
+     "ret": "EnrollmentDTO",
+     "params": "Long id",
+     "ann": [
+      [
+       "Override",
+       ""
+      ],
+      [
+       "Transactional",
+       ""
+      ]
+     ],
+     "doc": "Cancels (withdraws) an enrollment."
+    },
+    {
+     "name": "updateGrade",
+     "ret": "EnrollmentDTO",
+     "params": "Long id, UpdateGradeRequest request",
+     "ann": [
+      [
+       "Override",
+       ""
+      ],
+      [
+       "Transactional",
+       ""
+      ]
+     ],
+     "doc": "{@inheritDoc}"
+    },
+    {
+     "name": "markGradeSeen",
+     "ret": "EnrollmentDTO",
+     "params": "Long id",
+     "ann": [
+      [
+       "Override",
+       ""
+      ],
+      [
+       "Transactional",
+       ""
+      ]
+     ],
+     "doc": ""
+    }
+   ],
+   "fields": []
+  },
+  {
+   "id": "ProfileServiceImpl",
+   "layer": "service",
+   "kind": "class",
+   "path": "com/student_manager/feature/profile/ProfileServiceImpl.java",
+   "ann": [
+    [
+     "Service",
+     ""
+    ],
+    [
+     "RequiredArgsConstructor",
+     ""
+    ],
+    [
+     "Transactional",
+     "readOnly = true"
+    ]
+   ],
+   "doc": "Default ProfileService.",
+   "extends": "",
+   "implements": "ProfileService",
+   "deps": [
+    "UserRepository",
+    "StudentRepository",
+    "TeacherRepository",
+    "PasswordEncoder"
+   ],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "get",
+     "ret": "ProfileDTO",
+     "params": "String username",
+     "ann": [
+      [
+       "Override",
+       ""
+      ]
+     ],
+     "doc": ""
+    },
+    {
+     "name": "update",
+     "ret": "ProfileDTO",
+     "params": "String username, UpdateProfileRequest request",
+     "ann": [
+      [
+       "Override",
+       ""
+      ],
+      [
+       "Transactional",
+       ""
+      ]
+     ],
+     "doc": ""
+    },
+    {
+     "name": "changePassword",
+     "ret": "void",
+     "params": "String username, ChangePasswordRequest request",
+     "ann": [
+      [
+       "Override",
+       ""
+      ],
+      [
+       "Transactional",
+       ""
+      ]
+     ],
+     "doc": ""
+    }
+   ],
+   "fields": []
+  },
+  {
+   "id": "StudentServiceImpl",
+   "layer": "service",
+   "kind": "class",
+   "path": "com/student_manager/feature/student/StudentServiceImpl.java",
+   "ann": [
+    [
+     "Slf4j",
+     ""
+    ],
+    [
+     "Service",
+     ""
+    ],
+    [
+     "RequiredArgsConstructor",
+     ""
+    ],
+    [
+     "Transactional",
+     "readOnly = true"
+    ]
+   ],
+   "doc": "Default StudentService implementation.",
+   "extends": "CrudServiceSupport<Student, StudentDTO>",
+   "implements": "StudentService",
+   "deps": [
+    "StudentRepository",
+    "UserRepository",
+    "AccountProvisioner"
+   ],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "search",
+     "ret": "Page<StudentDTO>",
+     "params": "String query, Pageable pageable",
+     "ann": [
+      [
+       "Override",
+       ""
+      ]
+     ],
+     "doc": ""
+    },
+    {
+     "name": "options",
+     "ret": "List<StudentOption>",
+     "params": "",
+     "ann": [
+      [
+       "Override",
+       ""
+      ]
+     ],
+     "doc": ""
+    },
+    {
+     "name": "findByAccountUsername",
+     "ret": "StudentDTO",
+     "params": "String username",
+     "ann": [
+      [
+       "Override",
+       ""
+      ]
+     ],
+     "doc": ""
+    },
+    {
+     "name": "accountOwnsStudent",
+     "ret": "boolean",
+     "params": "String username, Long studentId",
+     "ann": [
+      [
+       "Override",
+       ""
+      ]
+     ],
+     "doc": "True when the account identified by username resolves to the student row studentId."
+    },
+    {
+     "name": "create",
+     "ret": "StudentDTO",
+     "params": "CreateStudentRequest request",
+     "ann": [
+      [
+       "Override",
+       ""
+      ],
+      [
+       "Transactional",
+       ""
+      ]
+     ],
+     "doc": "Creates a new student profile."
+    },
+    {
+     "name": "update",
+     "ret": "StudentDTO",
+     "params": "Long id, CreateStudentRequest request",
+     "ann": [
+      [
+       "Override",
+       ""
+      ],
+      [
+       "Transactional",
+       ""
+      ]
+     ],
+     "doc": "Updates an existing student's details."
+    },
+    {
+     "name": "delete",
+     "ret": "void",
+     "params": "Long id",
+     "ann": [
+      [
+       "Override",
+       ""
+      ],
+      [
+       "Transactional",
+       ""
+      ]
+     ],
+     "doc": "Deletes the student profile and the login account that belongs to it, so no orphaned account is left behind."
+    }
+   ],
+   "fields": []
+  },
+  {
+   "id": "TeacherServiceImpl",
+   "layer": "service",
+   "kind": "class",
+   "path": "com/student_manager/feature/teacher/TeacherServiceImpl.java",
+   "ann": [
+    [
+     "Slf4j",
+     ""
+    ],
+    [
+     "Service",
+     ""
+    ],
+    [
+     "RequiredArgsConstructor",
+     ""
+    ],
+    [
+     "Transactional",
+     "readOnly = true"
+    ]
+   ],
+   "doc": "Default TeacherService implementation.",
+   "extends": "CrudServiceSupport<Teacher, TeacherDTO>",
+   "implements": "TeacherService",
+   "deps": [
+    "TeacherRepository",
+    "AccountProvisioner",
+    "UserRepository"
+   ],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "search",
+     "ret": "Page<TeacherDTO>",
+     "params": "String query, Pageable pageable",
+     "ann": [
+      [
+       "Override",
+       ""
+      ]
+     ],
+     "doc": ""
+    },
+    {
+     "name": "options",
+     "ret": "List<TeacherOption>",
+     "params": "",
+     "ann": [
+      [
+       "Override",
+       ""
+      ]
+     ],
+     "doc": "Supplies the resource name used in ResourceNotFoundException messages."
+    },
+    {
+     "name": "findIdByAccountUsername",
+     "ret": "Optional<Long>",
+     "params": "String username",
+     "ann": [
+      [
+       "Override",
+       ""
+      ]
+     ],
+     "doc": ""
+    },
+    {
+     "name": "create",
+     "ret": "TeacherDTO",
+     "params": "CreateTeacherRequest request",
+     "ann": [
+      [
+       "Override",
+       ""
+      ],
+      [
+       "Transactional",
+       ""
+      ]
+     ],
+     "doc": "{@inheritDoc}"
+    },
+    {
+     "name": "update",
+     "ret": "TeacherDTO",
+     "params": "Long id, CreateTeacherRequest request",
+     "ann": [
+      [
+       "Override",
+       ""
+      ],
+      [
+       "Transactional",
+       ""
+      ]
+     ],
+     "doc": "{@inheritDoc}"
+    },
+    {
+     "name": "delete",
+     "ret": "void",
+     "params": "Long id",
+     "ann": [
+      [
+       "Override",
+       ""
+      ],
+      [
+       "Transactional",
+       ""
+      ]
+     ],
+     "doc": "Deletes the teacher profile and the login account that belongs to it, so no orphaned account is left behind."
+    }
+   ],
+   "fields": []
+  },
+  {
+   "id": "BaseRepository",
+   "layer": "data",
+   "kind": "interface",
+   "path": "com/student_manager/shared/repository/BaseRepository.java",
+   "ann": [
+    [
+     "NoRepositoryBean",
+     ""
+    ]
+   ],
+   "doc": "Common base for the feature repositories: standard CRUD + paging from JpaRepository, plus JpaSpecificationExecutor so list endpoints can combine search/filter Specifications with a Pageable (see CrudServiceSupport#search).",
+   "extends": "JpaRepository<E, Long>, JpaSpecificationExecutor<E>",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [],
+   "fields": []
+  },
+  {
+   "id": "CourseRepository",
+   "layer": "data",
+   "kind": "interface",
+   "path": "com/student_manager/feature/course/CourseRepository.java",
+   "ann": [
+    [
+     "Repository",
+     ""
+    ]
+   ],
+   "doc": "Spring Data repository providing CRUD, paged search (BaseRepository) and lookup operations for Course entities.",
+   "extends": "BaseRepository<Course>",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "findAllProjectedBy",
+     "ret": "List<CourseOption>",
+     "params": "Sort sort",
+     "ann": [],
+     "doc": "Every course as a CourseOption, for dropdowns."
+    },
+    {
+     "name": "findProjectedByTeacherId",
+     "ret": "List<CourseOption>",
+     "params": "Long teacherId, Sort sort",
+     "ann": [],
+     "doc": "The courses run by one teacher as CourseOptions."
+    },
+    {
+     "name": "findAll",
+     "ret": "Page<Course>",
+     "params": "Specification<Course> spec, Pageable pageable",
+     "ann": [
+      [
+       "Override",
+       ""
+      ],
+      [
+       "EntityGraph",
+       "attributePaths = {\"teacher\", \"term\"}"
+      ]
+     ],
+     "doc": ""
+    },
+    {
+     "name": "existsByCode",
+     "ret": "boolean",
+     "params": "String code",
+     "ann": [],
+     "doc": "Checks whether a course with the given code already exists."
+    },
+    {
+     "name": "existsByCodeAndIdNot",
+     "ret": "boolean",
+     "params": "String code, Long id",
+     "ann": [],
+     "doc": "Checks whether a course code is already used by a course other than the given one."
+    },
+    {
+     "name": "findByStatus",
+     "ret": "List<Course>",
+     "params": "CourseStatus status",
+     "ann": [
+      [
+       "EntityGraph",
+       "attributePaths = {\"teacher\", \"term\"}"
+      ]
+     ],
+     "doc": "Finds all courses with the given status."
+    },
+    {
+     "name": "existsByIdAndTeacherId",
+     "ret": "boolean",
+     "params": "Long id, Long teacherId",
+     "ann": [],
+     "doc": "Used by OwnershipGuard to check whether the given teacher runs this course."
+    }
+   ],
+   "fields": []
+  },
+  {
+   "id": "EnrollmentRepository",
+   "layer": "data",
+   "kind": "interface",
+   "path": "com/student_manager/feature/enrollment/EnrollmentRepository.java",
+   "ann": [
+    [
+     "Repository",
+     ""
+    ]
+   ],
+   "doc": "Spring Data JPA repository for Enrollment.",
+   "extends": "BaseRepository<Enrollment>",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "findAll",
+     "ret": "Page<Enrollment>",
+     "params": "Specification<Enrollment> spec, Pageable pageable",
+     "ann": [
+      [
+       "Override",
+       ""
+      ],
+      [
+       "EntityGraph",
+       "attributePaths = {\"student\", \"course\"}"
+      ]
+     ],
+     "doc": "One page of enrollments matching spec, with their student and course fetched in the same query (the separate count query is unaffected)."
+    },
+    {
+     "name": "findByStudentId",
+     "ret": "List<Enrollment>",
+     "params": "Long studentId",
+     "ann": [
+      [
+       "EntityGraph",
+       "attributePaths = {\"student\", \"course\"}"
+      ]
+     ],
+     "doc": "Finds all enrollments belonging to a given student."
+    },
+    {
+     "name": "findByCourseId",
+     "ret": "List<Enrollment>",
+     "params": "Long courseId",
+     "ann": [
+      [
+       "EntityGraph",
+       "attributePaths = {\"student\", \"course\"}"
+      ]
+     ],
+     "doc": "Finds all enrollments (the roster) for a given course."
+    },
+    {
+     "name": "existsByStudentIdAndCourseId",
+     "ret": "boolean",
+     "params": "Long studentId, Long courseId",
+     "ann": [],
+     "doc": "Checks whether a student already has an enrollment row for a course."
+    },
+    {
+     "name": "findByStudentIdAndCourseId",
+     "ret": "Optional<Enrollment>",
+     "params": "Long studentId, Long courseId",
+     "ann": [],
+     "doc": ""
+    },
+    {
+     "name": "existsByIdAndCourseTeacherId",
+     "ret": "boolean",
+     "params": "Long id, Long teacherId",
+     "ann": [],
+     "doc": "Checks whether the given account teaches the course this enrollment belongs to."
+    }
+   ],
+   "fields": []
+  },
+  {
+   "id": "StudentRepository",
+   "layer": "data",
+   "kind": "interface",
+   "path": "com/student_manager/feature/student/StudentRepository.java",
+   "ann": [],
+   "doc": "Spring Data JPA repository for Student.",
+   "extends": "BaseRepository<Student>",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "findAllOptions",
+     "ret": "List<StudentOption>",
+     "params": "",
+     "ann": [
+      [
+       "Query",
+       "\"\"\" select new com.student_manager.feature.student.StudentOption( s.id, concat(s.firstName, ' ', s.lastName), s.matriculationNumber) from Student s order by s.lastName, s.firstName \"\"\""
+      ]
+     ],
+     "doc": "Every student as a lightweight StudentOption, for dropdowns."
+    },
+    {
+     "name": "findByEmail",
+     "ret": "Optional<Student>",
+     "params": "String email",
+     "ann": [],
+     "doc": "Finds the student with the given email."
+    },
+    {
+     "name": "existsByEmail",
+     "ret": "boolean",
+     "params": "String email",
+     "ann": [],
+     "doc": "Checks whether a student with the given email already exists."
+    },
+    {
+     "name": "existsByMatriculationNumber",
+     "ret": "boolean",
+     "params": "String matriculationNumber",
+     "ann": [],
+     "doc": "Checks whether a student with the given matriculation number already exists."
+    },
+    {
+     "name": "existsByEmailAndIdNot",
+     "ret": "boolean",
+     "params": "String email, Long id",
+     "ann": [],
+     "doc": "Checks whether a student other than the given id already uses this email."
+    },
+    {
+     "name": "existsByMatriculationNumberAndIdNot",
+     "ret": "boolean",
+     "params": "String matriculationNumber, Long id",
+     "ann": [],
+     "doc": "Checks whether a student other than the given id already uses this matriculation number."
+    },
+    {
+     "name": "findByAccountUsername",
+     "ret": "Optional<Student>",
+     "params": "String username",
+     "ann": [],
+     "doc": "Finds the student whose account FK points at the login account with the given username."
+    }
+   ],
+   "fields": []
+  },
+  {
+   "id": "TeacherRepository",
+   "layer": "data",
+   "kind": "interface",
+   "path": "com/student_manager/feature/teacher/TeacherRepository.java",
+   "ann": [],
+   "doc": "Spring Data repository providing CRUD, paged search (BaseRepository) and lookup operations for Teacher entities.",
+   "extends": "BaseRepository<Teacher>",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "findAllOptions",
+     "ret": "List<TeacherOption>",
+     "params": "",
+     "ann": [
+      [
+       "Query",
+       "\"\"\" select new com.student_manager.feature.teacher.TeacherOption( t.id, concat(t.firstName, ' ', t.lastName), t.department) from Teacher t order by t.lastName, t.firstName \"\"\""
+      ]
+     ],
+     "doc": "Every teacher as a TeacherOption, ordered by name, for dropdowns."
+    },
+    {
+     "name": "findByEmail",
+     "ret": "Optional<Teacher>",
+     "params": "String email",
+     "ann": [],
+     "doc": "Finds a teacher by their unique email address."
+    },
+    {
+     "name": "existsByEmail",
+     "ret": "boolean",
+     "params": "String email",
+     "ann": [],
+     "doc": "Checks whether a teacher with the given email already exists."
+    },
+    {
+     "name": "existsByEmailAndIdNot",
+     "ret": "boolean",
+     "params": "String email, Long id",
+     "ann": [],
+     "doc": "Checks whether an email is already used by a teacher other than the given one."
+    },
+    {
+     "name": "findByAccountUsername",
+     "ret": "Optional<Teacher>",
+     "params": "String username",
+     "ann": [],
+     "doc": "Finds the teacher profile linked to the given user account username."
+    }
+   ],
+   "fields": []
+  },
+  {
+   "id": "TermRepository",
+   "layer": "data",
+   "kind": "interface",
+   "path": "com/student_manager/feature/course/TermRepository.java",
+   "ann": [],
+   "doc": "Spring Data repository providing CRUD and lookup operations for Term entities.",
+   "extends": "JpaRepository<Term, Long>",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "existsByName",
+     "ret": "boolean",
+     "params": "String name",
+     "ann": [],
+     "doc": "Checks whether a term with the given name already exists."
+    }
+   ],
+   "fields": []
+  },
+  {
+   "id": "UserRepository",
+   "layer": "data",
+   "kind": "interface",
+   "path": "com/student_manager/feature/auth/UserRepository.java",
+   "ann": [],
+   "doc": "Spring Data repository for User accounts.",
+   "extends": "JpaRepository<User, Long>",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "findByUsername",
+     "ret": "Optional<User>",
+     "params": "String username",
+     "ann": [],
+     "doc": "Looks up an account by its unique username."
+    },
+    {
+     "name": "findByEmail",
+     "ret": "Optional<User>",
+     "params": "String email",
+     "ann": [],
+     "doc": "Looks up an account by its unique email address."
+    },
+    {
+     "name": "existsByUsername",
+     "ret": "boolean",
+     "params": "String username",
+     "ann": [],
+     "doc": "Checks whether an account with the given username already exists."
+    },
+    {
+     "name": "existsByEmail",
+     "ret": "boolean",
+     "params": "String email",
+     "ann": [],
+     "doc": "Checks whether an account with the given email already exists."
+    }
+   ],
+   "fields": []
+  },
+  {
+   "id": "BaseEntity",
+   "layer": "domain",
+   "kind": "class",
+   "path": "com/student_manager/shared/domain/BaseEntity.java",
+   "ann": [
+    [
+     "Getter",
+     ""
+    ],
+    [
+     "Setter",
+     ""
+    ],
+    [
+     "MappedSuperclass",
+     ""
+    ],
+    [
+     "EntityListeners",
+     "AuditingEntityListener.class"
+    ]
+   ],
+   "doc": "Common JPA base for entities: a generated identity id, Spring Data auditing (when and by whom a row was created / last changed), and an optimistic-lock version.",
+   "extends": "",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [],
+   "fields": [
+    {
+     "name": "id",
+     "type": "Long",
+     "ann": [
+      [
+       "Id",
+       ""
+      ],
+      [
+       "GeneratedValue",
+       "strategy = GenerationType.IDENTITY"
+      ]
+     ]
+    },
+    {
+     "name": "createdAt",
+     "type": "LocalDateTime",
+     "ann": [
+      [
+       "CreatedDate",
+       ""
+      ],
+      [
+       "Column",
+       "nullable = false, updatable = false"
+      ]
+     ]
+    },
+    {
+     "name": "updatedAt",
+     "type": "LocalDateTime",
+     "ann": [
+      [
+       "LastModifiedDate",
+       ""
+      ],
+      [
+       "Column",
+       "nullable = false"
+      ]
+     ]
+    },
+    {
+     "name": "createdBy",
+     "type": "String",
+     "ann": [
+      [
+       "CreatedBy",
+       ""
+      ],
+      [
+       "Column",
+       "updatable = false"
+      ]
+     ]
+    },
+    {
+     "name": "updatedBy",
+     "type": "String",
+     "ann": [
+      [
+       "LastModifiedBy",
+       ""
+      ]
+     ]
+    },
+    {
+     "name": "version",
+     "type": "long",
+     "ann": [
+      [
+       "Version",
+       ""
+      ],
+      [
+       "Column",
+       "nullable = false, columnDefinition = \"bigint default 0\""
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "Course",
+   "layer": "domain",
+   "kind": "class",
+   "path": "com/student_manager/feature/course/Course.java",
+   "ann": [
+    [
+     "Entity",
+     ""
+    ],
+    [
+     "Table",
+     "name = \"courses\""
+    ],
+    [
+     "Getter",
+     ""
+    ],
+    [
+     "Setter",
+     ""
+    ],
+    [
+     "NoArgsConstructor",
+     ""
+    ],
+    [
+     "AllArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "JPA entity representing a course offered by the institution.",
+   "extends": "BaseEntity",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "isActive",
+     "ret": "boolean",
+     "params": "",
+     "ann": [],
+     "doc": "Checks whether this course's status is CourseStatus#ACTIVE."
+    }
+   ],
+   "fields": [
+    {
+     "name": "code",
+     "type": "String",
+     "ann": [
+      [
+       "Column",
+       "nullable = false, unique = true"
+      ]
+     ]
+    },
+    {
+     "name": "title",
+     "type": "String",
+     "ann": [
+      [
+       "Column",
+       "nullable = false"
+      ]
+     ]
+    },
+    {
+     "name": "description",
+     "type": "String",
+     "ann": []
+    },
+    {
+     "name": "creditHours",
+     "type": "int",
+     "ann": [
+      [
+       "Column",
+       "nullable = false"
+      ]
+     ]
+    },
+    {
+     "name": "status",
+     "type": "CourseStatus",
+     "ann": [
+      [
+       "Enumerated",
+       "EnumType.STRING"
+      ],
+      [
+       "Column",
+       "nullable = false"
+      ]
+     ]
+    },
+    {
+     "name": "term",
+     "type": "Term",
+     "ann": [
+      [
+       "ManyToOne",
+       "fetch = FetchType.LAZY"
+      ],
+      [
+       "JoinColumn",
+       "name = \"term_id\""
+      ]
+     ]
+    },
+    {
+     "name": "teacher",
+     "type": "Teacher",
+     "ann": [
+      [
+       "ManyToOne",
+       "fetch = FetchType.LAZY"
+      ],
+      [
+       "JoinColumn",
+       "name = \"teacher_id\""
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "Enrollment",
+   "layer": "domain",
+   "kind": "class",
+   "path": "com/student_manager/feature/enrollment/Enrollment.java",
+   "ann": [
+    [
+     "Entity",
+     ""
+    ],
+    [
+     "Table",
+     "name = \"enrollments\", uniqueConstraints = @UniqueConstraint(columnNames = {\"student_id\", \"course_id\"})"
+    ],
+    [
+     "Getter",
+     ""
+    ],
+    [
+     "Setter",
+     ""
+    ],
+    [
+     "NoArgsConstructor",
+     ""
+    ],
+    [
+     "AllArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "Links a Student to a Course they are (or were) taking, tracking the enrollment's status and, once confirmed, its Grade.",
+   "extends": "BaseEntity",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "isConfirmed",
+     "ret": "boolean",
+     "params": "",
+     "ann": [],
+     "doc": ""
+    }
+   ],
+   "fields": [
+    {
+     "name": "student",
+     "type": "Student",
+     "ann": [
+      [
+       "ManyToOne",
+       "fetch = FetchType.LAZY"
+      ],
+      [
+       "JoinColumn",
+       "name = \"student_id\", nullable = false"
+      ]
+     ]
+    },
+    {
+     "name": "course",
+     "type": "Course",
+     "ann": [
+      [
+       "ManyToOne",
+       "fetch = FetchType.LAZY"
+      ],
+      [
+       "JoinColumn",
+       "name = \"course_id\", nullable = false"
+      ]
+     ]
+    },
+    {
+     "name": "enrolledAt",
+     "type": "LocalDate",
+     "ann": [
+      [
+       "Column",
+       "nullable = false"
+      ]
+     ]
+    },
+    {
+     "name": "status",
+     "type": "EnrollmentStatus",
+     "ann": [
+      [
+       "Enumerated",
+       "EnumType.STRING"
+      ],
+      [
+       "Column",
+       "nullable = false"
+      ]
+     ]
+    },
+    {
+     "name": "grade",
+     "type": "Grade",
+     "ann": [
+      [
+       "Enumerated",
+       "EnumType.STRING"
+      ],
+      [
+       "Column",
+       "nullable = false"
+      ]
+     ]
+    },
+    {
+     "name": "gradeSeen",
+     "type": "boolean",
+     "ann": [
+      [
+       "Column",
+       "nullable = false"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "Student",
+   "layer": "domain",
+   "kind": "class",
+   "path": "com/student_manager/feature/student/Student.java",
+   "ann": [
+    [
+     "Entity",
+     ""
+    ],
+    [
+     "Table",
+     "name = \"students\""
+    ],
+    [
+     "Getter",
+     ""
+    ],
+    [
+     "Setter",
+     ""
+    ],
+    [
+     "NoArgsConstructor",
+     ""
+    ],
+    [
+     "AllArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "A student's academic profile: personal details, matriculation number, and the linked login #account, if the student has one.",
+   "extends": "BaseEntity",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "getFullName",
+     "ret": "String",
+     "params": "",
+     "ann": [],
+     "doc": "The student's display name."
+    }
+   ],
+   "fields": [
+    {
+     "name": "firstName",
+     "type": "String",
+     "ann": [
+      [
+       "Column",
+       "nullable = false"
+      ]
+     ]
+    },
+    {
+     "name": "lastName",
+     "type": "String",
+     "ann": [
+      [
+       "Column",
+       "nullable = false"
+      ]
+     ]
+    },
+    {
+     "name": "matriculationNumber",
+     "type": "String",
+     "ann": [
+      [
+       "Column",
+       "nullable = false, unique = true"
+      ]
+     ]
+    },
+    {
+     "name": "birthDate",
+     "type": "LocalDate",
+     "ann": []
+    },
+    {
+     "name": "email",
+     "type": "String",
+     "ann": [
+      [
+       "Column",
+       "nullable = false, unique = true"
+      ]
+     ]
+    },
+    {
+     "name": "account",
+     "type": "User",
+     "ann": [
+      [
+       "OneToOne",
+       "fetch = FetchType.LAZY"
+      ],
+      [
+       "JoinColumn",
+       "name = \"user_id\", unique = true"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "Teacher",
+   "layer": "domain",
+   "kind": "class",
+   "path": "com/student_manager/feature/teacher/Teacher.java",
+   "ann": [
+    [
+     "Entity",
+     ""
+    ],
+    [
+     "Table",
+     "name = \"teachers\""
+    ],
+    [
+     "Getter",
+     ""
+    ],
+    [
+     "Setter",
+     ""
+    ],
+    [
+     "NoArgsConstructor",
+     ""
+    ],
+    [
+     "AllArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "JPA entity representing a teacher profile.",
+   "extends": "BaseEntity",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "getFullName",
+     "ret": "String",
+     "params": "",
+     "ann": [],
+     "doc": "Builds the teacher's display name from their first and last name."
+    }
+   ],
+   "fields": [
+    {
+     "name": "firstName",
+     "type": "String",
+     "ann": [
+      [
+       "Column",
+       "nullable = false"
+      ]
+     ]
+    },
+    {
+     "name": "lastName",
+     "type": "String",
+     "ann": [
+      [
+       "Column",
+       "nullable = false"
+      ]
+     ]
+    },
+    {
+     "name": "email",
+     "type": "String",
+     "ann": [
+      [
+       "Column",
+       "nullable = false, unique = true"
+      ]
+     ]
+    },
+    {
+     "name": "department",
+     "type": "String",
+     "ann": []
+    },
+    {
+     "name": "account",
+     "type": "User",
+     "ann": [
+      [
+       "OneToOne",
+       "fetch = FetchType.LAZY"
+      ],
+      [
+       "JoinColumn",
+       "name = \"user_id\", unique = true"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "Term",
+   "layer": "domain",
+   "kind": "class",
+   "path": "com/student_manager/feature/course/Term.java",
+   "ann": [
+    [
+     "Entity",
+     ""
+    ],
+    [
+     "Table",
+     "name = \"terms\""
+    ],
+    [
+     "Getter",
+     ""
+    ],
+    [
+     "Setter",
+     ""
+    ],
+    [
+     "NoArgsConstructor",
+     ""
+    ],
+    [
+     "AllArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "JPA entity representing an academic term (e.g.",
+   "extends": "BaseEntity",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [],
+   "fields": [
+    {
+     "name": "name",
+     "type": "String",
+     "ann": [
+      [
+       "Column",
+       "nullable = false, unique = true"
+      ]
+     ]
+    },
+    {
+     "name": "startDate",
+     "type": "LocalDate",
+     "ann": [
+      [
+       "Column",
+       "name = \"start_date\""
+      ]
+     ]
+    },
+    {
+     "name": "endDate",
+     "type": "LocalDate",
+     "ann": [
+      [
+       "Column",
+       "name = \"end_date\""
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "User",
+   "layer": "domain",
+   "kind": "class",
+   "path": "com/student_manager/feature/auth/User.java",
+   "ann": [
+    [
+     "Entity",
+     ""
+    ],
+    [
+     "Table",
+     "name = \"users\""
+    ],
+    [
+     "Getter",
+     ""
+    ],
+    [
+     "Setter",
+     ""
+    ],
+    [
+     "NoArgsConstructor",
+     ""
+    ],
+    [
+     "AllArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "A login account: credentials, role, and active/inactive status.",
+   "extends": "BaseEntity",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "isActive",
+     "ret": "boolean",
+     "params": "",
+     "ann": [],
+     "doc": "Whether this account is enabled and may authenticate."
+    }
+   ],
+   "fields": [
+    {
+     "name": "username",
+     "type": "String",
+     "ann": [
+      [
+       "Column",
+       "nullable = false, unique = true"
+      ]
+     ]
+    },
+    {
+     "name": "email",
+     "type": "String",
+     "ann": [
+      [
+       "Column",
+       "nullable = false, unique = true"
+      ]
+     ]
+    },
+    {
+     "name": "passwordHash",
+     "type": "String",
+     "ann": [
+      [
+       "Column",
+       "nullable = false"
+      ]
+     ]
+    },
+    {
+     "name": "role",
+     "type": "Role",
+     "ann": [
+      [
+       "Enumerated",
+       "EnumType.STRING"
+      ],
+      [
+       "Column",
+       "nullable = false"
+      ]
+     ]
+    },
+    {
+     "name": "active",
+     "type": "boolean",
+     "ann": [
+      [
+       "Column",
+       "nullable = false"
+      ]
+     ]
+    },
+    {
+     "name": "firstName",
+     "type": "String",
+     "ann": []
+    },
+    {
+     "name": "lastName",
+     "type": "String",
+     "ann": []
+    }
+   ]
+  },
+  {
+   "id": "ChangePasswordRequest",
+   "layer": "request",
+   "kind": "class",
+   "path": "com/student_manager/feature/profile/ChangePasswordRequest.java",
+   "ann": [
+    [
+     "Data",
+     ""
+    ],
+    [
+     "NoArgsConstructor",
+     ""
+    ],
+    [
+     "AllArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "Request payload for PUT /api/profile/password.",
+   "extends": "",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [],
+   "fields": [
+    {
+     "name": "currentPassword",
+     "type": "String",
+     "ann": [
+      [
+       "NotBlank",
+       "message = \"Current password is required\""
+      ]
+     ]
+    },
+    {
+     "name": "newPassword",
+     "type": "String",
+     "ann": [
+      [
+       "NotBlank",
+       "message = \"New password is required\""
+      ],
+      [
+       "Pattern",
+       "regexp = ValidationPatterns.PASSWORD, message = ValidationPatterns.PASSWORD_MESSAGE"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "CreateCourseRequest",
+   "layer": "request",
+   "kind": "class",
+   "path": "com/student_manager/feature/course/CreateCourseRequest.java",
+   "ann": [
+    [
+     "Data",
+     ""
+    ],
+    [
+     "NoArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "Validated request payload for creating or updating a Course via the API.",
+   "extends": "",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [],
+   "fields": [
+    {
+     "name": "code",
+     "type": "String",
+     "ann": [
+      [
+       "NotBlank",
+       "message = \"Course code is required\""
+      ],
+      [
+       "Pattern",
+       "regexp = \"^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$\", message = \"Course code must be alphanumeric segments separated by '-' (e.g. CS-101)\""
+      ]
+     ]
+    },
+    {
+     "name": "title",
+     "type": "String",
+     "ann": [
+      [
+       "NotBlank",
+       "message = \"Course title is required\""
+      ]
+     ]
+    },
+    {
+     "name": "description",
+     "type": "String",
+     "ann": []
+    },
+    {
+     "name": "creditHours",
+     "type": "int",
+     "ann": [
+      [
+       "Min",
+       "value = 1, message = \"Credit hours must be at least 1\""
+      ],
+      [
+       "Max",
+       "value = 10, message = \"Credit hours must be at most 10\""
+      ]
+     ]
+    },
+    {
+     "name": "status",
+     "type": "CourseStatus",
+     "ann": []
+    },
+    {
+     "name": "teacherId",
+     "type": "Long",
+     "ann": []
+    },
+    {
+     "name": "termId",
+     "type": "Long",
+     "ann": []
+    },
+    {
+     "name": "version",
+     "type": "Long",
+     "ann": []
+    }
+   ]
+  },
+  {
+   "id": "CreateEnrollmentRequest",
+   "layer": "request",
+   "kind": "class",
+   "path": "com/student_manager/feature/enrollment/CreateEnrollmentRequest.java",
+   "ann": [
+    [
+     "Data",
+     ""
+    ],
+    [
+     "NoArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "Request payload for enrolling a student in a course (used by POST /api/enrollments).",
+   "extends": "",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [],
+   "fields": [
+    {
+     "name": "studentId",
+     "type": "Long",
+     "ann": [
+      [
+       "NotNull",
+       "message = \"Student ID is required\""
+      ]
+     ]
+    },
+    {
+     "name": "courseId",
+     "type": "Long",
+     "ann": [
+      [
+       "NotNull",
+       "message = \"Course ID is required\""
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "CreateStudentRequest",
+   "layer": "request",
+   "kind": "class",
+   "path": "com/student_manager/feature/student/CreateStudentRequest.java",
+   "ann": [
+    [
+     "Data",
+     ""
+    ],
+    [
+     "NoArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "Request payload for creating or updating a student (used by POST /api/students and PUT /api/students/{id}).",
+   "extends": "",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [],
+   "fields": [
+    {
+     "name": "firstName",
+     "type": "String",
+     "ann": [
+      [
+       "NotBlank",
+       "message = \"First name is required\""
+      ]
+     ]
+    },
+    {
+     "name": "lastName",
+     "type": "String",
+     "ann": [
+      [
+       "NotBlank",
+       "message = \"Last name is required\""
+      ]
+     ]
+    },
+    {
+     "name": "matriculationNumber",
+     "type": "String",
+     "ann": [
+      [
+       "NotBlank",
+       "message = \"Matriculation number is required\""
+      ],
+      [
+       "Pattern",
+       "regexp = \"^[A-Za-z0-9-]{2,40}$\", message = \"Matriculation number must be 2-40 characters: letters, digits or '-'\""
+      ]
+     ]
+    },
+    {
+     "name": "birthDate",
+     "type": "LocalDate",
+     "ann": []
+    },
+    {
+     "name": "email",
+     "type": "String",
+     "ann": [
+      [
+       "NotBlank",
+       "message = \"Email is required\""
+      ],
+      [
+       "Email",
+       "message = \"Email is invalid\""
+      ]
+     ]
+    },
+    {
+     "name": "createAccount",
+     "type": "boolean",
+     "ann": []
+    },
+    {
+     "name": "accountUsername",
+     "type": "String",
+     "ann": [
+      [
+       "Pattern",
+       "regexp = ValidationPatterns.USERNAME, message = ValidationPatterns.USERNAME_MESSAGE"
+      ]
+     ]
+    },
+    {
+     "name": "accountPassword",
+     "type": "String",
+     "ann": [
+      [
+       "Pattern",
+       "regexp = ValidationPatterns.PASSWORD, message = ValidationPatterns.PASSWORD_MESSAGE"
+      ]
+     ]
+    },
+    {
+     "name": "version",
+     "type": "Long",
+     "ann": []
+    }
+   ]
+  },
+  {
+   "id": "CreateTeacherRequest",
+   "layer": "request",
+   "kind": "class",
+   "path": "com/student_manager/feature/teacher/CreateTeacherRequest.java",
+   "ann": [
+    [
+     "Data",
+     ""
+    ],
+    [
+     "NoArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "Validated request payload for creating or updating a Teacher via the API.",
+   "extends": "",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [],
+   "fields": [
+    {
+     "name": "firstName",
+     "type": "String",
+     "ann": [
+      [
+       "NotBlank",
+       "message = \"First name is required\""
+      ]
+     ]
+    },
+    {
+     "name": "lastName",
+     "type": "String",
+     "ann": [
+      [
+       "NotBlank",
+       "message = \"Last name is required\""
+      ]
+     ]
+    },
+    {
+     "name": "email",
+     "type": "String",
+     "ann": [
+      [
+       "NotBlank",
+       "message = \"Email is required\""
+      ],
+      [
+       "Email",
+       "message = \"Email is invalid\""
+      ]
+     ]
+    },
+    {
+     "name": "department",
+     "type": "String",
+     "ann": [
+      [
+       "Pattern",
+       "regexp = \"^[A-Za-z .'-]{2,100}$\", message = \"Department must be 2-100 characters: letters, spaces, '.', ''' or '-'\""
+      ]
+     ]
+    },
+    {
+     "name": "createAccount",
+     "type": "boolean",
+     "ann": []
+    },
+    {
+     "name": "accountUsername",
+     "type": "String",
+     "ann": [
+      [
+       "Pattern",
+       "regexp = ValidationPatterns.USERNAME, message = ValidationPatterns.USERNAME_MESSAGE"
+      ]
+     ]
+    },
+    {
+     "name": "accountPassword",
+     "type": "String",
+     "ann": [
+      [
+       "Pattern",
+       "regexp = ValidationPatterns.PASSWORD, message = ValidationPatterns.PASSWORD_MESSAGE"
+      ]
+     ]
+    },
+    {
+     "name": "version",
+     "type": "Long",
+     "ann": []
+    }
+   ]
+  },
+  {
+   "id": "CreateTermRequest",
+   "layer": "request",
+   "kind": "class",
+   "path": "com/student_manager/feature/course/CreateTermRequest.java",
+   "ann": [
+    [
+     "Data",
+     ""
+    ],
+    [
+     "NoArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "Request payload for POST /api/terms.",
+   "extends": "",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [],
+   "fields": [
+    {
+     "name": "name",
+     "type": "String",
+     "ann": [
+      [
+       "NotBlank",
+       "message = \"Term name is required\""
+      ],
+      [
+       "Size",
+       "max = 100, message = \"Term name must be at most 100 characters\""
+      ]
+     ]
+    },
+    {
+     "name": "startDate",
+     "type": "LocalDate",
+     "ann": []
+    },
+    {
+     "name": "endDate",
+     "type": "LocalDate",
+     "ann": []
+    }
+   ]
+  },
+  {
+   "id": "LoginRequest",
+   "layer": "request",
+   "kind": "class",
+   "path": "com/student_manager/feature/auth/LoginRequest.java",
+   "ann": [
+    [
+     "Data",
+     ""
+    ],
+    [
+     "NoArgsConstructor",
+     ""
+    ],
+    [
+     "AllArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "Request payload for POST /api/auth/login: username and password.",
+   "extends": "",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [],
+   "fields": [
+    {
+     "name": "username",
+     "type": "String",
+     "ann": [
+      [
+       "NotBlank",
+       "message = \"Username is required\""
+      ]
+     ]
+    },
+    {
+     "name": "password",
+     "type": "String",
+     "ann": [
+      [
+       "NotBlank",
+       "message = \"Password is required\""
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "RegisterRequest",
+   "layer": "request",
+   "kind": "class",
+   "path": "com/student_manager/feature/auth/RegisterRequest.java",
+   "ann": [
+    [
+     "Data",
+     ""
+    ],
+    [
+     "NoArgsConstructor",
+     ""
+    ],
+    [
+     "AllArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "Request payload for POST /api/auth/register: username, email, password, and the role to assign.",
+   "extends": "",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [],
+   "fields": [
+    {
+     "name": "username",
+     "type": "String",
+     "ann": [
+      [
+       "NotBlank",
+       "message = \"Username is required\""
+      ],
+      [
+       "Pattern",
+       "regexp = ValidationPatterns.USERNAME, message = ValidationPatterns.USERNAME_MESSAGE"
+      ]
+     ]
+    },
+    {
+     "name": "email",
+     "type": "String",
+     "ann": [
+      [
+       "NotBlank",
+       "message = \"Email is required\""
+      ],
+      [
+       "Email",
+       "message = \"Email is invalid\""
+      ]
+     ]
+    },
+    {
+     "name": "password",
+     "type": "String",
+     "ann": [
+      [
+       "NotBlank",
+       "message = \"Password is required\""
+      ],
+      [
+       "Pattern",
+       "regexp = ValidationPatterns.PASSWORD, message = ValidationPatterns.PASSWORD_MESSAGE"
+      ]
+     ]
+    },
+    {
+     "name": "role",
+     "type": "Role",
+     "ann": [
+      [
+       "NotNull",
+       "message = \"Role is required\""
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "UpdateGradeRequest",
+   "layer": "request",
+   "kind": "class",
+   "path": "com/student_manager/feature/enrollment/UpdateGradeRequest.java",
+   "ann": [
+    [
+     "Data",
+     ""
+    ],
+    [
+     "NoArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "Request payload for assigning a grade to a confirmed enrollment (used by PATCH /api/enrollments/{id/grade}).",
+   "extends": "",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [],
+   "fields": [
+    {
+     "name": "grade",
+     "type": "Grade",
+     "ann": [
+      [
+       "NotNull",
+       "message = \"Grade is required\""
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "UpdateProfileRequest",
+   "layer": "request",
+   "kind": "class",
+   "path": "com/student_manager/feature/profile/UpdateProfileRequest.java",
+   "ann": [
+    [
+     "Data",
+     ""
+    ],
+    [
+     "NoArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "Request payload for PUT /api/profile.",
+   "extends": "",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [],
+   "fields": [
+    {
+     "name": "username",
+     "type": "String",
+     "ann": [
+      [
+       "NotBlank",
+       "message = \"Username is required\""
+      ],
+      [
+       "Pattern",
+       "regexp = ValidationPatterns.USERNAME, message = ValidationPatterns.USERNAME_MESSAGE"
+      ]
+     ]
+    },
+    {
+     "name": "email",
+     "type": "String",
+     "ann": [
+      [
+       "NotBlank",
+       "message = \"Email is required\""
+      ],
+      [
+       "Email",
+       "message = \"Email is invalid\""
+      ]
+     ]
+    },
+    {
+     "name": "firstName",
+     "type": "String",
+     "ann": []
+    },
+    {
+     "name": "lastName",
+     "type": "String",
+     "ann": []
+    },
+    {
+     "name": "birthDate",
+     "type": "LocalDate",
+     "ann": []
+    },
+    {
+     "name": "department",
+     "type": "String",
+     "ann": [
+      [
+       "Pattern",
+       "regexp = \"^[A-Za-z .'-]{2,100}$\", message = \"Department must be 2-100 characters: letters, spaces, '.', ''' or '-'\""
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "AccountProvisioner",
+   "layer": "cross",
+   "kind": "class",
+   "path": "com/student_manager/feature/auth/AccountProvisioner.java",
+   "ann": [
+    [
+     "Component",
+     ""
+    ]
+   ],
+   "doc": "Creates login accounts on behalf of an ADMIN: directly via POST /api/auth/register, or together with a new Student/Teacher profile.",
+   "extends": "",
+   "implements": "",
+   "deps": [
+    "UserRepository",
+    "PasswordEncoder",
+    "String"
+   ],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "AccountProvisioner",
+     "ret": "public",
+     "params": "UserRepository userRepository, PasswordEncoder passwordEncoder, String defaultPassword",
+     "ann": [
+      [
+       "Value",
+       "\"${app.accounts.default-password}\""
+      ]
+     ],
+     "doc": ""
+    },
+    {
+     "name": "create",
+     "ret": "User",
+     "params": "String username, String email, String password, Role role",
+     "ann": [
+      [
+       "Transactional",
+       ""
+      ]
+     ],
+     "doc": "Creates and saves an active account."
+    }
+   ],
+   "fields": [
+    {
+     "name": "VALID_USERNAME",
+     "type": "Pattern",
+     "ann": []
+    }
+   ]
+  },
+  {
+   "id": "AuditingConfig",
+   "layer": "cross",
+   "kind": "class",
+   "path": "com/student_manager/shared/config/AuditingConfig.java",
+   "ann": [
+    [
+     "Configuration",
+     ""
+    ]
+   ],
+   "doc": "Supplies the \"who\" for Spring Data auditing (@CreatedBy / @LastModifiedBy on BaseEntity): the username of the logged-in session.",
+   "extends": "",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "auditorAware",
+     "ret": "AuditorAware<String>",
+     "params": "",
+     "ann": [
+      [
+       "Bean",
+       ""
+      ]
+     ],
+     "doc": "The current auditor, resolved per save from the security context."
+    }
+   ],
+   "fields": []
+  },
+  {
+   "id": "DemoDataSeeder",
+   "layer": "cross",
+   "kind": "class",
+   "path": "com/student_manager/shared/demo/DemoDataSeeder.java",
+   "ann": [
+    [
+     "Slf4j",
+     ""
+    ],
+    [
+     "Component",
+     ""
+    ],
+    [
+     "RequiredArgsConstructor",
+     ""
+    ],
+    [
+     "ConditionalOnProperty",
+     "name = \"app.seed.demo-data\", havingValue = \"true\""
+    ]
+   ],
+   "doc": "Fills an empty database with realistic sample data: an admin account plus ten terms, teachers, students, courses and enrollments, so every screen has something to show.",
+   "extends": "",
+   "implements": "ApplicationRunner",
+   "deps": [
+    "AccountProvisioner",
+    "UserRepository",
+    "TermRepository",
+    "TeacherRepository",
+    "StudentRepository",
+    "CourseRepository",
+    "EnrollmentRepository"
+   ],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "run",
+     "ret": "void",
+     "params": "ApplicationArguments args",
+     "ann": [
+      [
+       "Override",
+       ""
+      ],
+      [
+       "Transactional",
+       ""
+      ]
+     ],
+     "doc": ""
+    }
+   ],
+   "fields": [
+    {
+     "name": "ADMIN_EMAIL",
+     "type": "String",
+     "ann": [
+      [
+       "student",
+       ""
+      ]
+     ]
+    },
+    {
+     "name": "TERMS",
+     "type": "List<TermSeed>",
+     "ann": []
+    },
+    {
+     "name": "TEACHERS",
+     "type": "List<TeacherSeed>",
+     "ann": []
+    },
+    {
+     "name": "STUDENTS",
+     "type": "List<StudentSeed>",
+     "ann": []
+    },
+    {
+     "name": "COURSES",
+     "type": "List<CourseSeed>",
+     "ann": []
+    },
+    {
+     "name": "ENROLLMENTS",
+     "type": "List<EnrollmentSeed>",
+     "ann": []
+    }
+   ]
+  },
+  {
+   "id": "GlobalExceptionHandler",
+   "layer": "cross",
+   "kind": "class",
+   "path": "com/student_manager/shared/exception/GlobalExceptionHandler.java",
+   "ann": [
+    [
+     "Slf4j",
+     ""
+    ],
+    [
+     "RestControllerAdvice",
+     ""
+    ]
+   ],
+   "doc": "Centralized exception-to-HTTP-response translation for every controller.",
+   "extends": "",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "handleNotFound",
+     "ret": "ResponseEntity<ErrorResponse>",
+     "params": "ResourceNotFoundException ex",
+     "ann": [
+      [
+       "ExceptionHandler",
+       "ResourceNotFoundException.class"
+      ]
+     ],
+     "doc": "Handles a missing resource lookup."
+    },
+    {
+     "name": "handleInvalidCredentials",
+     "ret": "ResponseEntity<ErrorResponse>",
+     "params": "InvalidCredentialsException ex",
+     "ann": [
+      [
+       "ExceptionHandler",
+       "InvalidCredentialsException.class"
+      ]
+     ],
+     "doc": "Handles a failed login attempt."
+    },
+    {
+     "name": "handleValidation",
+     "ret": "ResponseEntity<ErrorResponse>",
+     "params": "ValidationException ex",
+     "ann": [
+      [
+       "ExceptionHandler",
+       "ValidationException.class"
+      ]
+     ],
+     "doc": "Handles an application-level validation failure (e.g."
+    },
+    {
+     "name": "handleMethodArgumentNotValid",
+     "ret": "ResponseEntity<ErrorResponse>",
+     "params": "MethodArgumentNotValidException ex",
+     "ann": [
+      [
+       "ExceptionHandler",
+       "MethodArgumentNotValidException.class"
+      ]
+     ],
+     "doc": "Handles bean-validation failures on a @Valid request body, collecting each field's error message."
+    },
+    {
+     "name": "handleAccessDenied",
+     "ret": "ResponseEntity<ErrorResponse>",
+     "params": "AccessDeniedException ex",
+     "ann": [
+      [
+       "ExceptionHandler",
+       "AccessDeniedException.class"
+      ]
+     ],
+     "doc": "Handles a method-level (@PreAuthorize) authorization denial."
+    },
+    {
+     "name": "handleTypeMismatch",
+     "ret": "ResponseEntity<ErrorResponse>",
+     "params": "MethodArgumentTypeMismatchException ex",
+     "ann": [
+      [
+       "ExceptionHandler",
+       "MethodArgumentTypeMismatchException.class"
+      ]
+     ],
+     "doc": "Handles a request parameter/path variable that cannot be converted to its target type (e.g."
+    },
+    {
+     "name": "handleUnreadableBody",
+     "ret": "ResponseEntity<ErrorResponse>",
+     "params": "HttpMessageNotReadableException ex",
+     "ann": [
+      [
+       "ExceptionHandler",
+       "HttpMessageNotReadableException.class"
+      ]
+     ],
+     "doc": "Handles a request body that cannot be parsed (e.g."
+    },
+    {
+     "name": "handleOptimisticLock",
+     "ret": "ResponseEntity<ErrorResponse>",
+     "params": "ObjectOptimisticLockingFailureException ex",
+     "ann": [
+      [
+       "ExceptionHandler",
+       "ObjectOptimisticLockingFailureException.class"
+      ]
+     ],
+     "doc": "Handles an update based on an outdated copy of a record (optimistic locking, see BaseEntity#version): someone else saved it first."
+    },
+    {
+     "name": "handleDataIntegrity",
+     "ret": "ResponseEntity<ErrorResponse>",
+     "params": "DataIntegrityViolationException ex",
+     "ann": [
+      [
+       "ExceptionHandler",
+       "DataIntegrityViolationException.class"
+      ]
+     ],
+     "doc": "Handles a database constraint violation that slipped past the service-level checks, typically deleting a record that other rows still reference (a student with enrollments, a teacher who runs courses, a term with courses)."
+    },
+    {
+     "name": "handleBadSortProperty",
+     "ret": "ResponseEntity<ErrorResponse>",
+     "params": "PropertyReferenceException ex",
+     "ann": [
+      [
+       "ExceptionHandler",
+       "PropertyReferenceException.class"
+      ]
+     ],
+     "doc": "Handles a ?sort= on a property the entity doesn't have."
+    },
+    {
+     "name": "handleGeneral",
+     "ret": "ResponseEntity<ErrorResponse>",
+     "params": "Exception ex",
+     "ann": [
+      [
+       "ExceptionHandler",
+       "Exception.class"
+      ]
+     ],
+     "doc": "Catch-all fallback for any exception not handled more specifically above."
+    },
+    {
+     "name": "ErrorResponse",
+     "ret": "record",
+     "params": "int status, String message, Object details, LocalDateTime timestamp",
+     "ann": [],
+     "doc": "Uniform error body returned by every handler in this class."
+    }
+   ],
+   "fields": []
+  },
+  {
+   "id": "InvalidCredentialsException",
+   "layer": "cross",
+   "kind": "class",
+   "path": "com/student_manager/shared/exception/InvalidCredentialsException.java",
+   "ann": [],
+   "doc": "Thrown when a login attempt fails.",
+   "extends": "RuntimeException",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "InvalidCredentialsException",
+     "ret": "public",
+     "params": "",
+     "ann": [],
+     "doc": "Creates the exception with its fixed, non-specific message."
+    }
+   ],
+   "fields": []
+  },
+  {
+   "id": "OwnershipGuard",
+   "layer": "cross",
+   "kind": "class",
+   "path": "com/student_manager/shared/security/OwnershipGuard.java",
+   "ann": [
+    [
+     "Slf4j",
+     ""
+    ],
+    [
+     "Component",
+     "\"ownershipGuard\""
+    ],
+    [
+     "RequiredArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "SpEL-callable authorization helper for @PreAuthorize.",
+   "extends": "",
+   "implements": "",
+   "deps": [
+    "StudentService",
+    "TeacherService",
+    "CourseRepository",
+    "EnrollmentRepository"
+   ],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "canAccessStudentData",
+     "ret": "boolean",
+     "params": "Long studentId, Authentication authentication",
+     "ann": [],
+     "doc": "Determines whether the current caller may access a given student's data."
+    },
+    {
+     "name": "canAccessCourseData",
+     "ret": "boolean",
+     "params": "Long courseId, Authentication authentication",
+     "ann": [],
+     "doc": "SecurityConfig already restricts GET /api/enrollments/course/** to TEACHER/ADMIN, so this only needs to further narrow TEACHER to courses they actually teach \u2014 ADMIN is unrestricted."
+    },
+    {
+     "name": "canManageEnrollment",
+     "ret": "boolean",
+     "params": "Long enrollmentId, Authentication authentication",
+     "ann": [],
+     "doc": "SecurityConfig already restricts the enrollment confirm/cancel/grade endpoints to TEACHER/ADMIN, so this only needs to further narrow TEACHER to enrollments in courses they actually teach \u2014 ADMIN is unrestricted."
+    },
+    {
+     "name": "teacherScope",
+     "ret": "Long",
+     "params": "Authentication authentication",
+     "ann": [],
+     "doc": "The teacher id a caller's view of courses/enrollments must be limited to."
+    },
+    {
+     "name": "canEnroll",
+     "ret": "boolean",
+     "params": "Long studentId, Long courseId, Authentication authentication",
+     "ann": [],
+     "doc": "May this caller enroll studentId in courseId?"
+    },
+    {
+     "name": "canManageCourse",
+     "ret": "boolean",
+     "params": "Long courseId, Authentication authentication",
+     "ann": [],
+     "doc": "May this caller edit or delete course courseId?"
+    },
+    {
+     "name": "canCancelEnrollment",
+     "ret": "boolean",
+     "params": "Long enrollmentId, Authentication authentication",
+     "ann": [],
+     "doc": "May this caller cancel enrollment enrollmentId?"
+    },
+    {
+     "name": "canAcknowledgeGrade",
+     "ret": "boolean",
+     "params": "Long enrollmentId, Authentication authentication",
+     "ann": [],
+     "doc": "May this caller acknowledge the grade of enrollmentId?"
+    },
+    {
+     "name": "isAdmin",
+     "ret": "boolean",
+     "params": "Authentication authentication",
+     "ann": [],
+     "doc": ""
+    }
+   ],
+   "fields": [
+    {
+     "name": "STAFF_AUTHORITIES",
+     "type": "Set<String>",
+     "ann": []
+    },
+    {
+     "name": "NO_TEACHER",
+     "type": "long",
+     "ann": []
+    }
+   ]
+  },
+  {
+   "id": "RequestLoggingFilter",
+   "layer": "cross",
+   "kind": "class",
+   "path": "com/student_manager/shared/config/RequestLoggingFilter.java",
+   "ann": [
+    [
+     "Slf4j",
+     ""
+    ],
+    [
+     "Component",
+     ""
+    ]
+   ],
+   "doc": "Single place that logs one line per HTTP request: method, path, response status and duration in ms.",
+   "extends": "OncePerRequestFilter",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [],
+   "fields": []
+  },
+  {
+   "id": "ResourceNotFoundException",
+   "layer": "cross",
+   "kind": "class",
+   "path": "com/student_manager/shared/exception/ResourceNotFoundException.java",
+   "ann": [],
+   "doc": "Thrown when a requested entity does not exist, translated by GlobalExceptionHandler into a 404 response.",
+   "extends": "RuntimeException",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "ResourceNotFoundException",
+     "ret": "public",
+     "params": "String message",
+     "ann": [],
+     "doc": "Creates the exception with a fully custom message."
+    },
+    {
+     "name": "ResourceNotFoundException",
+     "ret": "public",
+     "params": "String resource, Long id",
+     "ann": [],
+     "doc": "Creates the exception with a standardized \" not found with id: \" message."
+    }
+   ],
+   "fields": []
+  },
+  {
+   "id": "SecurityConfig",
+   "layer": "cross",
+   "kind": "class",
+   "path": "com/student_manager/shared/config/SecurityConfig.java",
+   "ann": [
+    [
+     "Configuration",
+     ""
+    ],
+    [
+     "EnableWebSecurity",
+     ""
+    ],
+    [
+     "EnableMethodSecurity",
+     ""
+    ]
+   ],
+   "doc": "Central Spring Security configuration: session-cookie authentication (the session itself lives in Postgres via Spring Session JDBC), CSRF protection, CORS, HSTS, and the per-endpoint authorization rules for every feature area (auth, courses, students, teachers, enrollments).",
+   "extends": "",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "securityFilterChain",
+     "ret": "SecurityFilterChain",
+     "params": "HttpSecurity http",
+     "ann": [
+      [
+       "Bean",
+       ""
+      ]
+     ],
+     "doc": "Builds the main security filter chain: session-based authentication (established by AuthController on login), CSRF via an XSRF-TOKEN cookie echoed back in the X-XSRF-TOKEN header, HSTS, the per-endpoint authorization rules, and POST /api/auth/logout."
+    },
+    {
+     "name": "securityContextRepository",
+     "ret": "SecurityContextRepository",
+     "params": "",
+     "ann": [
+      [
+       "Bean",
+       ""
+      ]
+     ],
+     "doc": "Where the logged-in SecurityContext is kept between requests: the HTTP session, which Spring Session JDBC persists in Postgres."
+    },
+    {
+     "name": "passwordEncoder",
+     "ret": "PasswordEncoder",
+     "params": "",
+     "ann": [
+      [
+       "Bean",
+       ""
+      ]
+     ],
+     "doc": "Password encoder used for hashing and verifying account passwords."
+    },
+    {
+     "name": "corsConfigurationSource",
+     "ret": "CorsConfigurationSource",
+     "params": "",
+     "ann": [
+      [
+       "Bean",
+       ""
+      ]
+     ],
+     "doc": "Builds the CORS configuration applied to every endpoint, from the cors.allowed-origins and cors.allowed-origin-patterns properties."
+    }
+   ],
+   "fields": [
+    {
+     "name": "allowedOrigins",
+     "type": "String",
+     "ann": [
+      [
+       "Value",
+       "\"${cors.allowed-origins:http://localhost:5173,http://localhost}\""
+      ]
+     ]
+    },
+    {
+     "name": "allowedOriginPatterns",
+     "type": "String",
+     "ann": [
+      [
+       "Value",
+       "\"${cors.allowed-origin-patterns:}\""
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "SessionLogin",
+   "layer": "cross",
+   "kind": "class",
+   "path": "com/student_manager/feature/auth/SessionLogin.java",
+   "ann": [
+    [
+     "Component",
+     ""
+    ],
+    [
+     "RequiredArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "Turns a successfully authenticated account into a logged-in HTTP session.",
+   "extends": "",
+   "implements": "",
+   "deps": [
+    "SecurityContextRepository"
+   ],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "start",
+     "ret": "void",
+     "params": "AuthResponse account, HttpServletRequest request, HttpServletResponse response",
+     "ann": [],
+     "doc": "Stores the account as the authenticated principal of a (new) session."
+    }
+   ],
+   "fields": []
+  },
+  {
+   "id": "SpaCsrfTokenRequestHandler",
+   "layer": "cross",
+   "kind": "class",
+   "path": "com/student_manager/shared/config/SpaCsrfTokenRequestHandler.java",
+   "ann": [],
+   "doc": "CSRF token handling for a single-page app, following the Spring Security reference docs (\"Single-Page Applications\").",
+   "extends": "",
+   "implements": "CsrfTokenRequestHandler",
+   "deps": [],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "handle",
+     "ret": "void",
+     "params": "HttpServletRequest request, HttpServletResponse response, Supplier<CsrfToken> csrfToken",
+     "ann": [
+      [
+       "Override",
+       ""
+      ]
+     ],
+     "doc": ""
+    },
+    {
+     "name": "resolveCsrfTokenValue",
+     "ret": "String",
+     "params": "HttpServletRequest request, CsrfToken csrfToken",
+     "ann": [
+      [
+       "Override",
+       ""
+      ]
+     ],
+     "doc": ""
+    }
+   ],
+   "fields": [
+    {
+     "name": "plain",
+     "type": "CsrfTokenRequestHandler",
+     "ann": []
+    },
+    {
+     "name": "xor",
+     "type": "CsrfTokenRequestHandler",
+     "ann": []
+    }
+   ]
+  },
+  {
+   "id": "SwaggerConfig",
+   "layer": "cross",
+   "kind": "class",
+   "path": "com/student_manager/shared/config/SwaggerConfig.java",
+   "ann": [
+    [
+     "Configuration",
+     ""
+    ]
+   ],
+   "doc": "Springdoc/OpenAPI configuration for the Swagger UI documentation exposed by this API.",
+   "extends": "",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "openAPI",
+     "ret": "OpenAPI",
+     "params": "",
+     "ann": [
+      [
+       "Bean",
+       ""
+      ]
+     ],
+     "doc": "Defines the OpenAPI document metadata (title, description, version) shown in Swagger UI."
+    }
+   ],
+   "fields": []
+  },
+  {
+   "id": "ValidationException",
+   "layer": "cross",
+   "kind": "class",
+   "path": "com/student_manager/shared/exception/ValidationException.java",
+   "ann": [],
+   "doc": "Thrown for application-level validation failures that aren't covered by bean-validation annotations (e.g.",
+   "extends": "RuntimeException",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "ValidationException",
+     "ret": "public",
+     "params": "String message",
+     "ann": [],
+     "doc": "Creates the exception with a message describing the validation failure."
+    }
+   ],
+   "fields": []
+  },
+  {
+   "id": "ValidationPatterns",
+   "layer": "cross",
+   "kind": "class",
+   "path": "com/student_manager/shared/validation/ValidationPatterns.java",
+   "ann": [],
+   "doc": "Regular expressions and messages shared by every request that carries account credentials, so the rules cannot drift apart between endpoints.",
+   "extends": "",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [],
+   "fields": [
+    {
+     "name": "USERNAME",
+     "type": "String",
+     "ann": []
+    },
+    {
+     "name": "USERNAME_MESSAGE",
+     "type": "String",
+     "ann": []
+    },
+    {
+     "name": "PASSWORD",
+     "type": "String",
+     "ann": []
+    },
+    {
+     "name": "PASSWORD_MESSAGE",
+     "type": "String",
+     "ann": []
+    }
+   ]
+  }
+ ]
+}
