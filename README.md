@@ -237,6 +237,21 @@ Set `PW_CHROMIUM_PATH` to use an already installed Chromium.
 
 ---
 
+## Two interchangeable backends (Spring Boot ⇄ NestJS)
+
+`backend-nest/` is a second implementation of the same API in TypeScript (NestJS). It serves the **same `/api` routes, the same JSON and
+error format, the same session-cookie + CSRF scheme, and uses the same Postgres schema** (Spring's Flyway migrations stay the owner of
+the schema). The frontend cannot tell the two apart, so you can switch between them.
+
+* **Locally:** start either one — both listen on port 5030, and the Vite dev server proxies `/api` there.
+  (`API_TARGET=http://localhost:3000 npm run dev` points the proxy somewhere else.)
+* **Deployed:** `node scripts/use-backend.mjs status | spring | nest` rewrites the `/api` proxy target in `frontend/vercel.json`
+  (addresses in `backends.json`). Commit and push, and Vercel redeploys against the other backend. Users sign in again after a switch,
+  because each backend keeps its own sessions.
+* **Sample data for the NestJS backend:** `DATABASE_URL=… node backend-nest/scripts/seed-demo.mjs` (empty database only).
+
+Details, environment variables and tests: [`backend-nest/README.md`](backend-nest/README.md). CI runs both backends' tests.
+
 ## Docker Compose (all services)
 
 Build and run all services locally with one command from the project root:

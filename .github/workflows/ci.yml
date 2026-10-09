@@ -102,3 +102,48 @@ jobs:
           chmod +x mvnw
           ./mvnw clean verify
         working-directory: backend/student-manager
+
+  # The NestJS twin of the Spring backend: same /api contract, same database schema (owned by Spring's Flyway
+  # migrations, which the tests apply to a throw-away database).
+  backend-nest:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend-nest/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: backend-nest
+
+      - name: Type check
+        run: npm run typecheck
+        working-directory: backend-nest
+
+      - name: Build
+        run: npm run build
+        working-directory: backend-nest
+
+      - name: Tests
+        run: npm test
+        working-directory: backend-nest
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
