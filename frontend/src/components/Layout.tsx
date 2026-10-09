@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import ChatAssistant from './ChatAssistant';
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
@@ -34,6 +35,8 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+
+      <ChatAssistant />
     </div>
   );
 }

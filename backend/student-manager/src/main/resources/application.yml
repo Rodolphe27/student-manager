@@ -43,6 +43,12 @@ spring:
       # `always` creates them in Postgres too (idempotent — skipped if they exist).
       initialize-schema: always
 
+# In-app assistant (feature/chat). Without an API key the chat button is hidden and the
+# endpoint answers 503; the key is read from the environment only and never sent to the browser.
+chat:
+  anthropic-api-key: ${ANTHROPIC_API_KEY:}
+  model: ${CHAT_MODEL:claude-opus-5-5}
+
 app:
   accounts:
     # Initial password for accounts an ADMIN creates without typing one (e.g. together

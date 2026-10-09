@@ -135,6 +135,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/enrollments/**").hasRole("ADMIN")
                         .requestMatchers("/api/enrollments/**").hasAnyRole("TEACHER", "ADMIN")
 
+                        // In-app assistant: every signed-in role. What it may do is decided per call by
+                        // OwnershipGuard in ChatService, with the caller's own rights.
+                        .requestMatchers("/api/chat/**").authenticated()
+
                         .anyRequest().authenticated());
 
         return http.build();
