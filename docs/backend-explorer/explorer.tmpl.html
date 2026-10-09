@@ -130,6 +130,7 @@ const RULES = [
   ['PATCH','/api/enrollments/*/grade-seen','STUDENT'],
   ['DELETE','/api/enrollments/**','ADMIN'],
   [null,'/api/enrollments/**','TEACHER,ADMIN'],
+  [null,'/api/chat/**','auth'],
   [null,'**','auth'],
 ];
 function patternRegex(p){
@@ -351,6 +352,7 @@ const LANES = [
   ['seen',   'A student confirms they have seen a grade', 'EnrollmentController', 'markGradeSeen'],
   ['enroll', 'Someone enrolls a student in a course',     'EnrollmentController', 'create'],
   ['grade',  'A teacher enters a grade',                  'EnrollmentController', 'updateGrade'],
+  ['chat',   'Someone asks the AI assistant a question',  'ChatController', 'chat'],
 ];
 function laneSteps(role, ctlId, epName){
   const ctl = CLASSES.find(c => c.id === ctlId), ep = ctl.endpoints.find(e => e.name === epName), a = access(role, ep);

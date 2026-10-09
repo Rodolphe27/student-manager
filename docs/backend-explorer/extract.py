@@ -161,9 +161,11 @@ def layer(c):
     A = [a for a, _ in c['ann']]
     if n.endswith('Controller'): return 'web'
     if n.endswith('ServiceImpl') or n == 'CrudServiceSupport': return 'service'
+    # the AI assistant (feature/chat) has no interface + *Impl pairs: its classes are plain services
+    if p.startswith('feature/chat/') and n in ('ChatService', 'ClaudeAssistantClient', 'AssistantToolbox', 'PendingActionStore'): return 'service'
     if n.endswith('Repository') and c['kind'] == 'interface': return 'data'
     if 'Entity' in A or 'MappedSuperclass' in A: return 'domain'
-    if re.search(r'(Create|Update|Login|Register|ChangePassword)\w*Request$', n): return 'request'
+    if re.search(r'(Create|Update|Login|Register|ChangePassword|Chat|Confirm)\w*Request$', n): return 'request'
     if p.startswith('shared/') or n in ('SessionLogin', 'AccountProvisioner'): return 'cross'
     return None
 

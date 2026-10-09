@@ -63,6 +63,63 @@
    "fields": []
   },
   {
+   "id": "ChatController",
+   "layer": "web",
+   "kind": "class",
+   "path": "com/student_manager/feature/chat/ChatController.java",
+   "ann": [
+    [
+     "RestController",
+     ""
+    ],
+    [
+     "RequestMapping",
+     "\"/api/chat\""
+    ],
+    [
+     "RequiredArgsConstructor",
+     ""
+    ]
+   ],
+   "doc": "Chat with the in-app assistant.",
+   "extends": "",
+   "implements": "",
+   "deps": [
+    "ChatService"
+   ],
+   "endpoints": [
+    {
+     "verb": "GET",
+     "path": "/api/chat/status",
+     "name": "status",
+     "ret": "ResponseEntity<Map<String, Boolean>>",
+     "params": "",
+     "pre": "",
+     "doc": "Lets the frontend hide the chat button when the server has no API key."
+    },
+    {
+     "verb": "POST",
+     "path": "/api/chat",
+     "name": "chat",
+     "ret": "ResponseEntity<ChatResponse>",
+     "params": " ChatRequest request, Authentication authentication",
+     "pre": "",
+     "doc": ""
+    },
+    {
+     "verb": "POST",
+     "path": "/api/chat/confirm",
+     "name": "confirm",
+     "ret": "ResponseEntity<ConfirmResponse>",
+     "params": " ConfirmRequest request, Authentication authentication",
+     "pre": "",
+     "doc": "Runs a change the assistant proposed, after the user pressed the confirm button."
+    }
+   ],
+   "methods": [],
+   "fields": []
+  },
+  {
    "id": "CourseController",
    "layer": "web",
    "kind": "class",
@@ -586,6 +643,76 @@
    "fields": []
   },
   {
+   "id": "AssistantToolbox",
+   "layer": "service",
+   "kind": "class",
+   "path": "com/student_manager/feature/chat/AssistantToolbox.java",
+   "ann": [],
+   "doc": "The tools the model may use during one chat turn, bound to the signed-in user.",
+   "extends": "",
+   "implements": "AssistantClient",
+   "deps": [
+    "CourseService",
+    "EnrollmentService",
+    "StudentService",
+    "OwnershipGuard",
+    "PendingActionStore",
+    "ObjectMapper",
+    "Authentication"
+   ],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "proposed",
+     "ret": "List<PendingAction>",
+     "params": "",
+     "ann": [],
+     "doc": "The changes proposed so far in this turn."
+    },
+    {
+     "name": "specs",
+     "ret": "List<AssistantClient.ToolSpec>",
+     "params": "",
+     "ann": [
+      [
+       "Override",
+       ""
+      ]
+     ],
+     "doc": ""
+    },
+    {
+     "name": "run",
+     "ret": "String",
+     "params": "String name, Map<String, Object> input",
+     "ann": [
+      [
+       "Override",
+       ""
+      ]
+     ],
+     "doc": ""
+    }
+   ],
+   "fields": [
+    {
+     "name": "COURSE_LIMIT",
+     "type": "int",
+     "ann": []
+    },
+    {
+     "name": "ENROLLMENT_LIMIT",
+     "type": "int",
+     "ann": []
+    },
+    {
+     "name": "proposed",
+     "type": "List<PendingAction>",
+     "ann": []
+    }
+   ]
+  },
+  {
    "id": "AuthServiceImpl",
    "layer": "service",
    "kind": "class",
@@ -656,6 +783,171 @@
     }
    ],
    "fields": []
+  },
+  {
+   "id": "ChatService",
+   "layer": "service",
+   "kind": "class",
+   "path": "com/student_manager/feature/chat/ChatService.java",
+   "ann": [
+    [
+     "Slf4j",
+     ""
+    ],
+    [
+     "Service",
+     ""
+    ]
+   ],
+   "doc": "Runs one chat turn and the confirmation of changes the assistant proposed.",
+   "extends": "",
+   "implements": "",
+   "deps": [
+    "AssistantClient",
+    "CourseService",
+    "EnrollmentService",
+    "StudentService",
+    "OwnershipGuard",
+    "PendingActionStore",
+    "ObjectMapper",
+    "Clock"
+   ],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "ChatService",
+     "ret": "public",
+     "params": "AssistantClient client, CourseService courses, EnrollmentService enrollments, StudentService students, OwnershipGuard guard, PendingActionStore store, ObjectMapper json",
+     "ann": [
+      [
+       "Autowired",
+       ""
+      ]
+     ],
+     "doc": ""
+    },
+    {
+     "name": "isAvailable",
+     "ret": "boolean",
+     "params": "",
+     "ann": [],
+     "doc": ""
+    },
+    {
+     "name": "chat",
+     "ret": "ChatResponse",
+     "params": "ChatRequest request, Authentication auth",
+     "ann": [],
+     "doc": ""
+    },
+    {
+     "name": "confirm",
+     "ret": "ConfirmResponse",
+     "params": "String actionId, Authentication auth",
+     "ann": [],
+     "doc": "Runs a proposal the user confirmed."
+    }
+   ],
+   "fields": [
+    {
+     "name": "MAX_MESSAGES",
+     "type": "int",
+     "ann": []
+    },
+    {
+     "name": "MAX_MESSAGE_CHARS",
+     "type": "int",
+     "ann": []
+    },
+    {
+     "name": "REQUESTS_PER_MINUTE",
+     "type": "int",
+     "ann": []
+    },
+    {
+     "name": "recent",
+     "type": "Map<String, Deque<Instant>>",
+     "ann": []
+    }
+   ]
+  },
+  {
+   "id": "ClaudeAssistantClient",
+   "layer": "service",
+   "kind": "class",
+   "path": "com/student_manager/feature/chat/ClaudeAssistantClient.java",
+   "ann": [
+    [
+     "Slf4j",
+     ""
+    ],
+    [
+     "Component",
+     ""
+    ]
+   ],
+   "doc": "Talks to Claude through the official Anthropic SDK.",
+   "extends": "",
+   "implements": "AssistantClient",
+   "deps": [
+    "AnthropicClient",
+    "String"
+   ],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "ClaudeAssistantClient",
+     "ret": "public",
+     "params": " String apiKey, String model",
+     "ann": [
+      [
+       "Value",
+       "\"${chat.anthropic-api-key:}\""
+      ],
+      [
+       "Value",
+       "\"${chat.model:claude-opus-5-5}\""
+      ]
+     ],
+     "doc": ""
+    },
+    {
+     "name": "isConfigured",
+     "ret": "boolean",
+     "params": "",
+     "ann": [
+      [
+       "Override",
+       ""
+      ]
+     ],
+     "doc": ""
+    },
+    {
+     "name": "reply",
+     "ret": "String",
+     "params": "String systemPrompt, List<ChatMessage> history, Toolbox tools",
+     "ann": [
+      [
+       "Override",
+       ""
+      ]
+     ],
+     "doc": ""
+    }
+   ],
+   "fields": [
+    {
+     "name": "MAX_STEPS",
+     "type": "int",
+     "ann": []
+    },
+    {
+     "name": "MAX_TOKENS",
+     "type": "long",
+     "ann": []
+    }
+   ]
   },
   {
    "id": "CourseServiceImpl",
@@ -963,6 +1255,72 @@
     }
    ],
    "fields": []
+  },
+  {
+   "id": "PendingActionStore",
+   "layer": "service",
+   "kind": "class",
+   "path": "com/student_manager/feature/chat/PendingActionStore.java",
+   "ann": [
+    [
+     "Component",
+     ""
+    ]
+   ],
+   "doc": "Holds the changes the assistant proposed until the user confirms or ignores them.",
+   "extends": "",
+   "implements": "",
+   "deps": [
+    "Clock"
+   ],
+   "endpoints": [],
+   "methods": [
+    {
+     "name": "Entry",
+     "ret": "record",
+     "params": "String id, String username, String type, Map<String, Long> params, String description, Instant expiresAt",
+     "ann": [],
+     "doc": "A stored proposal and what is needed to run it."
+    },
+    {
+     "name": "PendingActionStore",
+     "ret": "public",
+     "params": "",
+     "ann": [],
+     "doc": ""
+    },
+    {
+     "name": "propose",
+     "ret": "PendingAction",
+     "params": "String username, String type, Map<String, Long> params, String description",
+     "ann": [],
+     "doc": "Stores a proposal for username; the oldest one is dropped beyond #MAX_PER_USER."
+    },
+    {
+     "name": "take",
+     "ret": "Optional<Entry>",
+     "params": "String id, String username",
+     "ann": [],
+     "doc": "Removes and returns the proposal if it exists, belongs to username and has not expired."
+    }
+   ],
+   "fields": [
+    {
+     "name": "TTL",
+     "type": "Duration",
+     "ann": []
+    },
+    {
+     "name": "MAX_PER_USER",
+     "type": "int",
+     "ann": []
+    },
+    {
+     "name": "byUser",
+     "type": "Map<String, Deque<Entry>>",
+     "ann": []
+    }
+   ]
   },
   {
    "id": "ProfileServiceImpl",
@@ -2465,6 +2823,34 @@
    ]
   },
   {
+   "id": "ChatRequest",
+   "layer": "request",
+   "kind": "record",
+   "path": "com/student_manager/feature/chat/ChatRequest.java",
+   "ann": [],
+   "doc": "The whole conversation so far; the server keeps no chat history of its own.",
+   "extends": "",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [],
+   "fields": []
+  },
+  {
+   "id": "ConfirmRequest",
+   "layer": "request",
+   "kind": "record",
+   "path": "com/student_manager/feature/chat/ConfirmRequest.java",
+   "ann": [],
+   "doc": "",
+   "extends": "",
+   "implements": "",
+   "deps": [],
+   "endpoints": [],
+   "methods": [],
+   "fields": []
+  },
+  {
    "id": "CreateCourseRequest",
    "layer": "request",
    "kind": "class",
@@ -3405,6 +3791,30 @@
       ]
      ],
      "doc": "Handles a ?sort= on a property the entity doesn't have."
+    },
+    {
+     "name": "handleAssistantUnavailable",
+     "ret": "ResponseEntity<ErrorResponse>",
+     "params": "com.student_manager.feature.chat.AssistantUnavailableException ex",
+     "ann": [
+      [
+       "ExceptionHandler",
+       "com.student_manager.feature.chat.AssistantUnavailableException.class"
+      ]
+     ],
+     "doc": ""
+    },
+    {
+     "name": "handleTooManyChatRequests",
+     "ret": "ResponseEntity<ErrorResponse>",
+     "params": "com.student_manager.feature.chat.TooManyChatRequestsException ex",
+     "ann": [
+      [
+       "ExceptionHandler",
+       "com.student_manager.feature.chat.TooManyChatRequestsException.class"
+      ]
+     ],
+     "doc": ""
     },
     {
      "name": "handleGeneral",
