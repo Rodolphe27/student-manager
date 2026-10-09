@@ -181,6 +181,19 @@ public class GlobalExceptionHandler {
                         null, LocalDateTime.now()));
     }
 
+    @ExceptionHandler(com.student_manager.feature.chat.AssistantUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleAssistantUnavailable(com.student_manager.feature.chat.AssistantUnavailableException ex) {
+        log.warn("Assistant unavailable: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new ErrorResponse(503, ex.getMessage(), null, LocalDateTime.now()));
+    }
+
+    @ExceptionHandler(com.student_manager.feature.chat.TooManyChatRequestsException.class)
+    public ResponseEntity<ErrorResponse> handleTooManyChatRequests(com.student_manager.feature.chat.TooManyChatRequestsException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(new ErrorResponse(429, ex.getMessage(), null, LocalDateTime.now()));
+    }
+
     /**
      * Catch-all fallback for any exception not handled more specifically
      * above. Logs the full stack trace and never leaks internal details to

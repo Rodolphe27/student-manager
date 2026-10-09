@@ -149,6 +149,15 @@ List endpoints are paged and sortable: `?page=0&size=10&sort=lastName,asc` (size
 | PATCH | `/api/enrollments/{id}/grade-seen` | the owning STUDENT | Acknowledge the grade (clears the "new grade" notice). |
 | DELETE | `/api/enrollments/{id}` | ADMIN | Delete an enrollment record. |
 
+### AI assistant (chat)
+| Method | Endpoint | Access | Description |
+|--------|----------|--------|-------------|
+| GET | `/api/chat/status` | any authenticated | `{"enabled": true}` when the server has an API key; the chat button is hidden otherwise. |
+| POST | `/api/chat` | any authenticated | Send the conversation so far; get the assistant's answer plus any changes it proposes. Limited to 10 messages per minute per user. |
+| POST | `/api/chat/confirm` | the user the proposal was made for | Run a proposed change (enroll / cancel) after the user pressed *Confirm*. Rights are checked again here. |
+
+The assistant (Claude, called from the backend) can look up courses and the caller's enrollments and answer questions about the app. It acts with exactly the caller's own rights, and it never changes data by itself: a change is only a *proposal* until the user confirms it in the chat. See `feature/chat`.
+
 ### Operations
 | Method | Endpoint | Access | Description |
 |--------|----------|--------|-------------|
@@ -227,6 +236,21 @@ npm run build && npx playwright test
 Set `PW_CHROMIUM_PATH` to use an already installed Chromium.
 
 ---
+
+## Two interchangeable backends (Spring Boot ⇄ NestJS)
+
+`backend-nest/` is a second implementation of the same API in TypeScript (NestJS). It serves the **same `/api` routes, the same JSON and
+error format, the same session-cookie + CSRF scheme, and uses the same Postgres schema** (Spring's Flyway migrations stay the owner of
+the schema). The frontend cannot tell the two apart, so you can switch between them.
+
+* **Locally:** start either one — both listen on port 5030, and the Vite dev server proxies `/api` there.
+  (`API_TARGET=http://localhost:3000 npm run dev` points the proxy somewhere else.)
+* **Deployed:** `node scripts/use-backend.mjs status | spring | nest` rewrites the `/api` proxy target in `frontend/vercel.json`
+  (addresses in `backends.json`). Commit and push, and Vercel redeploys against the other backend. Users sign in again after a switch,
+  because each backend keeps its own sessions.
+* **Sample data for the NestJS backend:** `DATABASE_URL=… node backend-nest/scripts/seed-demo.mjs` (empty database only).
+
+Details, environment variables and tests: [`backend-nest/README.md`](backend-nest/README.md). CI runs both backends' tests.
 
 ## Docker Compose (all services)
 
@@ -312,6 +336,8 @@ first request afterwards waits about a minute while Spring Boot starts. The
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost` | Comma-separated allowed browser origins |
 | `CORS_ALLOWED_ORIGIN_PATTERNS` | *(empty)* | Comma-separated origin patterns (e.g. `https://*.example.com`) |
 | `SPRING_JPA_DDL_AUTO` | `validate` | Hibernate schema mode; the schema itself is managed by Flyway (`db/migration`) |
+| `ANTHROPIC_API_KEY` | *(empty)* | API key for the in-app assistant. Without it the chat button is hidden and `/api/chat` answers 503. Set it only on the backend (never in the frontend). |
+| `CHAT_MODEL` | `claude-opus-5-5` | Claude model the assistant uses |
 | `DEFAULT_ACCOUNT_PASSWORD` | `testuser12` | Initial password for accounts an admin creates without typing one (e.g. "Also create a login account" on a new student/teacher) and for the demo accounts. Change it for anything beyond a demo |
 | `SEED_DEMO_DATA` | `false` | Fill an empty database with an admin account and 10 terms/teachers/students/courses/enrollments (local demos only) |
 | `SPRING_JPA_SHOW_SQL` | `false` | Log every SQL statement (dev only) |
