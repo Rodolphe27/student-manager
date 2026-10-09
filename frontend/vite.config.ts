@@ -5,9 +5,11 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // The backend is reached same-origin under /api (see src/services/api.ts), so in dev
-// and preview Vite forwards /api to the local Spring Boot server.
+// and preview Vite forwards /api to the local backend. Spring Boot and the NestJS twin
+// (backend-nest) both listen on 5030 and speak the same API, so switching is just starting
+// the other one — or point API_TARGET elsewhere, e.g. API_TARGET=http://localhost:3000 npm run dev.
 const apiProxy = {
-  '/api': { target: 'http://localhost:5030', changeOrigin: true },
+  '/api': { target: process.env.API_TARGET || 'http://localhost:5030', changeOrigin: true },
 }
 
 // https://vite.dev/config/
