@@ -1,4 +1,4 @@
-import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -9,7 +9,12 @@ import { AppOptions, createApp } from '../src/app.factory';
 import { Db, PgDb } from '../src/db/db';
 
 /** The Spring project owns the schema: the tests run its Flyway migrations on a throw-away Postgres. */
-const MIGRATIONS = join(__dirname, '..', '..', 'student-manager', 'src', 'main', 'resources', 'db', 'migration');
+const MIGRATIONS = [
+  join(__dirname, '..', '..', 'backend', 'student-manager'), // in the repository
+  join(__dirname, '..', '..', 'student-manager'), // a standalone copy next to the Spring project
+]
+  .map((root) => join(root, 'src', 'main', 'resources', 'db', 'migration'))
+  .find((dir) => existsSync(dir)) as string;
 
 const freePort = () =>
   new Promise<number>((resolve, reject) => {
