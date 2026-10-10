@@ -12,6 +12,8 @@ export function config() {
     anthropicApiKey: env.ANTHROPIC_API_KEY ?? '',
     chatModel: env.CHAT_MODEL ?? 'claude-opus-5-5',
     sessionSecret: env.SESSION_SECRET ?? 'dev-only-secret-change-me',
+    applySchema: env.APPLY_SCHEMA === 'true',
+    seedDemoData: env.SEED_DEMO_DATA === 'true',
     production: env.NODE_ENV === 'production',
   };
 }
