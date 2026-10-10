@@ -1,0 +1,476 @@
+[
+ {
+  "title": "Application bootstrap & configuration",
+  "lead": "Annotations that start the application and wire its infrastructure.",
+  "items": [
+   {
+    "name": "@SpringBootApplication",
+    "lib": "Spring Boot",
+    "desc": "Meta-annotation combining <code>@Configuration</code>, <code>@EnableAutoConfiguration</code> and <code>@ComponentScan</code>. Marks the entry point: Spring scans the <code>com.student_manager</code> package and auto-configures web, JPA, security, etc.",
+    "where": "StudentManagerApplication"
+   },
+   {
+    "name": "@Configuration",
+    "lib": "Spring",
+    "desc": "Declares a class that defines beans through <code>@Bean</code> methods.",
+    "where": "AuditingConfig, SecurityConfig, SwaggerConfig"
+   },
+   {
+    "name": "@Bean",
+    "lib": "Spring",
+    "desc": "The method's return value is registered as a Spring-managed bean (e.g. the <code>SecurityFilterChain</code>, <code>PasswordEncoder</code>, CORS source, <code>AuditorAware</code>, OpenAPI definition).",
+    "where": "AuditingConfig (1), SecurityConfig (4), SwaggerConfig (1)"
+   },
+   {
+    "name": "@Value",
+    "lib": "Spring",
+    "desc": "Injects a value from application properties, e.g. <code>cors.allowed-origins</code> or <code>app.accounts.default-password</code>.",
+    "where": "SecurityConfig (2), AccountProvisioner"
+   },
+   {
+    "name": "@ConditionalOnProperty",
+    "lib": "Spring Boot",
+    "desc": "Registers the bean only if <code>app.seed.demo-data=true</code>, so demo data is opt-in.",
+    "where": "DemoDataSeeder"
+   }
+  ]
+ },
+ {
+  "title": "Stereotypes & dependency injection",
+  "lead": "Mark classes as Spring beans and define their architectural role.",
+  "items": [
+   {
+    "name": "@RestController",
+    "lib": "Spring Web",
+    "desc": "<code>@Controller</code> + <code>@ResponseBody</code>: every method returns JSON written straight to the response body.",
+    "where": "AuthController, CourseController, EnrollmentController, ProfileController, StudentController, TeacherController, TermController"
+   },
+   {
+    "name": "@Service",
+    "lib": "Spring",
+    "desc": "Business-logic layer bean (specialisation of <code>@Component</code>).",
+    "where": "AuthServiceImpl, CourseServiceImpl, EnrollmentServiceImpl, ProfileServiceImpl, StudentServiceImpl, TeacherServiceImpl"
+   },
+   {
+    "name": "@Repository",
+    "lib": "Spring",
+    "desc": "Persistence-layer bean; enables exception translation to Spring's <code>DataAccessException</code> hierarchy.",
+    "where": "CourseRepository, EnrollmentRepository"
+   },
+   {
+    "name": "@Component",
+    "lib": "Spring",
+    "desc": "Generic Spring-managed bean found by component scanning. <code>OwnershipGuard</code> is named <code>\"ownershipGuard\"</code> so SpEL in <code>@PreAuthorize</code> can call it.",
+    "where": "AccountProvisioner, DemoDataSeeder, OwnershipGuard, RequestLoggingFilter, SessionLogin"
+   },
+   {
+    "name": "@Autowired",
+    "lib": "Spring",
+    "desc": "Field injection of a dependency. Used only in tests; production code uses constructor injection via Lombok.",
+    "where": "Tests: AuthControllerTest, AuthorizationRulesTest, SpringDataPatternsTest, ErrorStatusIntegrationTest, ActuatorHealthTest"
+   }
+  ]
+ },
+ {
+  "title": "Lombok (boilerplate generation)",
+  "lead": "Compile-time code generation: no getters, constructors or loggers are written by hand.",
+  "items": [
+   {
+    "name": "@Getter / @Setter",
+    "lib": "Lombok",
+    "desc": "Generates getters / setters for every field.",
+    "where": "BaseEntity, Course, Enrollment, Student, Teacher, Term, User"
+   },
+   {
+    "name": "@Data",
+    "lib": "Lombok",
+    "desc": "Shortcut for <code>@Getter</code> + <code>@Setter</code> + <code>@ToString</code> + <code>@EqualsAndHashCode</code> + <code>@RequiredArgsConstructor</code>. Used on DTOs and request objects.",
+    "where": "AuthResponse, ProfileDTO, CourseDTO, EnrollmentDTO, StudentDTO, TeacherDTO, RegisterRequest, LoginRequest, ChangePasswordRequest, UpdateProfileRequest, CreateStudentRequest, CreateTeacherRequest, CreateCourseRequest, CreateTermRequest, CreateEnrollmentRequest, UpdateGradeRequest"
+   },
+   {
+    "name": "@NoArgsConstructor",
+    "lib": "Lombok",
+    "desc": "Generates an empty constructor \u2014 required by JPA and by Jackson when deserialising JSON.",
+    "where": "All entities (6), all DTOs and request classes (16)"
+   },
+   {
+    "name": "@AllArgsConstructor",
+    "lib": "Lombok",
+    "desc": "Generates a constructor taking every field.",
+    "where": "AuthResponse, ChangePasswordRequest, LoginRequest, RegisterRequest, ProfileDTO, CourseDTO, EnrollmentDTO, StudentDTO, TeacherDTO, Course, Enrollment, Student, Teacher, Term, User"
+   },
+   {
+    "name": "@RequiredArgsConstructor",
+    "lib": "Lombok",
+    "desc": "Generates a constructor for <code>final</code> fields \u2014 constructor-based dependency injection without writing it.",
+    "where": "AuthController, CourseController, EnrollmentController, ProfileController, StudentController, TeacherController, TermController, AuthServiceImpl, CourseServiceImpl, EnrollmentServiceImpl, ProfileServiceImpl, StudentServiceImpl, TeacherServiceImpl, CrudServiceSupport, DemoDataSeeder, OwnershipGuard, SessionLogin"
+   },
+   {
+    "name": "@Slf4j",
+    "lib": "Lombok",
+    "desc": "Adds a <code>private static final Logger log</code> field.",
+    "where": "AuthController, CourseController, EnrollmentController, StudentController, TeacherController, AuthServiceImpl, CourseServiceImpl, EnrollmentServiceImpl, StudentServiceImpl, TeacherServiceImpl, DemoDataSeeder, GlobalExceptionHandler, OwnershipGuard, RequestLoggingFilter"
+   }
+  ]
+ },
+ {
+  "title": "JPA / Hibernate mapping",
+  "lead": "Describe how Java entities map to database tables.",
+  "items": [
+   {
+    "name": "@Entity",
+    "lib": "Jakarta Persistence",
+    "desc": "Marks a class as a persistent entity.",
+    "where": "Course, Enrollment, Student, Teacher, Term, User"
+   },
+   {
+    "name": "@Table",
+    "lib": "Jakarta Persistence",
+    "desc": "Names the table (<code>users</code>, <code>courses</code>, <code>terms</code>, <code>enrollments</code>, <code>students</code>, <code>teachers</code>) and can declare constraints.",
+    "where": "Course, Enrollment, Student, Teacher, Term, User"
+   },
+   {
+    "name": "@UniqueConstraint",
+    "lib": "Jakarta Persistence",
+    "desc": "Composite unique key on <code>(student_id, course_id)</code>: a student can enrol in a course only once.",
+    "where": "Enrollment"
+   },
+   {
+    "name": "@MappedSuperclass",
+    "lib": "Jakarta Persistence",
+    "desc": "A non-entity parent whose fields are inherited into each subclass table (id, audit fields, version).",
+    "where": "BaseEntity"
+   },
+   {
+    "name": "@Id & @GeneratedValue",
+    "lib": "Jakarta Persistence",
+    "desc": "Primary key, generated by the database (<code>GenerationType.IDENTITY</code>).",
+    "where": "BaseEntity"
+   },
+   {
+    "name": "@Column",
+    "lib": "Jakarta Persistence",
+    "desc": "Column options: <code>nullable</code>, <code>unique</code>, <code>updatable</code>, custom <code>name</code>, <code>columnDefinition</code>.",
+    "where": "BaseEntity (4), Course (4), Enrollment (4), Student (4), Teacher (3), Term (3), User (5)"
+   },
+   {
+    "name": "@Enumerated",
+    "lib": "Jakarta Persistence",
+    "desc": "Stores an enum by name (<code>EnumType.STRING</code>) rather than ordinal \u2014 safe when enum order changes.",
+    "where": "Course (status), Enrollment (status, grade), User (role)"
+   },
+   {
+    "name": "@ManyToOne",
+    "lib": "Jakarta Persistence",
+    "desc": "Many-to-one relation, lazily fetched: Course\u2192Term, Course\u2192Teacher, Enrollment\u2192Student, Enrollment\u2192Course.",
+    "where": "Course (2), Enrollment (2)"
+   },
+   {
+    "name": "@OneToOne",
+    "lib": "Jakarta Persistence",
+    "desc": "One-to-one link from the profile (Student / Teacher) to its login <code>User</code>.",
+    "where": "Student, Teacher"
+   },
+   {
+    "name": "@JoinColumn",
+    "lib": "Jakarta Persistence",
+    "desc": "Names the foreign-key column (<code>term_id</code>, <code>teacher_id</code>, <code>student_id</code>, <code>course_id</code>, <code>user_id</code>).",
+    "where": "Course (2), Enrollment (2), Student, Teacher"
+   },
+   {
+    "name": "@Version",
+    "lib": "Jakarta Persistence",
+    "desc": "Optimistic locking: the counter increments on each update and a stale update fails instead of overwriting.",
+    "where": "BaseEntity"
+   },
+   {
+    "name": "@EntityListeners",
+    "lib": "Jakarta Persistence",
+    "desc": "Registers <code>AuditingEntityListener</code> so audit fields fill in automatically.",
+    "where": "BaseEntity"
+   }
+  ]
+ },
+ {
+  "title": "Spring Data & auditing",
+  "lead": "Repository behaviour and automatic created/modified tracking.",
+  "items": [
+   {
+    "name": "@NoRepositoryBean",
+    "lib": "Spring Data",
+    "desc": "Tells Spring Data not to create a bean for this generic interface; only its sub-interfaces are real repositories.",
+    "where": "BaseRepository"
+   },
+   {
+    "name": "@Query",
+    "lib": "Spring Data JPA",
+    "desc": "Custom JPQL query. Here: lightweight projections (<code>select new \u2026Option(id, name, \u2026)</code>) for dropdown lists.",
+    "where": "StudentRepository, TeacherRepository"
+   },
+   {
+    "name": "@EntityGraph",
+    "lib": "Spring Data JPA",
+    "desc": "Fetches the listed lazy associations (<code>teacher</code>, <code>term</code>, <code>student</code>, <code>course</code>) in the same query, avoiding N+1 selects.",
+    "where": "CourseRepository (2), EnrollmentRepository (3)"
+   },
+   {
+    "name": "@EnableJpaAuditing",
+    "lib": "Spring Data JPA",
+    "desc": "Turns on automatic population of audit fields.",
+    "where": "StudentManagerApplication"
+   },
+   {
+    "name": "@CreatedDate / @LastModifiedDate",
+    "lib": "Spring Data",
+    "desc": "Timestamp set on insert / on every update.",
+    "where": "BaseEntity"
+   },
+   {
+    "name": "@CreatedBy / @LastModifiedBy",
+    "lib": "Spring Data",
+    "desc": "Username of the logged-in user (supplied by the <code>AuditorAware</code> bean) stored on insert / update.",
+    "where": "BaseEntity"
+   },
+   {
+    "name": "@PageableDefault",
+    "lib": "Spring Data",
+    "desc": "Default page size/sort for list endpoints when the client supplies none (e.g. sort by <code>lastName, firstName</code>).",
+    "where": "CourseController, EnrollmentController, StudentController, TeacherController"
+   }
+  ]
+ },
+ {
+  "title": "Transactions",
+  "lead": "Database transaction boundaries.",
+  "items": [
+   {
+    "name": "@Transactional",
+    "lib": "Spring",
+    "desc": "Runs the method (or all methods of the class) in one transaction. Class-level <code>readOnly = true</code> on services, overridden by plain <code>@Transactional</code> on write methods.",
+    "where": "Class-level: CourseServiceImpl, EnrollmentServiceImpl, ProfileServiceImpl, StudentServiceImpl, TeacherServiceImpl. Method-level: AccountProvisioner, AuthServiceImpl, CrudServiceSupport (3), DemoDataSeeder, TermController (2) and the write methods of the services."
+   }
+  ]
+ },
+ {
+  "title": "REST endpoints (Spring Web)",
+  "lead": "URL mapping and request binding.",
+  "items": [
+   {
+    "name": "@RequestMapping",
+    "lib": "Spring Web",
+    "desc": "Base path of a controller (e.g. <code>/api/students</code>).",
+    "where": "AuthController, CourseController, EnrollmentController, ProfileController, StudentController, TeacherController, TermController"
+   },
+   {
+    "name": "@GetMapping",
+    "lib": "Spring Web",
+    "desc": "Handles HTTP GET (reads/lists).",
+    "where": "AuthController, ProfileController, TermController, CourseController (4), EnrollmentController (4), StudentController (4), TeacherController (4)"
+   },
+   {
+    "name": "@PostMapping",
+    "lib": "Spring Web",
+    "desc": "Handles HTTP POST (create, login, register).",
+    "where": "AuthController (2), CourseController, EnrollmentController, StudentController, TeacherController, TermController"
+   },
+   {
+    "name": "@PutMapping",
+    "lib": "Spring Web",
+    "desc": "Handles HTTP PUT (full update).",
+    "where": "CourseController, StudentController, TeacherController, ProfileController (2)"
+   },
+   {
+    "name": "@PatchMapping",
+    "lib": "Spring Web",
+    "desc": "Handles HTTP PATCH (partial change: grade, cancel, acknowledge, etc.).",
+    "where": "EnrollmentController (4)"
+   },
+   {
+    "name": "@DeleteMapping",
+    "lib": "Spring Web",
+    "desc": "Handles HTTP DELETE.",
+    "where": "CourseController, EnrollmentController, StudentController, TeacherController"
+   },
+   {
+    "name": "@RequestBody",
+    "lib": "Spring Web",
+    "desc": "Deserialises the JSON body into a Java object.",
+    "where": "All controllers that accept input (AuthController, CourseController, EnrollmentController, ProfileController, StudentController, TeacherController, TermController)"
+   },
+   {
+    "name": "@PathVariable",
+    "lib": "Spring Web",
+    "desc": "Binds a URL segment such as <code>/{id}</code> to a parameter.",
+    "where": "CourseController, EnrollmentController, StudentController, TeacherController"
+   },
+   {
+    "name": "@RequestParam",
+    "lib": "Spring Web",
+    "desc": "Binds a query parameter (filters like <code>?search=</code>).",
+    "where": "CourseController, EnrollmentController, StudentController, TeacherController"
+   },
+   {
+    "name": "@RestControllerAdvice",
+    "lib": "Spring Web",
+    "desc": "Global interception point for exceptions thrown by any controller.",
+    "where": "GlobalExceptionHandler"
+   },
+   {
+    "name": "@ExceptionHandler",
+    "lib": "Spring Web",
+    "desc": "Maps one exception type to an HTTP response. 11 handlers: not-found, invalid credentials, validation, bad body, type mismatch, access denied, optimistic lock, integrity violation, bad sort property, fallback.",
+    "where": "GlobalExceptionHandler (11)"
+   }
+  ]
+ },
+ {
+  "title": "Bean validation (Jakarta Validation)",
+  "lead": "Declarative checks on incoming request objects, triggered by <code>@Valid</code>. Patterns are centralised in <code>ValidationPatterns</code>.",
+  "items": [
+   {
+    "name": "@Valid",
+    "lib": "Jakarta Validation",
+    "desc": "Triggers validation of the request body; failures raise <code>MethodArgumentNotValidException</code> \u2192 HTTP 400.",
+    "where": "AuthController (2), CourseController (2), EnrollmentController (2), ProfileController (2), StudentController (2), TeacherController (2), TermController"
+   },
+   {
+    "name": "@NotBlank",
+    "lib": "Jakarta Validation",
+    "desc": "String must not be null, empty or whitespace.",
+    "where": "RegisterRequest, LoginRequest, ChangePasswordRequest, UpdateProfileRequest, CreateStudentRequest, CreateTeacherRequest, CreateCourseRequest, CreateTermRequest"
+   },
+   {
+    "name": "@NotNull",
+    "lib": "Jakarta Validation",
+    "desc": "Value must be present (used for roles, ids, grade).",
+    "where": "RegisterRequest, CreateEnrollmentRequest (2), UpdateGradeRequest"
+   },
+   {
+    "name": "@Pattern",
+    "lib": "Jakarta Validation",
+    "desc": "Regular-expression check (username, password policy, names, course code, matriculation number).",
+    "where": "RegisterRequest, ChangePasswordRequest, UpdateProfileRequest, CreateStudentRequest, CreateTeacherRequest, CreateCourseRequest"
+   },
+   {
+    "name": "@Email",
+    "lib": "Jakarta Validation",
+    "desc": "Must be a syntactically valid e-mail address.",
+    "where": "RegisterRequest, UpdateProfileRequest, CreateStudentRequest, CreateTeacherRequest"
+   },
+   {
+    "name": "@Size",
+    "lib": "Jakarta Validation",
+    "desc": "Length limit (term name \u2264 100).",
+    "where": "CreateTermRequest"
+   },
+   {
+    "name": "@Min / @Max",
+    "lib": "Jakarta Validation",
+    "desc": "Numeric bounds (credit hours 1\u201310).",
+    "where": "CreateCourseRequest"
+   }
+  ]
+ },
+ {
+  "title": "Security",
+  "lead": "Authentication set-up and method-level authorization.",
+  "items": [
+   {
+    "name": "@EnableWebSecurity",
+    "lib": "Spring Security",
+    "desc": "Activates the web security filter chain (session login, CSRF, CORS, HSTS, URL rules).",
+    "where": "SecurityConfig"
+   },
+   {
+    "name": "@EnableMethodSecurity",
+    "lib": "Spring Security",
+    "desc": "Enables method-level annotations such as <code>@PreAuthorize</code>.",
+    "where": "SecurityConfig"
+   },
+   {
+    "name": "@PreAuthorize",
+    "lib": "Spring Security",
+    "desc": "SpEL expression evaluated <em>before</em> the method runs, e.g. <code>@ownershipGuard.canManageCourse(#id, authentication)</code>; denial \u2192 403.",
+    "where": "CourseController (2), EnrollmentController (7)"
+   }
+  ]
+ },
+ {
+  "title": "Core Java",
+  "lead": "",
+  "items": [
+   {
+    "name": "@Override",
+    "lib": "Java",
+    "desc": "Compiler-checked marker that a method implements an interface or overrides a superclass method.",
+    "where": "AuthServiceImpl, CourseServiceImpl, CourseRepository, EnrollmentServiceImpl, EnrollmentRepository, ProfileServiceImpl, StudentServiceImpl, TeacherServiceImpl, DemoDataSeeder, RequestLoggingFilter, SpaCsrfTokenRequestHandler"
+   }
+  ]
+ },
+ {
+  "title": "Testing annotations",
+  "lead": "Used only in src/test.",
+  "items": [
+   {
+    "name": "@SpringBootTest",
+    "lib": "Spring Boot Test",
+    "desc": "Boots the full application context for integration tests.",
+    "where": "StudentManagerApplicationTests, ActuatorHealthTest, AuthControllerTest, AuthorizationRulesTest, ErrorStatusIntegrationTest, SpringDataPatternsTest"
+   },
+   {
+    "name": "@AutoConfigureMockMvc",
+    "lib": "Spring Boot Test",
+    "desc": "Provides a <code>MockMvc</code> client to call controllers without a real server.",
+    "where": "ActuatorHealthTest, AuthControllerTest, AuthorizationRulesTest, SpringDataPatternsTest"
+   },
+   {
+    "name": "@Transactional",
+    "lib": "Spring",
+    "desc": "In tests, rolls back each test's database changes automatically.",
+    "where": "AuthControllerTest, AuthorizationRulesTest, SpringDataPatternsTest"
+   },
+   {
+    "name": "@ExtendWith",
+    "lib": "JUnit 5",
+    "desc": "Registers an extension \u2014 here <code>MockitoExtension</code>, which initialises the mocks.",
+    "where": "AccountProvisionerTest, CourseServiceImplTest, DemoDataSeederTest, EnrollmentServiceImplTest, ProfileServiceImplTest, StudentServiceImplTest, TeacherServiceImplTest"
+   },
+   {
+    "name": "@Mock",
+    "lib": "Mockito",
+    "desc": "Creates a fake dependency (repositories, encoders\u2026).",
+    "where": "AccountProvisionerTest, CourseServiceImplTest, DemoDataSeederTest (7), EnrollmentServiceImplTest, ProfileServiceImplTest, StudentServiceImplTest, TeacherServiceImplTest"
+   },
+   {
+    "name": "@InjectMocks",
+    "lib": "Mockito",
+    "desc": "Creates the class under test and injects the mocks into it.",
+    "where": "CourseServiceImplTest, DemoDataSeederTest, EnrollmentServiceImplTest, ProfileServiceImplTest, StudentServiceImplTest, TeacherServiceImplTest"
+   },
+   {
+    "name": "@Test",
+    "lib": "JUnit 5",
+    "desc": "Marks a test method (142 in total).",
+    "where": "All 14 test classes"
+   },
+   {
+    "name": "@ParameterizedTest & @ValueSource",
+    "lib": "JUnit 5",
+    "desc": "Runs one test several times with different literal inputs (regex validation cases).",
+    "where": "RequestPatternValidationTest (7 each)"
+   },
+   {
+    "name": "@BeforeEach",
+    "lib": "JUnit 5",
+    "desc": "Runs before every test method (set-up).",
+    "where": "AccountProvisionerTest, CourseServiceImplTest, EnrollmentServiceImplTest, ProfileServiceImplTest, StudentServiceImplTest, TeacherServiceImplTest"
+   },
+   {
+    "name": "@BeforeAll / @AfterAll",
+    "lib": "JUnit 5",
+    "desc": "Run once before / after all tests in the class.",
+    "where": "RequestPatternValidationTest"
+   }
+  ]
+ }
+]
