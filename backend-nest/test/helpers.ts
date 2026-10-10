@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -8,13 +8,8 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppOptions, createApp } from '../src/app.factory';
 import { Db, PgDb } from '../src/db/db';
 
-/** The Spring project owns the schema: the tests run its Flyway migrations on a throw-away Postgres. */
-const MIGRATIONS = [
-  join(__dirname, '..', '..', 'backend', 'student-manager'), // in the repository
-  join(__dirname, '..', '..', 'student-manager'), // a standalone copy next to the Spring project
-]
-  .map((root) => join(root, 'src', 'main', 'resources', 'db', 'migration'))
-  .find((dir) => existsSync(dir)) as string;
+/** The schema the app ships with (a copy of Spring's Flyway migrations; test/schema.spec.ts keeps the two identical). */
+const MIGRATIONS = join(__dirname, '..', 'schema');
 
 const freePort = () =>
   new Promise<number>((resolve, reject) => {
@@ -50,7 +45,7 @@ async function migrate(db: Db) {
  * A fresh database with the Spring schema. With TEST_DATABASE_URL (see scripts/test-db.mjs) it is a new database
  * on that server; otherwise a Postgres is started just for this test file.
  */
-export async function newDb(): Promise<TestDb> {
+export async function newDb(options: { migrate?: boolean } = {}): Promise<TestDb> {
   const admin = process.env.TEST_DATABASE_URL;
   if (admin) {
     const name = `t_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
@@ -60,7 +55,7 @@ export async function newDb(): Promise<TestDb> {
       await adminDb.query(`drop database if exists ${name} with (force)`);
       await adminDb.close();
     });
-    await migrate(db);
+    if (options.migrate !== false) await migrate(db);
     return db;
   }
   const dir = mkdtempSync(join(tmpdir(), 'nest-pg-'));
@@ -78,7 +73,7 @@ export async function newDb(): Promise<TestDb> {
     await server.stop();
     rmSync(dir, { recursive: true, force: true });
   });
-  await migrate(db);
+  if (options.migrate !== false) await migrate(db);
   return db;
 }
 

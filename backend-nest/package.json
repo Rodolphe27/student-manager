@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/main.js",
+    "seed": "node dist/seed.js",
     "start:dev": "ts-node src/main.ts",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
     "typecheck": "tsc --noEmit -p tsconfig.json"

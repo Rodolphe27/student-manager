@@ -14,6 +14,7 @@ ENV NODE_ENV=production
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
+COPY schema ./schema
 # Same port as the Spring backend (Render: PORT=5030).
 EXPOSE 5030
 USER node

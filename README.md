@@ -248,7 +248,7 @@ the schema). The frontend cannot tell the two apart, so you can switch between t
 * **Deployed:** `node scripts/use-backend.mjs status | spring | nest` rewrites the `/api` proxy target in `frontend/vercel.json`
   (addresses in `backends.json`). Commit and push, and Vercel redeploys against the other backend. Users sign in again after a switch,
   because each backend keeps its own sessions.
-* **Sample data for the NestJS backend:** `DATABASE_URL=… node backend-nest/scripts/seed-demo.mjs` (empty database only).
+* **Standalone database:** the NestJS backend can set up an empty database itself (`APPLY_SCHEMA=true`, `SEED_DEMO_DATA=true`, or `npm run seed`).
 
 Details, environment variables and tests: [`backend-nest/README.md`](backend-nest/README.md). CI runs both backends' tests.
 

@@ -22,7 +22,10 @@ npm install
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/studentmanager npm run start:dev
 ```
 
-The database must already contain the schema, i.e. start the Spring backend once against it (it runs the Flyway migrations).
+The database needs the schema. Either start the Spring backend once against it (it runs the Flyway migrations), or let this app
+create it: with `APPLY_SCHEMA=true` an **empty** database gets the tables on start (`schema/` holds a copy of Spring's migrations; a test
+keeps the two identical), and `SEED_DEMO_DATA=true` adds sample data (admin / teachers / students, password `DEFAULT_ACCOUNT_PASSWORD`).
+`npm run seed` does both from the command line. A database Spring already set up is never touched.
 Both backends can share one database; only the login sessions are separate (a switch means signing in again).
 
 | Variable | Default | Meaning |
@@ -32,6 +35,8 @@ Both backends can share one database; only the login sessions are separate (a sw
 | `SESSION_SECRET` | dev value | signs the session cookie — **required in production** |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost` | allowed browser origins |
 | `DEFAULT_ACCOUNT_PASSWORD` | `testuser12` | password for accounts an admin creates without typing one |
+| `APPLY_SCHEMA` | `false` | create the tables if the database is empty |
+| `SEED_DEMO_DATA` | `false` | fill an empty database with sample data |
 | `ANTHROPIC_API_KEY` | — | enables the AI assistant (chat); without it `/api/chat/status` says `enabled:false` |
 | `CHAT_MODEL` | `claude-opus-5-5` | model used by the assistant |
 
